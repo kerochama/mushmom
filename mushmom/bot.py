@@ -52,7 +52,7 @@ async def on_message(message):
 
         if cmd not in [c.name for c in bot.commands]:  # also fails if None
             if cmd in states.EMOTIONS:
-                await _emote(cmd, args)
+                await _emote(ctx, cmd, args)
         else:
             await bot.process_commands(message)
 
@@ -71,6 +71,19 @@ async def test(ctx):
     print(ctx.message.author.id)
 
 
+@bot.command()
+@commands.check(valid)
+async def sprite(ctx, *args):
+    cmd = args[0]
+    char = Character.from_json(await db.get_char_data(ctx.author.id))
+    name = char.name or "char"
+
+    # create sprite
+    data = await api.get_sprite(char, emotion=cmd)
+    img = discord.File(fp=BytesIO(data), filename=f'{name}_{cmd}.png')
+    await webhook.send_as_author(ctx, file=img)
+
+
 # on_message emote commands
 async def _emote(ctx, cmd, args=None):
     """
@@ -84,11 +97,10 @@ async def _emote(ctx, cmd, args=None):
     name = char.name or "char"
 
     # create emote
-    data = await api.get_sprite(char, emotion=cmd)
+    data = await api.get_emote(char, emotion=cmd)
     img = discord.File(fp=BytesIO(data), filename=f'{name}_{cmd}.png')
     await webhook.send_as_author(ctx, file=img)
 
 
 bot.run(os.getenv('TOKEN'))
-
 

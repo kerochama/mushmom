@@ -100,7 +100,7 @@ async def get_emote(char, emotion='default', zoom=1):
     # crop body out image
     img = Image.open(BytesIO(img_data))
     w, h = img.size
-    pad = 6
+    pad = 4
     emote = img.crop((0, 0, w, h + zoom * (pad - BODY_HEIGHT)))
     byte_arr = BytesIO()
     emote.save(byte_arr, format='PNG')
