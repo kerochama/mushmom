@@ -1,7 +1,11 @@
 import json
 import aiohttp
 
+from PIL import Image
+from io import BytesIO
+
 API = "https://maplestory.io/api"
+BODY_HEIGHT = 33  # see scripts/get_sprite_sizes
 
 
 async def latest_version(region='GMS'):
@@ -70,3 +74,34 @@ async def get_sprite(char, pose='stand1', emotion='default',
         async with session.get(u) as r:
             if r.status == 200:
                 return await r.read()  # png bytes
+
+
+async def get_emote(char, emotion='default', zoom=1):
+    """
+    Make API call to get char sprite data, crop out body,
+    and return bytes.  Remove cape and weapon
+
+    :param char:
+    :param emotion:
+    :param zoom:
+    :return:
+    """
+    args = locals().copy()
+    args.pop('char')
+    u = char.url(remove=['Cape', 'Weapon'], **args)
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(u) as r:
+            if r.status == 200:
+                img_data = await r.read()  # png bytes
+            else:
+                return  # return None
+
+    # crop body out image
+    img = Image.open(BytesIO(img_data))
+    w, h = img.size
+    pad = 6
+    emote = img.crop((0, 0, w, h + zoom * (pad - BODY_HEIGHT)))
+    byte_arr = BytesIO()
+    emote.save(byte_arr, format='PNG')
+    return byte_arr.getvalue()
