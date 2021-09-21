@@ -80,8 +80,11 @@ async def sprite(ctx, *args):
 
     # create sprite
     data = await api.get_sprite(char, emotion=cmd)
-    img = discord.File(fp=BytesIO(data), filename=f'{name}_{cmd}.png')
-    await webhook.send_as_author(ctx, file=img)
+
+    if data:
+        await ctx.message.delete()
+        img = discord.File(fp=BytesIO(data), filename=f'{name}_{cmd}.png')
+        await webhook.send_as_author(ctx, file=img)
 
 
 # on_message emote commands
@@ -98,8 +101,11 @@ async def _emote(ctx, cmd, args=None):
 
     # create emote
     data = await api.get_emote(char, emotion=cmd)
-    img = discord.File(fp=BytesIO(data), filename=f'{name}_{cmd}.png')
-    await webhook.send_as_author(ctx, file=img)
+
+    if data:
+        await ctx.message.delete()  # delete original message
+        img = discord.File(fp=BytesIO(data), filename=f'{name}_{cmd}.png')
+        await webhook.send_as_author(ctx, file=img)
 
 
 bot.run(os.getenv('TOKEN'))
