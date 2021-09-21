@@ -24,6 +24,20 @@ async def user_exists(userid):
     return rec is not None
 
 
+async def get_char_data(userid):
+    """
+    Get users default char data (dict)
+
+    :param userid:
+    :return:
+    """
+    user_data = await db.users.find_one({'_id': userid})
+
+    if user_data:
+        i = user_data['default']
+        return user_data['chars'][i]
+
+
 # change to add and set user.  also consider User class
 async def update_user(userid, data):
     # set userid/_id manually

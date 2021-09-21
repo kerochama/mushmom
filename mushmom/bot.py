@@ -80,9 +80,7 @@ async def _emote(ctx, cmd, args=None):
     :param args:
     :return:
     """
-    user_data = await db.get_user(ctx.author.id)
-    i = user_data['default']
-    char = Character.from_json(user_data['chars'][i])
+    char = Character.from_json(await db.get_char_data(ctx.author.id))
     name = char.name or "char"
 
     # create emote
