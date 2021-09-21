@@ -1,4 +1,3 @@
-import json
 import aiohttp
 
 from PIL import Image
@@ -21,7 +20,7 @@ async def latest_version(region='GMS'):
     async with aiohttp.ClientSession() as session:
         async with session.get(u) as r:
             if r.status == 200:
-                data = json.loads(await r.text())
+                data = await r.json()
                 region_data = [x for x in data if x['isReady'] and x['region'] == region]
                 latest = region_data[-1]['mapleVersionId']
             else:
@@ -40,12 +39,11 @@ async def get_item(itemid, region='GMS', version=None):
     :return:
     """
     u = f'{API}/{region}/{version}/item/{itemid}'
-
     # http request
     async with aiohttp.ClientSession() as session:
         async with session.get(u) as r:
             if r.status == 200:
-                data = json.loads(await r.text())
+                data = await r.json()
             else:
                 data = None
 
