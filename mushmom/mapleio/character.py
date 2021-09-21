@@ -3,12 +3,13 @@ import importlib.resources
 from urllib import parse
 from aenum import Enum, IntEnum, auto, extend_enum
 
+from mushmom import config
 from mushmom.mapleio.equip import Equip, equip_type, valid_equip
-from mushmom.mapleio import resources, api
+from mushmom.mapleio import resources
 
 
 class Character:
-    def __init__(self, name=""):
+    def __init__(self, name="", version=""):
         """
         Keep track of equips and sprite settings
 
@@ -17,7 +18,7 @@ class Character:
         self.name = name
 
         # can only be populated by from_* funcs
-        self.version = ""
+        self.version = version or config.MAPLEIO_DEFAULT_VERSION
         self.skin = None
         self.ears = None
         self.equips = []
@@ -96,12 +97,10 @@ class Character:
 
         :return:
         """
-        version = self.version
-
         # build Body and Head
         equips = [
-            {'type': 'Body', 'itemId': self.skin.value, 'version': version},
-            {'type': 'Head', 'itemId': 10000+self.skin.value, 'version': version}
+            {'type': 'Body', 'itemId': self.skin.value, 'version': self.version},
+            {'type': 'Head', 'itemId': 10000+self.skin.value, 'version': self.version}
         ]
 
         for equip in self.filter(keep, remove):
@@ -147,7 +146,7 @@ class Character:
             {k: str(v).lower() for k, v in query.items()}, safe=','
         )  # keep commas
 
-        return f'{api.API}/character/{items_s}/{pose}/0?{qs}'
+        return f'{config.MAPLEIO_API}/character/{items_s}/{pose}/0?{qs}'
 
     def to_dict(self):
         """

@@ -3,8 +3,7 @@ import aiohttp
 from PIL import Image
 from io import BytesIO
 
-API = "https://maplestory.io/api"
-BODY_HEIGHT = 33  # see scripts/get_sprite_sizes
+from mushmom import config
 
 
 async def latest_version(region='GMS'):
@@ -14,7 +13,7 @@ async def latest_version(region='GMS'):
     :param region:
     :return:
     """
-    u = f'{API}/wz'
+    u = f'{config.MAPLEIO_API}/wz'
 
     # http request
     async with aiohttp.ClientSession() as session:
@@ -29,7 +28,8 @@ async def latest_version(region='GMS'):
     return latest
 
 
-async def get_item(itemid, region='GMS', version=None):
+async def get_item(itemid, region='GMS',
+                   version=config.MAPLEIO_DEFAULT_VERSION):
     """
     Get info about itemid
 
@@ -38,7 +38,7 @@ async def get_item(itemid, region='GMS', version=None):
     :param version:
     :return:
     """
-    u = f'{API}/{region}/{version}/item/{itemid}'
+    u = f'{config.MAPLEIO_API}/{region}/{version}/item/{itemid}'
     # http request
     async with aiohttp.ClientSession() as session:
         async with session.get(u) as r:
@@ -99,7 +99,7 @@ async def get_emote(char, emotion='default', zoom=1):
     img = Image.open(BytesIO(img_data))
     w, h = img.size
     pad = 8
-    emote = img.crop((0, 0, w, h + zoom * (pad - BODY_HEIGHT)))
+    emote = img.crop((0, 0, w, h + zoom * (pad - config.MAPLEIO_BODY_HEIGHT)))
     byte_arr = BytesIO()
     emote.save(byte_arr, format='PNG')
     return byte_arr.getvalue()

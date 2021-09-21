@@ -5,8 +5,8 @@ from discord.ext import commands
 from io import BytesIO
 from dotenv import load_dotenv
 
-from mushmom import webhook
-from mushmom import database as db, utils
+from mushmom import config, webhook, utils
+from mushmom import database as db
 from mushmom.mapleio import api, states
 from mushmom.mapleio.character import Character
 
@@ -82,7 +82,9 @@ async def sprite(ctx, *args):
     data = await api.get_sprite(char, emotion=cmd)
 
     if data:
-        await ctx.message.delete()
+        if not config.DEBUG:
+            await ctx.message.delete()  # delete original message
+
         img = discord.File(fp=BytesIO(data), filename=f'{name}_{cmd}.png')
         await webhook.send_as_author(ctx, file=img)
 
@@ -103,7 +105,9 @@ async def _emote(ctx, cmd, args=None):
     data = await api.get_emote(char, emotion=cmd)
 
     if data:
-        await ctx.message.delete()  # delete original message
+        if not config.DEBUG:
+            await ctx.message.delete()  # delete original message
+
         img = discord.File(fp=BytesIO(data), filename=f'{name}_{cmd}.png')
         await webhook.send_as_author(ctx, file=img)
 
