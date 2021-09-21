@@ -1,0 +1,5 @@
+aenum
+aiohttp
+discord
+python-dotenv
+pymongo
