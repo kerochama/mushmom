@@ -1,0 +1,307 @@
+{
+    "Accessory": [
+        {
+            "subCategory": "Face Accessory",
+            "lowItemId": 1010000,
+            "highItemId": 1020000
+        },
+        {
+            "subCategory": "Eye Decoration",
+            "lowItemId": 1020000,
+            "highItemId": 1030000
+        },
+        {
+            "subCategory": "Earrings",
+            "lowItemId": 1030000,
+            "highItemId": 1040000
+        },
+        {
+            "subCategory": "Ring",
+            "lowItemId": 1110000,
+            "highItemId": 1120000
+        },
+        {
+            "subCategory": "Pendant",
+            "lowItemId": 1120000,
+            "highItemId": 1130000
+        },
+        {
+            "subCategory": "Belt",
+            "lowItemId": 1130000,
+            "highItemId": 1140000
+        },
+        {
+            "subCategory": "Medal",
+            "lowItemId": 1140000,
+            "highItemId": 1150000
+        },
+        {
+            "subCategory": "Shoulder Accessory",
+            "lowItemId": 1150000,
+            "highItemId": 1160000
+        },
+        {
+            "subCategory": "Pocket Item",
+            "lowItemId": 1160000,
+            "highItemId": 1170000
+        },
+        {
+            "subCategory": "Badge",
+            "lowItemId": 1180000,
+            "highItemId": 1190000
+        },
+        {
+            "subCategory": "Emblem",
+            "lowItemId": 1190000,
+            "highItemId": 1190500
+        },
+        {
+            "subCategory": "Totem",
+            "lowItemId": 1202000,
+            "highItemId": 1202200
+        }
+    ],
+    "Armor": [
+        {
+            "subCategory": "Cape",
+            "lowItemId": 1100000,
+            "highItemId": 1110000
+        },
+        {
+            "subCategory": "Hat",
+            "lowItemId": 1000000,
+            "highItemId": 1010000
+        },
+        {
+            "subCategory": "Top",
+            "lowItemId": 1040000,
+            "highItemId": 1050000
+        },
+        {
+            "subCategory": "Overall",
+            "lowItemId": 1050000,
+            "highItemId": 1060000
+        },
+        {
+            "subCategory": "Glove",
+            "lowItemId": 1080000,
+            "highItemId": 1090000
+        },
+        {
+            "subCategory": "Bottom",
+            "lowItemId": 1060000,
+            "highItemId": 1070000
+        },
+        {
+            "subCategory": "Shield",
+            "lowItemId": 1090000,
+            "highItemId": 1100000
+        },
+        {
+            "subCategory": "Shoes",
+            "lowItemId": 1070000,
+            "highItemId": 1080000
+        }
+    ],
+    "Character": [
+        {
+            "subCategory": "Face",
+            "lowItemId": 20000,
+            "highItemId": 29999
+        },
+        {
+            "subCategory": "Hair",
+            "lowItemId": 30000,
+            "highItemId": 49999
+        }
+    ],
+    "One-Handed Weapon": [
+        {
+            "subCategory": "Shining Rod",
+            "lowItemId": 1212000,
+            "highItemId": 1213000
+        },
+        {
+            "subCategory": "Breath Shooter",
+            "lowItemId": 1214000,
+            "highItemId": 1215000
+        },
+        {
+            "subCategory": "Soul Shooter",
+            "lowItemId": 1222000,
+            "highItemId": 1223000
+        },
+        {
+            "subCategory": "Desperado",
+            "lowItemId": 1232000,
+            "highItemId": 1233000
+        },
+        {
+            "subCategory": "Whip Blade",
+            "lowItemId": 1242000,
+            "highItemId": 1243000
+        },
+        {
+            "subCategory": "Scepter",
+            "lowItemId": 1252000,
+            "highItemId": 1253000
+        },
+        {
+            "subCategory": "Psy-limiter",
+            "lowItemId": 1262000,
+            "highItemId": 1263000
+        },
+        {
+            "subCategory": "Chain",
+            "lowItemId": 1272000,
+            "highItemId": 1273000
+        },
+        {
+            "subCategory": "Gauntlet",
+            "lowItemId": 1282000,
+            "highItemId": 1283000
+        },
+        {
+            "subCategory": "Ritual Fan",
+            "lowItemId": 1292000,
+            "highItemId": 1293000
+        },
+        {
+            "subCategory": "One-Handed Sword",
+            "lowItemId": 1300000,
+            "highItemId": 1310000
+        },
+        {
+            "subCategory": "One-Handed Axe",
+            "lowItemId": 1310000,
+            "highItemId": 1320000
+        },
+        {
+            "subCategory": "One-Handed Blunt Weapon",
+            "lowItemId": 1320000,
+            "highItemId": 1330000
+        },
+        {
+            "subCategory": "Dagger",
+            "lowItemId": 1330000,
+            "highItemId": 1340000
+        },
+        {
+            "subCategory": "Katara",
+            "lowItemId": 1340000,
+            "highItemId": 1350000
+        },
+        {
+            "subCategory": "Cane",
+            "lowItemId": 1360000,
+            "highItemId": 1370000
+        },
+        {
+            "subCategory": "Wand",
+            "lowItemId": 1370000,
+            "highItemId": 1380000
+        },
+        {
+            "subCategory": "Staff",
+            "lowItemId": 1380000,
+            "highItemId": 1390000
+        },
+        {
+            "subCategory": "Cash",
+            "lowItemId": 1701000,
+            "highItemId": 1704000
+        }
+    ],
+    "Two-Handed Weapon": [
+        {
+            "subCategory": "Two-Handed Sword",
+            "lowItemId": 1400000,
+            "highItemId": 1410000
+        },
+        {
+            "subCategory": "Two-Handed Axe",
+            "lowItemId": 1410000,
+            "highItemId": 1420000
+        },
+        {
+            "subCategory": "Two-Handed Blunt",
+            "lowItemId": 1420000,
+            "highItemId": 1430000
+        },
+        {
+            "subCategory": "Spear",
+            "lowItemId": 1430000,
+            "highItemId": 1440000
+        },
+        {
+            "subCategory": "Pole Arm",
+            "lowItemId": 1440000,
+            "highItemId": 1450000
+        },
+        {
+            "subCategory": "Bow",
+            "lowItemId": 1450000,
+            "highItemId": 1460000
+        },
+        {
+            "subCategory": "Crossbow",
+            "lowItemId": 1460000,
+            "highItemId": 1470000
+        },
+        {
+            "subCategory": "Claw",
+            "lowItemId": 1470000,
+            "highItemId": 1480000
+        },
+        {
+            "subCategory": "Knuckle",
+            "lowItemId": 1480000,
+            "highItemId": 1490000
+        },
+        {
+            "subCategory": "Gun",
+            "lowItemId": 1490000,
+            "highItemId": 1500000
+        },
+        {
+            "subCategory": "Dual Bowgun",
+            "lowItemId": 1520000,
+            "highItemId": 1530000
+        },
+        {
+            "subCategory": "Hand Cannon",
+            "lowItemId": 1530000,
+            "highItemId": 1540000
+        },
+        {
+            "subCategory": "Katana",
+            "lowItemId": 1542000,
+            "highItemId": 1543000
+        },
+        {
+            "subCategory": "Fan",
+            "lowItemId": 1552000,
+            "highItemId": 1553000
+        },
+        {
+            "subCategory": "Lapis",
+            "lowItemId": 1562000,
+            "highItemId": 1563000
+        },
+        {
+            "subCategory": "Lazuli",
+            "lowItemId": 1572000,
+            "highItemId": 1573000
+        },
+        {
+            "subCategory": "Arm Cannon",
+            "lowItemId": 1582000,
+            "highItemId": 1583000
+        },
+        {
+            "subCategory": "Ancient Bow",
+            "lowItemId": 1592000,
+            "highItemId": 1593000
+        }
+    ]
+}
