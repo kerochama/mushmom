@@ -63,14 +63,7 @@ async def hello(ctx):
     await ctx.send('hai')
 
 
-@bot.command()
-async def test(ctx):
-    print(ctx.message.content)
-    print(ctx.message.author)
-    print(ctx.message.author.id)
-
-
-@bot.command()
+@bot.group(invoke_without_command=True)
 async def sprite(ctx, *args):
     cmd = args[0]
     char = Character.from_json(await db.get_char_data(ctx.author.id))
@@ -85,6 +78,44 @@ async def sprite(ctx, *args):
 
         img = discord.File(fp=BytesIO(data), filename=f'{name}_{cmd}.png')
         await webhook.send_as_author(ctx, file=img)
+
+
+@sprite.command()
+async def emotions(ctx):
+    embed = discord.Embed(
+        description=('The following is a list of emotions you can use in the '
+                     'generation of your emoji or sprite.'),
+        color=0xf49c00  # hard coded to match current pfp banner
+    )
+
+    embed.set_author(name='Emotions', icon_url=bot.user.avatar_url)
+    # embed.set_thumbnail(url=bot.user.avatar_url)
+    embed.set_footer(text='[GMS v225]')
+
+    # split emotions into 3 lists
+    emotions = [states.EMOTIONS[i::3] for i in range(3)]  # order not preserved
+    embed.add_field(name='Emotions', value='\n'.join(emotions[0]))
+    embed.add_field(name='\u200b', value='\n'.join(emotions[1]))
+    embed.add_field(name='\u200b', value='\n'.join(emotions[2]))
+
+    await ctx.send(embed=embed)
+
+
+@sprite.command()
+async def poses(ctx):
+    embed = discord.Embed(
+        description=('The following is a list of poses you can use in the '
+                     'generation of your emoji or sprite.'),
+        color=0xf49c00  # hard coded to match current pfp banner
+    )
+
+    embed.set_author(name='Poses', icon_url=bot.user.avatar_url)
+    # embed.set_thumbnail(url=bot.user.avatar_url)
+    embed.set_footer(text='[GMS v225]')
+    embed.add_field(name='Pose', value='\n'.join(states.POSES.keys()))
+    embed.add_field(name='Value', value='\n'.join(states.POSES.values()))
+
+    await ctx.send(embed=embed)
 
 
 # on_message emote commands
