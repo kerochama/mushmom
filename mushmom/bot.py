@@ -20,6 +20,7 @@ async def on_ready():
     print('{0.user} is ready to mush!'.format(bot))
 
 
+@bot.check
 async def valid(ctx):
     """
     Conditions under which bot process message
@@ -58,13 +59,11 @@ async def on_message(message):
 
 
 @bot.command()
-@commands.check(valid)
 async def hello(ctx):
     await ctx.send('hai')
 
 
 @bot.command()
-@commands.check(valid)
 async def test(ctx):
     print(ctx.message.content)
     print(ctx.message.author)
@@ -72,7 +71,6 @@ async def test(ctx):
 
 
 @bot.command()
-@commands.check(valid)
 async def sprite(ctx, *args):
     cmd = args[0]
     char = Character.from_json(await db.get_char_data(ctx.author.id))
