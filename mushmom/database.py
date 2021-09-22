@@ -1,12 +1,19 @@
+"""
+Functions related to database connection
+
+"""
+
 import os
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 
+from mushmom import config
+
 load_dotenv()  # use env variables from .env
 
 client = AsyncIOMotorClient(os.getenv('MONGO_CONN_STR'))
-db = client.mushmom
+db = client[config.DATABASE]
 
 
 async def get_user(userid, proj=None):

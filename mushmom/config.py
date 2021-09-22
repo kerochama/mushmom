@@ -10,6 +10,15 @@ Global settings
 # Used to control whether or not original message is deleted
 DEBUG = False
 
+BOT_NAME = 'Mushmom'
+HOOK_NAME = BOT_NAME
+
+####################
+# MONGODB          #
+####################
+
+DATABASE = 'mushmom'
+
 ####################
 # MAPLESTORY.IO    #
 ####################
