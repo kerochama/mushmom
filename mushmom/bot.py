@@ -1,11 +1,12 @@
 import discord
 import os
+import typing
 
 from discord.ext import commands
 from io import BytesIO
 from dotenv import load_dotenv
 
-from mushmom import config, webhook, utils
+from mushmom import config, errors, webhook, utils
 from mushmom import database as db
 from mushmom.mapleio import api, states
 from mushmom.mapleio.character import Character
@@ -63,21 +64,48 @@ async def hello(ctx):
     await ctx.send('hai')
 
 
-@bot.group(invoke_without_command=True)
-async def sprite(ctx, *args):
-    cmd = args[0]
-    char = Character.from_json(await db.get_char_data(ctx.author.id))
+@bot.group(invoke_without_command=True, ignore_extra=False)
+async def sprite(ctx,
+                 emotion: typing.Optional[utils.EmotionConverter] = 'default',
+                 pose: typing.Optional[utils.PoseConverter] = 'stand1'):
+    # grab character
+    char_data = await db.get_char_data(ctx.author.id)
+
+    if not char_data:
+        raise errors.DataNotFoundError
+
+    char = Character.from_json(char_data)
     name = char.name or "char"
 
     # create sprite
-    data = await api.get_sprite(char, emotion=cmd)
+    data = await api.get_sprite(char, pose=pose, emotion=emotion)
 
     if data:
         if not config.DEBUG:
             await ctx.message.delete()  # delete original message
 
-        img = discord.File(fp=BytesIO(data), filename=f'{name}_{cmd}.png')
+        img = discord.File(fp=BytesIO(data),
+                           filename=f'{name}_{emotion}_{pose}.png')
         await webhook.send_as_author(ctx, file=img)
+    else:
+        raise errors.MapleIOError
+
+
+@sprite.error
+async def sprite_error(ctx, error):
+    if isinstance(error, commands.TooManyArguments):
+        await errors.send_error(ctx, f'Emotion/pose not found. \u200b See:'
+                                f'\n\n- `{bot.command_prefix[0]}sprite emotions`'
+                                f'\n- `{bot.command_prefix[0]}sprite poses`',
+                                delete_message=not config.DEBUG)
+    elif isinstance(error, errors.DataNotFoundError):
+        await errors.send_error(ctx, 'No registered character. \u200b '
+                                f'See:\n -`{bot.command_prefix[0]}import`',
+                                delete_message=not config.DEBUG)
+    elif isinstance(error, errors.MapleIOError):
+        await errors.send_error(ctx, 'Could not get maple data. \u200b '
+                                'Try again later',
+                                delete_message=not config.DEBUG)
 
 
 @sprite.command()
@@ -85,7 +113,7 @@ async def emotions(ctx):
     embed = discord.Embed(
         description=('The following is a list of emotions you can use in the '
                      'generation of your emoji or sprite.'),
-        color=0xf49c00  # hard coded to match current pfp banner
+        color=config.EMBED_COLOR  # hard coded to match current pfp banner
     )
 
     embed.set_author(name='Emotions', icon_url=bot.user.avatar_url)
@@ -106,7 +134,7 @@ async def poses(ctx):
     embed = discord.Embed(
         description=('The following is a list of poses you can use in the '
                      'generation of your emoji or sprite.'),
-        color=0xf49c00  # hard coded to match current pfp banner
+        color=config.EMBED_COLOR  # hard coded to match current pfp banner
     )
 
     embed.set_author(name='Poses', icon_url=bot.user.avatar_url)

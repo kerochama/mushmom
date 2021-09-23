@@ -1,3 +1,11 @@
+"""
+Contains helpers for parsing and converting argument types
+
+"""
+from discord.ext import commands
+
+from mushmom.mapleio import states
+
 
 class MessageParser:
     def __init__(self, message):
@@ -50,3 +58,34 @@ class MessageParser:
                 return cmd, tokens
 
         return None, None
+
+
+# Converters
+
+class EmotionConverter(commands.Converter):
+    """
+    Check if string is in list of emotions from maplestory.io.
+    Used with typing.Optional
+
+    """
+    async def convert(self, ctx, arg):
+        if arg in states.EMOTIONS:
+            return arg
+
+        raise commands.BadArgument(message="Not a valid emotion")
+
+
+class PoseConverter(commands.Converter):
+    """
+    Check if string is in list of poses from maplestory.io.
+    Used with typing.Optional
+
+    """
+    async def convert(self, ctx, arg):
+        # poses use O instead of 0
+        arg = arg.replace('0', 'O')
+
+        if arg in states.POSES.values():
+            return arg
+
+        raise commands.BadArgument(message="Not a valid pose")

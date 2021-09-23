@@ -13,6 +13,9 @@ DEBUG = False
 BOT_NAME = 'Mushmom'
 HOOK_NAME = BOT_NAME
 
+# for embed
+EMBED_COLOR = 0xf49c00
+
 ####################
 # MONGODB          #
 ####################
