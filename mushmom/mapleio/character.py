@@ -35,15 +35,24 @@ class Character:
             data = json.loads(data)
 
         char = Character()
-        char.name = data['name']
-        char.version = list(data['selectedItems'].values())[0]['version']  # use first
-        char.skin = Skin.get(data['skin'])
-        char.ears = Ears.get(data['mercEars'], data['illiumEars'], data['highFloraEars'])
-        char.equips = [
-            Equip(item['id'], item['version'], item['name'])
-            for type, item in data['selectedItems'].items()
-            if type not in ['Body', 'Head']
-        ]
+        char.name = data.get('name')
+        char.skin = Skin.get(data.get('skin', 2005))  # default green
+        char.ears = Ears.get(data.get('mercEars', False),
+                             data.get('illiumEars', False),
+                             data.get('highFloraEars', False))
+
+        # handle selectedItems
+        items = data.get('selectedItems', {})
+
+        if (items and isinstance(items, dict)
+                and all(isinstance(v, dict) for k, v in items.values())):
+            item0 = items[0]
+            char.version = item0.get('version', config.MAPLEIO_DEFAULT_VERSION)
+
+            char.equips = [
+                Equip(item['id'], item['version'], item['name'])
+                for type, item in items.items() if type not in ['Body', 'Head']
+            ]
 
         return char
 
@@ -56,23 +65,30 @@ class Character:
         :return:
         """
         parsed = parse.urlparse(url)
-        item_str = next(x for x in parsed.path.split('/') if 'itemId' in x)
-        items = json.loads('[{}]'.format(parse.unquote(item_str)))
         query = dict(parse.parse_qsl(parsed.query, keep_blank_values=True))
 
         char = Character()
-        char.name = query['name']
-        char.version = items[0]['version']
-        char.ears = Ears.get(query['showears'] == 'true', query['showLefEars'] == 'true',
-                             query['showHighLefEars'] == 'true')
+        char.name = query.get('name')
+        char.ears = Ears.get(query.get('showears', 'false') == 'true',
+                             query.get('showLefEars', 'false') == 'true',
+                             query.get('showHighLefEars', 'false') == 'true')
 
-        # identify Body item (id is skinid)
-        item = next((x for x in items if Skin.get(x['itemId'])), Skin.GREEN)
+        # handle items
+        item_str = next(x for x in parsed.path.split('/') if 'itemId' in x)
+        items = json.loads('[{}]'.format(parse.unquote(item_str)))
 
-        char.equips = [
-            Equip(item['itemId'], item['version'])
-            for item in items if valid_equip(item['itemId'])
-        ]
+        if (items and isinstance(items, dict)
+                and all(isinstance(v, dict) for k, v in items.values())):
+            item0 = items[0]
+            char.version = item0.get('version', config.MAPLEIO_DEFAULT_VERSION)
+
+            # identify Body item (id is skinid)
+            item = next((x for x in items if Skin.get(x['itemId'])), Skin.GREEN)
+
+            char.equips = [
+                Equip(item.get('itemId', 0), item.get('version', char.version))
+                for item in items if valid_equip(item.get('itemId', 0))
+            ]
 
         return char
 
