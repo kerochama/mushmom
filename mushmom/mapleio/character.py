@@ -74,8 +74,15 @@ class Character:
                              query.get('showHighLefEars', 'false') == 'true')
 
         # handle items
-        item_str = next(x for x in parsed.path.split('/') if 'itemId' in x)
-        items = json.loads('[{}]'.format(parse.unquote(item_str)))
+        generator = (x for x in parsed.path.split('/') if 'itemId' in x)
+        item_str = next(generator, None)
+        items = {}
+
+        if item_str:
+            try:
+                items = json.loads('[{}]'.format(parse.unquote(item_str)))
+            except json.decoder.JSONDecodeError:
+                pass  # already set to {}
 
         if (items and isinstance(items, dict)
                 and all(isinstance(v, dict) for k, v in items.values())):
