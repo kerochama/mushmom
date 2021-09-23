@@ -45,12 +45,14 @@ class Character:
         items = data.get('selectedItems', {})
 
         if (items and isinstance(items, dict)
-                and all(isinstance(v, dict) for k, v in items.values())):
-            item0 = items[0]
+                and all(isinstance(v, dict) for v in items.values())):
+            item0 = list(items.values())[0]
             char.version = item0.get('version', config.MAPLEIO_DEFAULT_VERSION)
 
             char.equips = [
-                Equip(item['id'], item['version'], item['name'])
+                Equip(item.get('id', 0),
+                      item.get('version', char.version),
+                      item.get('name', ''))
                 for type, item in items.items() if type not in ['Body', 'Head']
             ]
 
