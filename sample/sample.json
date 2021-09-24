@@ -1,0 +1,211 @@
+{
+  "id": 1628124273233,
+  "type": "character",
+  "action": "stand1",
+  "emotion": "love",
+  "skin": 2000,
+  "zoom": 1,
+  "frame": 0,
+  "mercEars": false,
+  "illiumEars": false,
+  "selectedItems": {
+    "Body": {
+      "name": "Body",
+      "noIcon": true,
+      "id": 2000,
+      "region": "GMS",
+      "version": "219",
+      "typeInfo": {
+        "overallCategory": "Character",
+        "category": "Character",
+        "subCategory": "Body",
+        "lowItemId": 2000,
+        "highItemId": 2999
+      }
+    },
+    "Head": {
+      "name": "Head",
+      "noIcon": true,
+      "id": 12000,
+      "region": "GMS",
+      "version": "219",
+      "typeInfo": {
+        "overallCategory": "Character",
+        "category": "Character",
+        "subCategory": "Head",
+        "lowItemId": 12000,
+        "highItemId": 12999
+      }
+    },
+    "Face": {
+      "requiredJobs": [
+        "Beginner"
+      ],
+      "isCash": true,
+      "requiredGender": 1,
+      "name": "Sweet Face (Violet)",
+      "desc": "",
+      "id": 24626,
+      "typeInfo": {
+        "overallCategory": "Equip",
+        "category": "Character",
+        "subCategory": "Face",
+        "lowItemId": 20000,
+        "highItemId": 29999
+      },
+      "region": "GMS",
+      "version": "222",
+      "visible": true
+    },
+    "Hair": {
+      "requiredJobs": [
+        "Beginner"
+      ],
+      "isCash": true,
+      "requiredGender": 2,
+      "name": "Brown Boomy Hair",
+      "desc": "",
+      "id": 40007,
+      "typeInfo": {
+        "overallCategory": "Equip",
+        "category": "Character",
+        "subCategory": "Hair",
+        "lowItemId": 30000,
+        "highItemId": 49999
+      },
+      "region": "GMS",
+      "version": "224"
+    },
+    "Face Accessory": {
+      "requiredJobs": [
+        "Beginner"
+      ],
+      "requiredLevel": 0,
+      "isCash": true,
+      "requiredGender": 2,
+      "name": "Ice Cold Red",
+      "desc": "",
+      "id": 1012082,
+      "typeInfo": {
+        "overallCategory": "Equip",
+        "category": "Accessory",
+        "subCategory": "Face Accessory",
+        "lowItemId": 1010000,
+        "highItemId": 1020000
+      },
+      "region": "GMS",
+      "version": "224"
+    },
+    "Hat": {
+      "requiredJobs": [
+        "Beginner"
+      ],
+      "requiredLevel": 0,
+      "isCash": true,
+      "requiredGender": 5,
+      "name": "Cat Diamond",
+      "desc": "",
+      "id": 1005043,
+      "typeInfo": {
+        "overallCategory": "Equip",
+        "category": "Armor",
+        "subCategory": "Hat",
+        "lowItemId": 1000000,
+        "highItemId": 1010000
+      },
+      "region": "GMS",
+      "version": "224"
+    },
+    "Cape": {
+      "requiredJobs": [
+        "Beginner"
+      ],
+      "requiredLevel": 0,
+      "isCash": true,
+      "requiredGender": 3,
+      "name": "Spring Green Morning",
+      "desc": "",
+      "id": 1103118,
+      "typeInfo": {
+        "overallCategory": "Equip",
+        "category": "Armor",
+        "subCategory": "Cape",
+        "lowItemId": 1100000,
+        "highItemId": 1110000
+      },
+      "region": "GMS",
+      "version": "224"
+    },
+    "Top": {
+      "requiredJobs": [
+        "Beginner"
+      ],
+      "requiredLevel": 0,
+      "isCash": true,
+      "requiredGender": 2,
+      "name": "[BTS] Purple Poem",
+      "desc": "",
+      "id": 1042422,
+      "typeInfo": {
+        "overallCategory": "Equip",
+        "category": "Armor",
+        "subCategory": "Top",
+        "lowItemId": 1040000,
+        "highItemId": 1050000
+      },
+      "region": "GMS",
+      "version": "224"
+    },
+    "Bottom": {
+      "requiredJobs": [
+        "Beginner"
+      ],
+      "requiredLevel": 0,
+      "isCash": true,
+      "requiredGender": 2,
+      "name": "[BTS] Deep Purple",
+      "desc": "",
+      "id": 1062282,
+      "typeInfo": {
+        "overallCategory": "Equip",
+        "category": "Armor",
+        "subCategory": "Bottom",
+        "lowItemId": 1060000,
+        "highItemId": 1070000
+      },
+      "region": "GMS",
+      "version": "224"
+    },
+    "Cash": {
+      "requiredJobs": [
+        "Beginner"
+      ],
+      "requiredLevel": 0,
+      "isCash": true,
+      "requiredGender": 2,
+      "name": "Candy Angel",
+      "desc": "A weapon skin that can be equipped over#c any weapon.#",
+      "id": 1702837,
+      "typeInfo": {
+        "overallCategory": "Equip",
+        "category": "One-Handed Weapon",
+        "subCategory": "Cash",
+        "lowItemId": 1701000,
+        "highItemId": 1704000
+      },
+      "region": "GMS",
+      "version": "224"
+    }
+  },
+  "visible": true,
+  "position": {
+    "x": -65,
+    "y": -444
+  },
+  "fhSnap": true,
+  "flipX": false,
+  "name": "",
+  "includeBackground": true,
+  "animating": true,
+  "highFloraEars": false
+}

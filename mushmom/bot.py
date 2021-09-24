@@ -1,6 +1,8 @@
 import discord
 import os
 import typing
+import aiohttp
+import inspect
 
 from discord.ext import commands
 from io import BytesIO
@@ -64,6 +66,90 @@ async def hello(ctx):
     await ctx.send('hai')
 
 
+@bot.command(name='import', ignore_extra=False)
+async def _import(ctx, name: utils.ImportNameConverter,
+                  url: typing.Optional[utils.MapleIOURLConverter] = ''):
+    # parse char data
+    if url:  # maplestory.io char api
+        char = Character.from_url(url)
+    elif ctx.message.attachments:  # json output of sim and studio
+        json_file = next((att for att in ctx.message.attachments
+                          if att.filename[-5:] == '.json'), None)
+
+        if not json_file:
+            raise errors.UnexpectedFileTypeError
+
+        # get json
+        async with aiohttp.ClientSession() as session:
+            async with session.get(json_file.url) as r:
+                if r.status == 200:
+                    data = await r.json()
+                else:
+                    raise errors.DiscordIOError
+
+        char = Character.from_json(data)
+    else:
+        # doesnt matter which param.  Handled in error message
+        raise commands.MissingRequiredArgument(
+            inspect.Parameter('url', inspect.Parameter.POSITIONAL_ONLY)
+        )
+
+    char.name = name
+
+    # query database
+    user = await db.get_user(ctx.author.id)
+
+    if not user:  # user has no saved chars
+        ret = await db.add_user(ctx.author.id, char.to_dict())
+    elif len(user['chars']) < config.MAX_CHARS:
+        user['chars'].append(char.to_dict())
+        ret = await db.set_user(ctx.author.id, {'chars': user['chars']})
+    else:
+        # handle more than 5 chars
+        print('else')
+        ret = None
+
+    if ret:
+        await ctx.send(f'{name} has been successfully mushed')
+    else:
+        raise errors.DataWriteError
+
+
+@_import.error
+async def _import_error(ctx, error):
+    help_text = ('Try `mush import [name] [url: maplestory.io]` or '
+                 '`mush import [name]` with a JSON file attached')
+
+    if isinstance(error, commands.TooManyArguments):
+        await errors.send_error(ctx, f'{config.BOT_NAME} did not understand. '
+                                '\u200b Try `mush import [name] '
+                                '[optional: maplestory.io url]` or `mush '
+                                'import [name]` with a JSON file attached')
+    elif isinstance(error, commands.BadArgument):
+        await errors.send_error(ctx, 'You must supply a character name to'
+                                'start mushing! \u200b ' + help_text)
+    elif isinstance(error, commands.MissingRequiredArgument):
+        if error.param.name == 'name':
+            await errors.send_error(ctx, 'You must supply a character name '
+                                    'to start mushing! \u200b Try `mush import'
+                                    ' [name] [optional: maplestory.io url]` '
+                                    'or `mush import [name]` with a JSON file '
+                                    'attached')
+        elif error.param.name == 'url':
+            await errors.send_error(ctx, 'Import requires a maplestory.io url '
+                                    'or a JSON file from maples.im / '
+                                    'maplestory.studio to begin mushing')
+    elif isinstance(error, errors.UnexpectedFileTypeError):
+        await errors.send_error(ctx,
+                                f'{config.BOT_NAME} only accepts JSON files')
+    elif isinstance(error, errors.DiscordIOError):
+        await errors.send_error(ctx, f'Error trying to read attached JSON '
+                                'file. \u200b Try again later')
+    elif isinstance(error, errors.DataWriteError):
+        await errors.send_error(ctx, 'Problem saving character. \u200b '
+                                'Try again later')
+
+
 @bot.group(invoke_without_command=True, ignore_extra=False)
 async def sprite(ctx,
                  emotion: typing.Optional[utils.EmotionConverter] = 'default',
@@ -72,7 +158,7 @@ async def sprite(ctx,
     char_data = await db.get_char_data(ctx.author.id)
 
     if not char_data:
-        raise errors.DataNotFoundError
+        raise errors.DataNotFound
 
     char = Character.from_json(char_data)
     name = char.name or "char"
@@ -94,18 +180,15 @@ async def sprite(ctx,
 @sprite.error
 async def sprite_error(ctx, error):
     if isinstance(error, commands.TooManyArguments):
-        await errors.send_error(ctx, f'Emotion/pose not found. \u200b See:'
-                                f'\n\n- `{bot.command_prefix[0]}sprite emotions`'
-                                f'\n- `{bot.command_prefix[0]}sprite poses`',
-                                delete_message=not config.DEBUG)
-    elif isinstance(error, errors.DataNotFoundError):
+        await errors.send_error(ctx, f'Emotion/pose not found. \u200b See:\n'
+                                f'\n- `{bot.command_prefix[0]}sprite emotions`'
+                                f'\n- `{bot.command_prefix[0]}sprite poses`')
+    elif isinstance(error, errors.DataNotFound):
         await errors.send_error(ctx, 'No registered character. \u200b '
-                                f'See:\n -`{bot.command_prefix[0]}import`',
-                                delete_message=not config.DEBUG)
+                                f'See:\n -`{bot.command_prefix[0]}import`')
     elif isinstance(error, errors.MapleIOError):
         await errors.send_error(ctx, 'Could not get maple data. \u200b '
-                                'Try again later',
-                                delete_message=not config.DEBUG)
+                                'Try again later')
 
 
 @sprite.command()

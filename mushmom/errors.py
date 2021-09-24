@@ -9,7 +9,8 @@ from discord.ext import commands
 from mushmom import config
 
 
-async def send_error(ctx, text, delete_message=True, delay=5):
+# Errors not auto-deleted when DEBUG on
+async def send_error(ctx, text, delete_message=not config.DEBUG, delay=10):
     """
     Generic function to send formatted error
 
@@ -36,9 +37,21 @@ async def send_error(ctx, text, delete_message=True, delay=5):
         await ctx.message.delete(delay=delay)
 
 
-class DataNotFoundError(commands.CommandError):
+class DataNotFound(commands.CommandError):
+    pass
+
+
+class DataWriteError(commands.CommandError):
     pass
 
 
 class MapleIOError(commands.CommandError):
+    pass
+
+
+class UnexpectedFileTypeError(commands.CommandError):
+    pass
+
+
+class DiscordIOError(commands.CommandError):
     pass

@@ -16,6 +16,8 @@ HOOK_NAME = BOT_NAME
 # for embed
 EMBED_COLOR = 0xf49c00
 
+MAX_CHARS = 5
+
 ####################
 # MONGODB          #
 ####################
