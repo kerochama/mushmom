@@ -117,37 +117,34 @@ async def _import(ctx, name: utils.ImportNameConverter,
 
 @_import.error
 async def _import_error(ctx, error):
-    help_text = ('Try `mush import [name] [url: maplestory.io]` or '
-                 '`mush import [name]` with a JSON file attached')
+    help_text = (
+        ' \u200b Try `mush import [name] [url: maplestory.io]` or '
+        '`mush import [name]` with a JSON file attached'
+    )
+    help = True
 
     if isinstance(error, commands.TooManyArguments):
-        await errors.send_error(ctx, f'{config.BOT_NAME} did not understand. '
-                                '\u200b Try `mush import [name] '
-                                '[optional: maplestory.io url]` or `mush '
-                                'import [name]` with a JSON file attached')
+        msg = f'{config.BOT_NAME} did not understand.'
     elif isinstance(error, commands.BadArgument):
-        await errors.send_error(ctx, 'You must supply a character name to'
-                                'start mushing! \u200b ' + help_text)
+        msg = 'You must supply a character name to start mushing!'
     elif isinstance(error, commands.MissingRequiredArgument):
         if error.param.name == 'name':
-            await errors.send_error(ctx, 'You must supply a character name '
-                                    'to start mushing! \u200b Try `mush import'
-                                    ' [name] [optional: maplestory.io url]` '
-                                    'or `mush import [name]` with a JSON file '
-                                    'attached')
+            msg = 'You must supply a character name to start mushing!'
         elif error.param.name == 'url':
-            await errors.send_error(ctx, 'Import requires a maplestory.io url '
-                                    'or a JSON file from maples.im / '
-                                    'maplestory.studio to begin mushing')
+            msg = 'Missing source data.'
     elif isinstance(error, errors.UnexpectedFileTypeError):
-        await errors.send_error(ctx,
-                                f'{config.BOT_NAME} only accepts JSON files')
+        msg = f'{config.BOT_NAME} only accepts JSON files'
+        help = False
     elif isinstance(error, errors.DiscordIOError):
-        await errors.send_error(ctx, f'Error trying to read attached JSON '
-                                'file. \u200b Try again later')
+        msg = (f'Error trying to read attached JSON file.'
+               '\u200b Try again later')
+        help = False
     elif isinstance(error, errors.DataWriteError):
-        await errors.send_error(ctx, 'Problem saving character. \u200b '
-                                'Try again later')
+        msg = 'Problem saving character. \u200b Try again later'
+        help = False
+
+    if msg:
+        await errors.send(ctx, msg, append=help_text if help else '')
 
 
 @bot.group(invoke_without_command=True, ignore_extra=False)
@@ -180,15 +177,17 @@ async def sprite(ctx,
 @sprite.error
 async def sprite_error(ctx, error):
     if isinstance(error, commands.TooManyArguments):
-        await errors.send_error(ctx, f'Emotion/pose not found. \u200b See:\n'
-                                f'\n- `{bot.command_prefix[0]}sprite emotions`'
-                                f'\n- `{bot.command_prefix[0]}sprite poses`')
+        msg = ('Emotion/pose not found. \u200b See:\n'
+               f'\n- `{bot.command_prefix[0]}sprite emotions`'
+               f'\n- `{bot.command_prefix[0]}sprite poses`')
     elif isinstance(error, errors.DataNotFound):
-        await errors.send_error(ctx, 'No registered character. \u200b '
-                                f'See:\n -`{bot.command_prefix[0]}import`')
+        msg = ('No registered character. \u200b See:\n '
+               f'\n-`{bot.command_prefix[0]}import`')
     elif isinstance(error, errors.MapleIOError):
-        await errors.send_error(ctx, 'Could not get maple data. \u200b '
-                                'Try again later')
+        msg = 'Could not get maple data. \u200b Try again later'
+
+    if msg:
+        await errors.send(ctx, msg)
 
 
 @sprite.command()

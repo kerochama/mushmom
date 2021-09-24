@@ -10,7 +10,8 @@ from mushmom import config
 
 
 # Errors not auto-deleted when DEBUG on
-async def send_error(ctx, text, delete_message=not config.DEBUG, delay=10):
+async def send_error(ctx, text, delete_message=not config.DEBUG, delay=10,
+                     append=''):
     """
     Generic function to send formatted error
 
@@ -18,12 +19,14 @@ async def send_error(ctx, text, delete_message=not config.DEBUG, delay=10):
     :param text:
     :param delete_message:
     :param delay: 5 seconds
+    :param append: extra text to append
     :return:
     """
     emoji = next((e for e in ctx.bot.emojis if e.name == 'mushshocked'), None)
 
     # send error
-    embed = discord.Embed(description=text, color=config.EMBED_COLOR)
+    embed = discord.Embed(description=text + append_text,
+                          color=config.EMBED_COLOR)
     embed.set_author(name='Error')
 
     if emoji:
@@ -35,6 +38,9 @@ async def send_error(ctx, text, delete_message=not config.DEBUG, delay=10):
     # delete original message
     if delete_message:
         await ctx.message.delete(delay=delay)
+
+
+send = send_error  # alias
 
 
 class DataNotFound(commands.CommandError):
