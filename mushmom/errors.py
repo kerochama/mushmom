@@ -11,7 +11,7 @@ from mushmom import config
 
 # Errors not auto-deleted when DEBUG on
 async def send_error(ctx, text, delete_message=not config.DEBUG, delay=10,
-                     append=''):
+                     append='', fields=None):
     """
     Generic function to send formatted error
 
@@ -20,14 +20,21 @@ async def send_error(ctx, text, delete_message=not config.DEBUG, delay=10,
     :param delete_message:
     :param delay: 5 seconds
     :param append: extra text to append
+    :param fields:
     :return:
     """
-    emoji = next((e for e in ctx.bot.emojis if e.name == 'mushshocked'), None)
-
     # send error
-    embed = discord.Embed(description=text + append_text,
+    embed = discord.Embed(description=text + append,
                           color=config.EMBED_COLOR)
     embed.set_author(name='Error')
+
+    # add fields
+    if fields:
+        for name, value in fields.items():
+            embed.add_field(name=name, value=value)
+
+    # attach thumbnail
+    emoji = next((e for e in ctx.bot.emojis if e.name == 'mushshocked'), None)
 
     if emoji:
         url = f'https://cdn.discordapp.com/emojis/{emoji.id}.png'

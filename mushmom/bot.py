@@ -117,11 +117,13 @@ async def _import(ctx, name: utils.ImportNameConverter,
 
 @_import.error
 async def _import_error(ctx, error):
-    help_text = (
-        ' \u200b Try `mush import [name] [url: maplestory.io]` or '
-        '`mush import [name]` with a JSON file attached'
-    )
-    help = True
+    append_text = ' \u200b Try:\n\u200b'
+    cmds = {
+        'Commands': '\n'.join([
+            '`mush import [name] [url: maplestory.io]`',
+            '`mush import [name]` with a JSON file attached'
+        ])
+    }
 
     if isinstance(error, commands.TooManyArguments):
         msg = f'{config.BOT_NAME} did not understand.'
@@ -134,17 +136,20 @@ async def _import_error(ctx, error):
             msg = 'Missing source data.'
     elif isinstance(error, errors.UnexpectedFileTypeError):
         msg = f'{config.BOT_NAME} only accepts JSON files'
-        help = False
+        append_text = ''
+        cmds = None
     elif isinstance(error, errors.DiscordIOError):
         msg = (f'Error trying to read attached JSON file.'
                '\u200b Try again later')
-        help = False
+        append_text = ''
+        cmds = None
     elif isinstance(error, errors.DataWriteError):
         msg = 'Problem saving character. \u200b Try again later'
-        help = False
+        append_text = ''
+        cmds = None
 
     if msg:
-        await errors.send(ctx, msg, append=help_text if help else '')
+        await errors.send(ctx, msg, append=append_text, fields=cmds)
 
 
 @bot.group(invoke_without_command=True, ignore_extra=False)
@@ -177,17 +182,22 @@ async def sprite(ctx,
 @sprite.error
 async def sprite_error(ctx, error):
     if isinstance(error, commands.TooManyArguments):
-        msg = ('Emotion/pose not found. \u200b See:\n'
-               f'\n- `{bot.command_prefix[0]}sprite emotions`'
-               f'\n- `{bot.command_prefix[0]}sprite poses`')
+        msg = 'Emotion/pose not found. \u200b See:\n\u200b'
+        fields = {
+            'Commands': '\n'.join([
+                f'`{bot.command_prefix[0]}sprite emotions`',
+                f'`{bot.command_prefix[0]}sprite poses`'
+            ])
+        }
     elif isinstance(error, errors.DataNotFound):
-        msg = ('No registered character. \u200b See:\n '
-               f'\n-`{bot.command_prefix[0]}import`')
+        msg = 'No registered character. \u200b See:\n\u200b'
+        fields = {'Commands': f'`{bot.command_prefix[0]}import`'}
     elif isinstance(error, errors.MapleIOError):
         msg = 'Could not get maple data. \u200b Try again later'
+        fields = None
 
     if msg:
-        await errors.send(ctx, msg)
+        await errors.send(ctx, msg, fields=fields)
 
 
 @sprite.command()
