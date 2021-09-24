@@ -16,13 +16,33 @@ HOOK_NAME = BOT_NAME
 # for embed
 EMBED_COLOR = 0xf49c00
 
+# If greater than 9 select reactions will break
 MAX_CHARS = 5
+
+
+####################
+# EMOJIS           #
+####################
+
+# Stored on a server. Reference by ID
+EMOJI_IDS = {
+    'mushshock': 890392463867527228,
+    'mushheart': 890978701158809671,
+    'mushdab': 890978611803324487,
+    'mushping': 890978760780832818
+}
+
+EMOJIS = {
+    k: f'https://cdn.discordapp.com/emojis/{v}.png?v=1'
+    for k, v in EMOJI_IDS.items()
+}
 
 ####################
 # MONGODB          #
 ####################
 
 DATABASE = 'mushmom'
+
 
 ####################
 # MAPLESTORY.IO    #

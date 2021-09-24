@@ -209,7 +209,7 @@ async def emotions(ctx):
     )
 
     embed.set_author(name='Emotions', icon_url=bot.user.avatar_url)
-    # embed.set_thumbnail(url=bot.user.avatar_url)
+    embed.set_thumbnail(url=config.EMOJIS['mushheart'])
     embed.set_footer(text='[GMS v225]')
 
     # split emotions into 3 lists
@@ -230,7 +230,7 @@ async def poses(ctx):
     )
 
     embed.set_author(name='Poses', icon_url=bot.user.avatar_url)
-    # embed.set_thumbnail(url=bot.user.avatar_url)
+    embed.set_thumbnail(url=config.EMOJIS['mushdab'])
     embed.set_footer(text='[GMS v225]')
     embed.add_field(name='Pose', value='\n'.join(states.POSES.keys()))
     embed.add_field(name='Value', value='\n'.join(states.POSES.values()))

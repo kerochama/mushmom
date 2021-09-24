@@ -26,19 +26,13 @@ async def send_error(ctx, text, delete_message=not config.DEBUG, delay=10,
     # send error
     embed = discord.Embed(description=text + append,
                           color=config.EMBED_COLOR)
-    embed.set_author(name='Error')
+    embed.set_author(name='Error', icon_url=ctx.bot.user.avatar_url)
+    embed.set_thumbnail(url=config.EMOJIS['mushshock'])
 
     # add fields
     if fields:
         for name, value in fields.items():
             embed.add_field(name=name, value=value)
-
-    # attach thumbnail
-    emoji = next((e for e in ctx.bot.emojis if e.name == 'mushshocked'), None)
-
-    if emoji:
-        url = f'https://cdn.discordapp.com/emojis/{emoji.id}.png'
-        embed.set_thumbnail(url=url)
 
     await ctx.send(embed=embed, delete_after=delay if delete_message else None)
 
@@ -67,4 +61,8 @@ class UnexpectedFileTypeError(commands.CommandError):
 
 
 class DiscordIOError(commands.CommandError):
+    pass
+
+
+class TimeoutError(commands.CommandError):
     pass
