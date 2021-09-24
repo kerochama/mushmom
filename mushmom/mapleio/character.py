@@ -86,13 +86,14 @@ class Character:
             except json.decoder.JSONDecodeError:
                 pass  # already set to {}
 
-        if (items and isinstance(items, dict)
-                and all(isinstance(v, dict) for k, v in items.values())):
+        if items and all(isinstance(v, dict) for v in items):
             item0 = items[0]
             char.version = item0.get('version', config.MAPLEIO_DEFAULT_VERSION)
 
             # identify Body item (id is skinid)
-            item = next((x for x in items if Skin.get(x['itemId'])), Skin.GREEN)
+            char.skin = next((Skin.get(x['itemId'])
+                              for x in items if Skin.get(x['itemId'])),
+                             Skin.GREEN)
 
             char.equips = [
                 Equip(item.get('itemId', 0), item.get('version', char.version))
@@ -187,7 +188,7 @@ class Character:
             'highFloraEars': self.ears is Ears.HIGH_FLORA,
             'selectedItems': {}
         }
-        
+
         for equip in self.equips:
             subcat = equip_type(equip.itemid)
             char['selectedItems'][subcat] = {
