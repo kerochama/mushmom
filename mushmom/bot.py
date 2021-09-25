@@ -227,7 +227,7 @@ async def emotions(ctx):
     embed = discord.Embed(
         description=('The following is a list of emotions you can use in the '
                      'generation of your emoji or sprite.'),
-        color=config.EMBED_COLOR  # hard coded to match current pfp banner
+        color=config.EMBED_COLOR
     )
 
     embed.set_author(name='Emotions', icon_url=bot.user.avatar_url)
@@ -248,7 +248,7 @@ async def poses(ctx):
     embed = discord.Embed(
         description=('The following is a list of poses you can use in the '
                      'generation of your emoji or sprite.'),
-        color=config.EMBED_COLOR  # hard coded to match current pfp banner
+        color=config.EMBED_COLOR
     )
 
     embed.set_author(name='Poses', icon_url=bot.user.avatar_url)
@@ -260,7 +260,7 @@ async def poses(ctx):
     await ctx.send(embed=embed)
 
 
-@bot.group(invoke_without_command=True, ignore_extra=False)
+@bot.command(ignore_extra=False)
 async def emote(ctx,
                 emotion: Optional[converters.EmotionConverter] = 'default'):
     # grab character
@@ -283,6 +283,48 @@ async def emote(ctx,
         await webhook.send_as_author(ctx, file=img)
     else:
         raise errors.MapleIOError
+
+
+@emote.error
+async def emote_error(ctx, error):
+    if isinstance(error, commands.TooManyArguments):
+        msg = 'Emote not found. \u200b See:\n\u200b'
+        fields = {
+            'Commands': f'`{bot.command_prefix[0]}emotes list`'
+        }
+    elif isinstance(error, errors.DataNotFound):
+        msg = 'No registered character. \u200b See:\n\u200b'
+        fields = {'Commands': f'`{bot.command_prefix[0]}import`'}
+    elif isinstance(error, errors.MapleIOError):
+        msg = 'Could not get maple data. \u200b Try again later'
+        fields = None
+
+    if msg:
+        await errors.send(ctx, msg, fields=fields)
+
+
+@bot.group()
+async def emotes(ctx):
+    pass
+
+
+@emotes.command(name='list')
+async def _list(ctx):
+    embed = discord.Embed(
+        description='The following is a list of emotes you can use\n\u200b',
+        color=config.EMBED_COLOR
+    )
+
+    embed.set_author(name='Emotes', icon_url=bot.user.avatar_url)
+    embed.set_thumbnail(url=config.EMOJIS['mushheart'])
+
+    # split emotions into 3 lists
+    emotes = [states.EMOTIONS[i::3] for i in range(3)]  # order not preserved
+    embed.add_field(name='Emotes', value='\n'.join(emotes[0]))
+    embed.add_field(name='\u200b', value='\n'.join(emotes[1]))
+    embed.add_field(name='\u200b', value='\n'.join(emotes[2]))
+
+    await ctx.send(embed=embed)
 
 
 bot.run(os.getenv('TOKEN'))
