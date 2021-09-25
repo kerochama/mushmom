@@ -110,7 +110,7 @@ async def _import(ctx, name: converters.ImportNameConverter,
         prompt = (f'{config.BOT_NAME} can only save {config.MAX_CHARS} '
                   f'character{"s" if config.MAX_CHARS>1 else ""}. \u200b'
                   'Choose a character to replace.')
-        sel = await select_char(ctx, prompt, user)
+        sel = await io.select_char(ctx, prompt, user)
 
         if sel == 'x':
             await ctx.send(f'{name} was not saved')
@@ -160,112 +160,13 @@ async def _import_error(ctx, error):
             msg = 'Problem saving character. \u200b Try again later'
 
             # only handled error that occurs after issuing a prompt
-            prompt = await get_orphaned_prompt(ctx)
+            prompt = await io.get_orphaned_prompt(ctx)
             await prompt.delete()
         else:
             msg = str(error)
 
     if msg:
         await errors.send(ctx, msg, append=append_text, fields=cmds)
-
-
-async def list_chars(ctx, text, thumbnail=None, user=None):
-    """
-    List users chars. Returns user and prompt
-
-    :param ctx:
-    :param text:
-    :param thumbnail:
-    :param user: db user if already retrieved
-    :return:
-    """
-    embed = discord.Embed(description=text, color=config.EMBED_COLOR)
-    embed.set_author(name='Characters', icon_url=bot.user.avatar_url)
-
-    if not thumbnail:
-        thumbnail = config.EMOJIS['mushparty']
-
-    embed.set_thumbnail(url=thumbnail)
-
-    # get user chars
-    if not user:
-        user = await db.get_user(ctx.author.id)
-
-    char_names = ['-'] * config.MAX_CHARS
-
-    for i, char in enumerate(user['chars']):
-        char_names[i] = char['name']
-
-    char_list = [f'{i+1}. {name}' for i, name in enumerate(char_names)]
-
-    embed.add_field(name='Characters', value='\n'.join(char_list))
-    msg = await ctx.send(embed=embed)
-
-    return user, msg
-
-
-async def select_char(ctx, text, user=None):
-    """
-    Sends embed with list of chars.  User should react to select
-
-    :param ctx:
-    :param text:
-    :param user: db user if already retrieved
-    :return:
-    """
-    msg = text + (' \u200b React to select a character or select \u200b \u274e'
-                  ' \u200b to cancel\n\u200b')
-    user, prompt = await list_chars(ctx, msg, config.EMOJIS['mushping'], user)
-
-    # numbered unicode emojis 1 - # max chars
-    reactions = {f'{x+1}': f'{x+1}\ufe0f\u20e3'
-                 for x in range(min(len(user['chars']), config.MAX_CHARS))}
-    reactions['x'] = '\u274e'
-
-    # add reactions
-    for reaction in reactions.values():
-        await prompt.add_reaction(reaction)
-
-    try:
-        reaction, user = (
-            await bot.wait_for('reaction_add',
-                               check=(lambda r, u:
-                                          u == ctx.author
-                                          and r.message.id == prompt.id
-                                          and r.emoji in reactions.values()),
-                               timeout=config.DEFAULT_DELAY)
-        )
-    except asyncio.TimeoutError:
-        if not config.DEBUG:
-            await prompt.delete()  # clean up prompt
-
-        raise errors.TimeoutError  # handle in command errors
-
-    return next(k for k, v in reactions.items() if reaction.emoji == v)
-
-
-async def get_orphaned_prompt(ctx):
-    """
-    Used to grab orphaned prompts that may need to be cleaned
-
-    :param ctx:
-    :return:
-    """
-    # search first 10 messages after ctx.message
-    params = {'limit': 10, 'after': ctx.message.created_at}
-
-    async for message in ctx.channel.history(**params):
-        # assume prompt
-        if (message.author == bot.user and message.embeds
-                and message.embeds[0].author.name == 'Characters'):
-            users = set()
-
-            for reaction in message.reactions:
-                async for user in reaction.users():
-                    users.add(user)
-
-            if ctx.author in users:
-                return message
 
 
 @bot.group(invoke_without_command=True, ignore_extra=False)
