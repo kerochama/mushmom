@@ -58,7 +58,7 @@ async def on_message(message):
 
         if cmd not in [c.name for c in bot.commands]:  # also fails if None
             if cmd in states.EMOTIONS:
-                await _emote(ctx, cmd, args)
+                await emote(ctx, cmd)
         else:
             await bot.process_commands(message)
 
@@ -260,27 +260,29 @@ async def poses(ctx):
     await ctx.send(embed=embed)
 
 
-# on_message emote commands
-async def _emote(ctx, cmd, args=None):
-    """
-    Handle emote commands (see emotions.json)
+@bot.group(invoke_without_command=True, ignore_extra=False)
+async def emote(ctx,
+                emotion: Optional[converters.EmotionConverter] = 'default'):
+    # grab character
+    char_data = await db.get_char_data(ctx.author.id)
 
-    :param ctx:
-    :param args:
-    :return:
-    """
-    char = Character.from_json(await db.get_char_data(ctx.author.id))
+    if not char_data:
+        raise errors.DataNotFound
+
+    char = Character.from_json(char_data)
     name = char.name or "char"
 
     # create emote
-    data = await api.get_emote(char, emotion=cmd)
+    data = await api.get_emote(char, emotion=emotion)
 
     if data:
         if not config.DEBUG:
             await ctx.message.delete()  # delete original message
 
-        img = discord.File(fp=BytesIO(data), filename=f'{name}_{cmd}.png')
+        img = discord.File(fp=BytesIO(data), filename=f'{name}_{emotion}.png')
         await webhook.send_as_author(ctx, file=img)
+    else:
+        raise errors.MapleIOError
 
 
 bot.run(os.getenv('TOKEN'))
