@@ -1,6 +1,5 @@
 import discord
 import os
-import typing
 import asyncio
 import aiohttp
 import inspect
@@ -8,9 +7,11 @@ import inspect
 from discord.ext import commands
 from io import BytesIO
 from dotenv import load_dotenv
+from typing import Optional
 
-from mushmom import config, errors, webhook, utils
-from mushmom import database as db
+from mushmom import config
+from mushmom.utils import database as db
+from mushmom.utils import errors, webhook, converters, io
 from mushmom.mapleio import api, states
 from mushmom.mapleio.character import Character
 
@@ -50,7 +51,7 @@ async def on_message(message):
     if not await valid(ctx):
         return
 
-    parser = utils.MessageParser(message)
+    parser = io.MessageParser(message)
 
     if parser.has_prefix(bot.command_prefix):
         cmd, args = parser.parse(bot.command_prefix)
@@ -68,8 +69,8 @@ async def hello(ctx):
 
 
 @bot.command(name='import', ignore_extra=False)
-async def _import(ctx, name: utils.ImportNameConverter,
-                  url: typing.Optional[utils.MapleIOURLConverter] = ''):
+async def _import(ctx, name: converters.ImportNameConverter,
+                  url: Optional[converters.MapleIOURLConverter] = ''):
     # parse char data
     if url:  # maplestory.io char api
         char = Character.from_url(url)
@@ -269,8 +270,8 @@ async def get_orphaned_prompt(ctx):
 
 @bot.group(invoke_without_command=True, ignore_extra=False)
 async def sprite(ctx,
-                 emotion: typing.Optional[utils.EmotionConverter] = 'default',
-                 pose: typing.Optional[utils.PoseConverter] = 'stand1'):
+                 emotion: Optional[converters.EmotionConverter] = 'default',
+                 pose: Optional[converters.PoseConverter] = 'stand1'):
     # grab character
     char_data = await db.get_char_data(ctx.author.id)
 

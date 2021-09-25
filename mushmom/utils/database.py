@@ -4,14 +4,13 @@ Functions related to database connection
 Keep track data access for all sets, but only when getting char data
 
 """
-
 import os
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 from datetime import datetime
 
-from mushmom import config, errors
+from mushmom import config
 
 load_dotenv()  # use env variables from .env
 

@@ -3,7 +3,6 @@ Custom errors for bot
 
 """
 import discord
-import typing
 
 from discord.ext import commands
 
