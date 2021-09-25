@@ -169,6 +169,11 @@ async def _import_error(ctx, error):
         await errors.send(ctx, msg, append=append_text, fields=cmds)
 
 
+@bot.command()
+async def chars(ctx):
+    await io.list_chars(ctx, 'Here are your registered characters\n\u200b')
+
+
 @bot.group(invoke_without_command=True, ignore_extra=False)
 async def sprite(ctx,
                  emotion: Optional[converters.EmotionConverter] = 'default',
