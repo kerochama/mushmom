@@ -11,61 +11,77 @@ from typing import Optional
 
 from mushmom import config
 from mushmom.utils import database as db
-from mushmom.utils import errors, webhook, converters, io
+from mushmom.utils import checks, errors, webhook, converters, io
 from mushmom.mapleio import api, states
 from mushmom.mapleio.character import Character
 
 load_dotenv()  # use env variables from .env
 
-bot = commands.Bot(command_prefix=['mush ', '!m '])
+
+class Core(commands.Cog):
+    def __init__(self, bot):
+        """
+        Basic core commands
+
+        :param bot:
+        """
+        self.bot = bot
+
+    @commands.command()
+    async def hello(self, ctx):
+        await ctx.send('hai')
 
 
-@bot.event
-async def on_ready():
-    print('{0.user} is ready to mush!'.format(bot))
+class Mushmom(commands.Bot):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
+        # attach some default commands
+        self.add_cog(Core(self))
 
-@bot.check
-async def valid(ctx):
-    """
-    Conditions under which bot process message
+    async def on_ready(self):
+        print(f'{self.user} is ready to mush!')
 
-    :param ctx:
-    :return:
-    """
-    message = ctx.message
+    async def on_message(self, message):
+        """
+        Call emotes if no command and emote names are passed
 
-    checks = (
-        message.author == bot.user,  # ignore self
-        message.author.bot  # ignore other bots
-    )
+        :param message:
+        :return:
+        """
+        ctx = await self.get_context(message)
 
-    return not any(checks)
+        # not handled by other commands
+        if (ctx.prefix and not ctx.command
+                and all([await check(ctx) for check in self._checks])):
+            args = message.content[len(ctx.prefix):].split(' ')
+            cmd = args.pop(0)
 
+            if cmd in states.EMOTIONS:  # manually call as emote command
+                emotes_cog = self.get_cog('Emotes')
 
-@bot.event
-async def on_message(message):
-    ctx = await bot.get_context(message)
-
-    # ignore message based on checks
-    if not await valid(ctx):
-        return
-
-    parser = io.MessageParser(message)
-
-    if parser.has_prefix(bot.command_prefix):
-        cmd, args = parser.parse(bot.command_prefix)
-
-        if cmd not in [c.name for c in bot.commands]:  # also fails if None
-            if cmd in states.EMOTIONS:
-                await emote(ctx, cmd)
+                if emotes_cog:  # emote cog exists
+                    if args:  # handle TooManyArguments manually
+                        error = commands.TooManyArguments()
+                        await emotes_cog.emote_error(ctx, error)
+                    else:
+                        try:
+                            await emotes_cog.emote(ctx, cmd)
+                        except commands.CommandError as e:
+                            await emotes_cog.emote_error(ctx, e)
         else:
-            await bot.process_commands(message)
+            await self.process_commands(message)
 
 
-@bot.command()
-async def hello(ctx):
-    await ctx.send('hai')
+def setup_bot():
+    bot = Mushmom(command_prefix=['mush ', '!m '])
+    bot.add_check(checks.not_bot)
+    bot.load_extension('cogs.emotes')
+
+    return bot
+
+
+bot = setup_bot()
 
 
 @bot.command(name='import', ignore_extra=False)
@@ -260,49 +276,6 @@ async def poses(ctx):
     await ctx.send(embed=embed)
 
 
-@bot.command(ignore_extra=False)
-async def emote(ctx,
-                emotion: Optional[converters.EmotionConverter] = 'default'):
-    # grab character
-    char_data = await db.get_char_data(ctx.author.id)
-
-    if not char_data:
-        raise errors.DataNotFound
-
-    char = Character.from_json(char_data)
-    name = char.name or "char"
-
-    # create emote
-    data = await api.get_emote(char, emotion=emotion)
-
-    if data:
-        if not config.DEBUG:
-            await ctx.message.delete()  # delete original message
-
-        img = discord.File(fp=BytesIO(data), filename=f'{name}_{emotion}.png')
-        await webhook.send_as_author(ctx, file=img)
-    else:
-        raise errors.MapleIOError
-
-
-@emote.error
-async def emote_error(ctx, error):
-    if isinstance(error, commands.TooManyArguments):
-        msg = 'Emote not found. \u200b See:\n\u200b'
-        fields = {
-            'Commands': f'`{bot.command_prefix[0]}emotes list`'
-        }
-    elif isinstance(error, errors.DataNotFound):
-        msg = 'No registered character. \u200b See:\n\u200b'
-        fields = {'Commands': f'`{bot.command_prefix[0]}import`'}
-    elif isinstance(error, errors.MapleIOError):
-        msg = 'Could not get maple data. \u200b Try again later'
-        fields = None
-
-    if msg:
-        await errors.send(ctx, msg, fields=fields)
-
-
 @bot.group()
 async def emotes(ctx):
     pass
@@ -327,5 +300,6 @@ async def _list(ctx):
     await ctx.send(embed=embed)
 
 
-bot.run(os.getenv('TOKEN'))
-
+if __name__ == "__main__":
+    # bot = setup_bot()
+    bot.run(os.getenv('TOKEN'))
