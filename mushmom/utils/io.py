@@ -88,9 +88,11 @@ async def list_chars(ctx, text, thumbnail=None, user=None):
     char_names = ['-'] * config.MAX_CHARS
 
     for i, char in enumerate(user['chars']):
-        char_names[i] = char['name']
+        template = '**{} (default)**' if i == user['default'] else '{}'
+        char_names[i] = template.format(char['name'])
 
-    char_list = [f'{i+1}. {name}' for i, name in enumerate(char_names)]
+    # full width numbers
+    char_list = [f'{chr(65297+i)} \u200b {name}' for i, name in enumerate(char_names)]
 
     embed.add_field(name='Characters', value='\n'.join(char_list))
     msg = await ctx.send(embed=embed)
