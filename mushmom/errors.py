@@ -3,6 +3,7 @@ Custom errors for bot
 
 """
 import discord
+import typing
 
 from discord.ext import commands
 
@@ -10,8 +11,8 @@ from mushmom import config
 
 
 # Errors not auto-deleted when DEBUG on
-async def send_error(ctx, text, delete_message=not config.DEBUG, delay=10,
-                     append='', fields=None):
+async def send_error(ctx, text, delete_message=not config.DEBUG,
+                     delay=config.DEFAULT_DELAY, append='', fields=None):
     """
     Generic function to send formatted error
 
