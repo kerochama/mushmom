@@ -21,7 +21,7 @@ class Emotes(commands.Cog):
 
     @commands.command(ignore_extra=False)
     async def emote(self, ctx,
-                    emotion: Optional[converters.EmotionConverter] = 'default'):
+                    emote: Optional[converters.EmotionConverter] = 'default'):
         # grab character
         char_data = await db.get_char_data(ctx.author.id)
 
@@ -32,13 +32,14 @@ class Emotes(commands.Cog):
         name = char.name or "char"
 
         # create emote
-        data = await api.get_emote(char, emotion=emotion)
+        data = await api.get_emote(char, emotion=emote)
 
         if data:
             if not config.DEBUG:
                 await ctx.message.delete()  # delete original message
 
-            img = discord.File(fp=BytesIO(data), filename=f'{name}_{emotion}.png')
+            filename = f'{name}_{emote}.png'
+            img = discord.File(fp=BytesIO(data), filename=filename)
             await webhook.send_as_author(ctx, file=img)
         else:
             raise errors.MapleIOError

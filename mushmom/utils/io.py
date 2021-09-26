@@ -56,7 +56,7 @@ async def select_char(ctx, text, user=None):
     :param user: db user if already retrieved
     :return:
     """
-    msg = text + (' \u200b React to select a character or select \u200b \u274e'
+    msg = text + ('React to select a character or select \u200b \u274e'
                   ' \u200b to cancel\n\u200b')
     user, prompt = await list_chars(ctx, msg, config.EMOJIS['mushping'], user)
 

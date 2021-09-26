@@ -1,6 +1,5 @@
 import discord
 import os
-import asyncio
 import aiohttp
 import inspect
 
@@ -77,6 +76,7 @@ def setup_bot():
     bot = Mushmom(command_prefix=['mush ', '!m '])
     bot.add_check(checks.not_bot)
     bot.load_extension('cogs.emotes')
+    bot.load_extension('cogs.characters')
 
     return bot
 
@@ -183,11 +183,6 @@ async def _import_error(ctx, error):
 
     if msg:
         await errors.send(ctx, msg, append=append_text, fields=cmds)
-
-
-@bot.command()
-async def chars(ctx):
-    await io.list_chars(ctx, 'Here are your registered characters\n\u200b')
 
 
 @bot.group(invoke_without_command=True, ignore_extra=False)
