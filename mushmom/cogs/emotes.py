@@ -46,20 +46,29 @@ class Emotes(commands.Cog):
 
     @emote.error
     async def emote_error(self, ctx, error):
+        msg = None
+        cmds = None
+
         if isinstance(error, commands.TooManyArguments):
             msg = 'Emote not found. \u200b See:\n\u200b'
-            fields = {
+            cmds = {
                 'Commands': f'`{self.bot.command_prefix[0]}emotes list`'
             }
-        elif isinstance(error, errors.DataNotFound):
-            msg = 'No registered character. \u200b See:\n\u200b'
-            fields = {'Commands': f'`{self.bot.command_prefix[0]}import`'}
+            msg = (f'No registered characters. \u200b To import '
+                   ' one use:\n\u200b')
+            cmds = {'Commands': '\n'.join([
+                '`mush add [name] [url: maplestory.io]`',
+                '`mush add [name]` with a JSON file attached',
+                '`mush import [name] [url: maplestory.io]`',
+                '`mush import [name]` with a JSON file attached',
+            ])}
         elif isinstance(error, errors.MapleIOError):
             msg = 'Could not get maple data. \u200b Try again later'
-            fields = None
 
-        if msg:
-            await errors.send(ctx, msg, fields=fields)
+        await errors.send(ctx, msg, fields=cmds)
+
+        if msg is None:
+            raise error
 
 
 def setup(bot):
