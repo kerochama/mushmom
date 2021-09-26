@@ -50,10 +50,6 @@ class Emotes(commands.Cog):
         cmds = None
 
         if isinstance(error, commands.TooManyArguments):
-            msg = 'Emote not found. \u200b See:\n\u200b'
-            cmds = {
-                'Commands': f'`{self.bot.command_prefix[0]}emotes list`'
-            }
             msg = (f'No registered characters. \u200b To import '
                    ' one use:\n\u200b')
             cmds = {'Commands': '\n'.join([
