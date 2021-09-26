@@ -34,6 +34,7 @@ class Core(commands.Cog):
 class Mushmom(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.reply_cache = errors.ReplyCache(garbage_collect_after=50)
 
         # attach some default commands
         self.add_cog(Core(self))
@@ -75,115 +76,15 @@ class Mushmom(commands.Bot):
 def setup_bot():
     bot = Mushmom(command_prefix=['mush ', '!m '])
     bot.add_check(checks.not_bot)
-    bot.load_extension('cogs.emotes')
     bot.load_extension('cogs.characters')
+    bot.load_extension('cogs.emotes')
+    bot.load_extension('cogs.import')
     bot.load_extension('cogs.sprite')
 
     return bot
 
 
 bot = setup_bot()
-
-
-@bot.command(name='import', ignore_extra=False)
-async def _import(ctx, name: converters.ImportNameConverter,
-                  url: Optional[converters.MapleIOURLConverter] = ''):
-    # parse char data
-    if url:  # maplestory.io char api
-        char = Character.from_url(url)
-    elif ctx.message.attachments:  # json output of sim and studio
-        json_file = next((att for att in ctx.message.attachments
-                          if att.filename[-5:] == '.json'), None)
-
-        if not json_file:
-            raise errors.UnexpectedFileTypeError
-
-        # get json
-        async with aiohttp.ClientSession() as session:
-            async with session.get(json_file.url) as r:
-                if r.status == 200:
-                    data = await r.json()
-                else:
-                    raise errors.DiscordIOError
-
-        char = Character.from_json(data)
-    else:
-        # doesnt matter which param.  Handled in error message
-        raise commands.MissingRequiredArgument(
-            inspect.Parameter('url', inspect.Parameter.POSITIONAL_ONLY)
-        )
-
-    char.name = name
-
-    # query database
-    user = await db.get_user(ctx.author.id)
-
-    if not user:  # user has no saved chars
-        ret = await db.add_user(ctx.author.id, char.to_dict())
-    elif len(user['chars']) < config.MAX_CHARS:
-        user['chars'].append(char.to_dict())
-        ret = await db.set_user(ctx.author.id, {'chars': user['chars']})
-    else:
-        prompt = (f'{config.BOT_NAME} can only save {config.MAX_CHARS} '
-                  f'character{"s" if config.MAX_CHARS>1 else ""}. \u200b'
-                  'Choose a character to replace.')
-        sel = await io.select_char(ctx, prompt, user)
-
-        if sel == 'x':
-            await ctx.send(f'{name} was not saved')
-            ret = None
-        else:
-            user['chars'][int(sel)-1] = char.to_dict()
-            ret = await db.set_user(ctx.author.id, {'chars': user['chars']})
-
-    if ret:
-        if ret.acknowledged:
-            await ctx.send(f'{name} has been successfully mushed')
-        else:
-            raise errors.DataWriteError
-
-
-@_import.error
-async def _import_error(ctx, error):
-    append_text = ' \u200b Try:\n\u200b'
-    cmds = {
-        'Commands': '\n'.join([
-            '`mush import [name] [url: maplestory.io]`',
-            '`mush import [name]` with a JSON file attached'
-        ])
-    }
-
-    if isinstance(error, commands.TooManyArguments):
-        msg = f'{config.BOT_NAME} did not understand.'
-    elif isinstance(error, commands.BadArgument):
-        msg = 'You must supply a character name to start mushing!'
-    elif isinstance(error, commands.MissingRequiredArgument):
-        if error.param.name == 'name':
-            msg = 'You must supply a character name to start mushing!'
-        elif error.param.name == 'url':
-            msg = 'Missing source data.'
-    else:
-        append_text = ''
-        cmds = None
-
-        if isinstance(error, errors.UnexpectedFileTypeError):
-            msg = f'{config.BOT_NAME} only accepts JSON files'
-        elif isinstance(error, errors.TimeoutError):
-            msg = 'No character was selected'
-        elif isinstance(error, errors.DiscordIOError):
-            msg = (f'Error trying to read attached JSON file.'
-                   '\u200b Try again later')
-        elif isinstance(error, errors.DataWriteError):
-            msg = 'Problem saving character. \u200b Try again later'
-
-            # only handled error that occurs after issuing a prompt
-            prompt = await io.get_orphaned_prompt(ctx)
-            await prompt.delete()
-        else:
-            msg = str(error)
-
-    if msg:
-        await errors.send(ctx, msg, append=append_text, fields=cmds)
 
 
 @bot.group()

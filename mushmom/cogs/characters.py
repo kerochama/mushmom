@@ -16,7 +16,6 @@ from mushmom.utils import errors
 class Characters(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.reply_cache = errors.ReplyCache(garbage_collect_after=50)
 
     async def list_chars(self, ctx, user, text, thumbnail=None):
         """
@@ -118,7 +117,7 @@ class Characters(commands.Cog):
             prompt, sel = await self.select_char(ctx, user)
 
             # cache in case need to clean up
-            self.reply_cache.register(ctx, prompt)
+            self.bot.reply_cache.register(ctx, prompt)
 
             if sel == 'x':
                 await ctx.send(cancel_text)
@@ -148,7 +147,7 @@ class Characters(commands.Cog):
         new_i = await self.get_char_index(ctx, user, name, cancel_text)
 
         if new_i is None:  # cancelled
-            self.reply_cache.unregister(ctx)
+            self.bot.reply_cache.unregister(ctx)
             return
 
         ret = await db.set_user(ctx.author.id, {'default': new_i})
@@ -160,12 +159,12 @@ class Characters(commands.Cog):
             raise errors.DataWriteError
 
         # no error, release from cache
-        self.reply_cache.unregister(ctx)
+        self.bot.reply_cache.unregister(ctx)
 
     @_main.error
     async def _main_error(self, ctx, error):
         # clean up orphaned prompts
-        self.reply_cache.clean(ctx)
+        self.bot.reply_cache.clean(ctx)
 
         msg = None
         cmds = None
@@ -206,7 +205,7 @@ class Characters(commands.Cog):
         del_i = await self.get_char_index(ctx, user, name, cancel_text)
 
         if del_i is None:  # cancelled
-            self.reply_cache.unregister(ctx)
+            self.bot.reply_cache.unregister(ctx)
             return
 
         # remove char and handle default
@@ -226,12 +225,12 @@ class Characters(commands.Cog):
         else:
             raise errors.DataWriteError
 
-        self.reply_cache.unregister(ctx)
+        self.bot.reply_cache.unregister(ctx)
 
     @delete.error
     async def delete_error(self, ctx, error):
         # clean up orphaned prompts
-        self.reply_cache.clean(ctx)
+        self.bot.reply_cache.clean(ctx)
 
         msg = None
         cmds = None
@@ -255,7 +254,7 @@ class Characters(commands.Cog):
     async def cog_after_invoke(self, ctx):
         # unregister reply cache if successful
         if not ctx.command_failed:
-            self.reply_cache.unregister(ctx)
+            self.bot.reply_cache.unregister(ctx)
 
 
 def setup(bot):
