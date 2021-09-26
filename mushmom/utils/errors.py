@@ -11,7 +11,7 @@ from mushmom import config
 
 
 # Errors not auto-deleted when DEBUG on
-async def send_error(ctx, text, delete_message=not config.DEBUG,
+async def send_error(ctx, text=None, delete_message=not config.DEBUG,
                      delay=config.DEFAULT_DELAY, append='', fields=None):
     """
     Generic function to send formatted error
@@ -24,6 +24,9 @@ async def send_error(ctx, text, delete_message=not config.DEBUG,
     :param fields:
     :return:
     """
+    if text is None:
+        text = 'Mushmom failed *cry*'
+
     # send error
     embed = discord.Embed(description=text + append,
                           color=config.EMBED_COLOR)
@@ -91,7 +94,7 @@ class ReplyCache:
         :param delete:
         :return:
         """
-        replies = self.unregister(ctx.message.id) or []
+        replies = self.unregister(ctx) or []
 
         if not delete:
             return

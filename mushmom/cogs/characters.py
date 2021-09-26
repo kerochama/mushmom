@@ -6,6 +6,7 @@ import discord
 import asyncio
 
 from discord.ext import commands
+from typing import Optional
 
 from mushmom import config
 from mushmom.utils import database as db
@@ -15,7 +16,7 @@ from mushmom.utils import errors
 class Characters(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.reply_cache = errors.ReplyCache()
+        self.reply_cache = errors.ReplyCache(garbage_collect_after=50)
 
     async def list_chars(self, ctx, user, text, thumbnail=None):
         """
@@ -96,50 +97,165 @@ class Characters(commands.Cog):
 
         return prompt, sel
 
+    async def get_char_index(self, ctx, user, name=None, cancel_text=''):
+        """
+        Get index from char list
+
+        :param ctx:
+        :param user:
+        :param name:
+        :return:
+        """
+        chars = user['chars']
+
+        if name:
+            ind = next((i for i, x in enumerate(chars)
+                        if x['name'] == name), None)
+
+            if ind is None:
+                raise errors.DataNotFound
+        else:
+            prompt, sel = await self.select_char(ctx, user)
+
+            # cache in case need to clean up
+            self.reply_cache.register(ctx, prompt)
+
+            if sel == 'x':
+                await ctx.send(cancel_text)
+                ind = None
+            else:
+                ind = int(sel)-1
+
+        return ind
+
     @commands.command()
     async def chars(self, ctx):
         user = await db.get_user(ctx.author.id)
         await self.list_chars(ctx, user, 'Your mushable characters\n\u200b')
 
-    @commands.group(aliases=['select', 'sel'])
+    @commands.group(alias='select')
     async def set(self, ctx):
         pass
 
-    @set.command(aliases=['main'])
-    async def default(self, ctx):
+    @set.command(name='main', aliases=['default'])
+    async def _main(self, ctx, name: Optional[str] = None):
         user = await db.get_user(ctx.author.id)
-        prompt, sel = await self.select_char(ctx, user)
 
-        # cache in case need to clean up
-        self.reply_cache.register(ctx, prompt)
+        if not user['chars']:  # no characters
+            raise errors.NoMoreItems
 
-        if sel == 'x':
-            await ctx.send(f'Your main was not changed')
+        cancel_text = 'Your main was not changed'
+        new_i = await self.get_char_index(ctx, user, name, cancel_text)
+
+        if new_i is None:  # cancelled
+            self.reply_cache.unregister(ctx)
+            return
+
+        ret = await db.set_user(ctx.author.id, {'default': new_i})
+
+        if ret.acknowledged:
+            name = user['chars'][new_i]['name']
+            await ctx.send(f'Your main was changed to **{name}**')
         else:
-            ret = await db.set_user(ctx.author.id, {'default': int(sel)-1})
-
-            if ret.acknowledged:
-                name = user['chars'][int(sel)-1]['name']
-                await ctx.send(f'Your main was changed to **{name}**')
-            else:
-                raise errors.DataWriteError
+            raise errors.DataWriteError
 
         # no error, release from cache
         self.reply_cache.unregister(ctx)
 
-    @default.error
-    async def default_error(self, ctx, error):
-        if isinstance(error, errors.DataWriteError):
-            msg = 'Problem saving settings. \u200b Try again later'
-        elif isinstance(error, errors.TimeoutError):
-            msg = 'No character was selected'
-        else:
-            msg = str(error)
-
+    @_main.error
+    async def _main_error(self, ctx, error):
         # clean up orphaned prompts
         self.reply_cache.clean(ctx)
 
-        await errors.send_error(ctx, msg)
+        msg = None
+        cmds = None
+
+        if isinstance(error, errors.NoMoreItems):
+            msg = (f'No registered characters. \u200b To import '
+                   ' one use:\n\u200b')
+            cmds = {'Commands': '\n'.join([
+                '`mush add [name] [url: maplestory.io]`',
+                '`mush add [name]` with a JSON file attached',
+                '`mush import [name] [url: maplestory.io]`',
+                '`mush import [name]` with a JSON file attached',
+            ])}
+        elif isinstance(error, errors.DataNotFound):
+            msg = (f'Could not find **{ctx.args[-1]}**. \u200b To see your'
+                   ' characters use:\n\u200b')
+            cmds = {'Commands': '`mush chars`'}
+        elif isinstance(error, errors.DataWriteError):
+            msg = 'Problem saving settings. \u200b Try again later'
+        elif isinstance(error, errors.TimeoutError):
+            msg = 'No character was selected'
+
+        await errors.send(ctx, msg, fields=cmds)
+
+        if msg is None:
+            raise error
+
+    @commands.command()
+    async def delete(self, ctx, name: Optional[str] = None):
+        user = await db.get_user(ctx.author.id)
+        chars = user['chars']
+        curr_i = user['default']
+
+        if not chars:
+            raise errors.NoMoreItems
+
+        cancel_text = 'Deletion cancelled'
+        del_i = await self.get_char_index(ctx, user, name, cancel_text)
+
+        if del_i is None:  # cancelled
+            self.reply_cache.unregister(ctx)
+            return
+
+        # remove char and handle default
+        if del_i > curr_i:
+            new_i = curr_i
+        elif del_i < curr_i:
+            new_i = curr_i - 1
+        else:
+            new_i = 0  # if deleted main, default to first
+
+        char = user['chars'].pop(del_i)
+        ret = await db.set_user(ctx.author.id,
+                                {'default': new_i, 'chars': user['chars']})
+
+        if ret.acknowledged:
+            await ctx.send(f'**{char["name"]}** was deleted')
+        else:
+            raise errors.DataWriteError
+
+        self.reply_cache.unregister(ctx)
+
+    @delete.error
+    async def delete_error(self, ctx, error):
+        # clean up orphaned prompts
+        self.reply_cache.clean(ctx)
+
+        msg = None
+        cmds = None
+
+        if isinstance(error, errors.NoMoreItems):
+            msg = 'You have no characters to delete'
+        elif isinstance(error, errors.DataNotFound):
+            msg = (f'Could not find **{ctx.args[-1]}**. \u200b To see your'
+                   ' characters use:\n\u200b')
+            cmds = {'Commands': '`mush chars`'}
+        elif isinstance(error, errors.TimeoutError):
+            msg = 'No character was selected'
+        elif isinstance(error, errors.DataWriteError):
+            msg = 'Problem saving settings. \u200b Try again later'
+
+        await errors.send_error(ctx, msg, fields=cmds)
+
+        if msg is None:
+            raise error
+
+    async def cog_after_invoke(self, ctx):
+        # unregister reply cache if successful
+        if not ctx.command_failed:
+            self.reply_cache.unregister(ctx)
 
 
 def setup(bot):
