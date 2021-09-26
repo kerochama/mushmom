@@ -77,6 +77,7 @@ def setup_bot():
     bot.add_check(checks.not_bot)
     bot.load_extension('cogs.emotes')
     bot.load_extension('cogs.characters')
+    bot.load_extension('cogs.sprite')
 
     return bot
 
@@ -183,92 +184,6 @@ async def _import_error(ctx, error):
 
     if msg:
         await errors.send(ctx, msg, append=append_text, fields=cmds)
-
-
-@bot.group(invoke_without_command=True, ignore_extra=False)
-async def sprite(ctx,
-                 emotion: Optional[converters.EmotionConverter] = 'default',
-                 pose: Optional[converters.PoseConverter] = 'stand1'):
-    # grab character
-    char_data = await db.get_char_data(ctx.author.id)
-
-    if not char_data:
-        raise errors.DataNotFound
-
-    char = Character.from_json(char_data)
-    name = char.name or "char"
-
-    # create sprite
-    data = await api.get_sprite(char, pose=pose, emotion=emotion)
-
-    if data:
-        if not config.DEBUG:
-            await ctx.message.delete()  # delete original message
-
-        img = discord.File(fp=BytesIO(data),
-                           filename=f'{name}_{emotion}_{pose}.png')
-        await webhook.send_as_author(ctx, file=img)
-    else:
-        raise errors.MapleIOError
-
-
-@sprite.error
-async def sprite_error(ctx, error):
-    if isinstance(error, commands.TooManyArguments):
-        msg = 'Emotion/pose not found. \u200b See:\n\u200b'
-        fields = {
-            'Commands': '\n'.join([
-                f'`{bot.command_prefix[0]}sprite emotions`',
-                f'`{bot.command_prefix[0]}sprite poses`'
-            ])
-        }
-    elif isinstance(error, errors.DataNotFound):
-        msg = 'No registered character. \u200b See:\n\u200b'
-        fields = {'Commands': f'`{bot.command_prefix[0]}import`'}
-    elif isinstance(error, errors.MapleIOError):
-        msg = 'Could not get maple data. \u200b Try again later'
-        fields = None
-
-    if msg:
-        await errors.send(ctx, msg, fields=fields)
-
-
-@sprite.command()
-async def emotions(ctx):
-    embed = discord.Embed(
-        description=('The following is a list of emotions you can use in the '
-                     'generation of your emoji or sprite.'),
-        color=config.EMBED_COLOR
-    )
-
-    embed.set_author(name='Emotions', icon_url=bot.user.avatar_url)
-    embed.set_thumbnail(url=config.EMOJIS['mushheart'])
-    embed.set_footer(text='[GMS v225]')
-
-    # split emotions into 3 lists
-    emotions = [states.EMOTIONS[i::3] for i in range(3)]  # order not preserved
-    embed.add_field(name='Emotions', value='\n'.join(emotions[0]))
-    embed.add_field(name='\u200b', value='\n'.join(emotions[1]))
-    embed.add_field(name='\u200b', value='\n'.join(emotions[2]))
-
-    await ctx.send(embed=embed)
-
-
-@sprite.command()
-async def poses(ctx):
-    embed = discord.Embed(
-        description=('The following is a list of poses you can use in the '
-                     'generation of your emoji or sprite.'),
-        color=config.EMBED_COLOR
-    )
-
-    embed.set_author(name='Poses', icon_url=bot.user.avatar_url)
-    embed.set_thumbnail(url=config.EMOJIS['mushdab'])
-    embed.set_footer(text='[GMS v225]')
-    embed.add_field(name='Pose', value='\n'.join(states.POSES.keys()))
-    embed.add_field(name='Value', value='\n'.join(states.POSES.values()))
-
-    await ctx.send(embed=embed)
 
 
 @bot.group()
