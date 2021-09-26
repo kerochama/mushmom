@@ -94,6 +94,7 @@ async def get_char_data(userid):
 
     if user_data:
         await increment_user(userid)
-
         i = user_data['default']
-        return user_data['chars'][i]
+
+        if user_data['chars']:
+            return user_data['chars'][i]
