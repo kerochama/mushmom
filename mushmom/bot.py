@@ -2,7 +2,7 @@ import discord
 import os
 import aiohttp
 
-from discord.ext import commands
+from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
 from mushmom.utils import checks, errors
@@ -29,7 +29,7 @@ class Mushmom(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.session = None  # set in on_ready
-        self.reply_cache = errors.ReplyCache(garbage_collect_after=50)
+        self.reply_cache = errors.ReplyCache()
 
         # attach some default commands
         self.add_cog(Core(self))
@@ -37,6 +37,7 @@ class Mushmom(commands.Bot):
     async def on_ready(self):
         print(f'{self.user} is ready to mush!')
         self.session = aiohttp.ClientSession(loop=self.loop)
+        self.run_garbage_collector.start()
 
     async def on_message(self, message):
         """
@@ -68,9 +69,19 @@ class Mushmom(commands.Bot):
         else:
             await self.process_commands(message)
 
+    @tasks.loop(minutes=10)
+    async def run_garbage_collector(self):
+        """
+        Clean up stray cached replies
+
+        :return:
+        """
+        self.reply_cache.run_garbage_collector()
+
     async def close(self):
         await super().close()
         await self.session.close()
+
 
 
 def setup_bot():

@@ -49,22 +49,19 @@ send = send_error  # alias
 
 
 class ReplyCache:
-    def __init__(self, garbage_collect_after=50, timeout=300):
+    def __init__(self, timeout=300):
         """
         Maintains a cache of messages sent by bot in response to a command
         so that they can be referenced/cleaned subsequently
 
-        :param garbage_collect_after: run garbage collect after n registers
-        :param timeout: seconds passed signifying delete
+        :param timeout: seconds passed signifying can be deleted
         """
         # keep track of message replies to clean up when error
         # does not have to be a direct reply, just response to command
         self._reply_cache = {
             # message.id: [(reply, ts)]
         }
-        self.garbage_collect_after = garbage_collect_after
         self.timeout = timeout  # seconds
-        self._n = 0
 
     def register(self, ctx, reply):
         msg_id = ctx.message.id
@@ -74,14 +71,6 @@ class ReplyCache:
             self._reply_cache[msg_id].append(record)
         else:
             self._reply_cache[msg_id] = [record]
-
-        self._n += 1
-
-        # run garbage collector
-        if (self.garbage_collect_after
-                and self._n >= self.garbage_collect_after):
-            self.run_garbage_collector()
-            self._n = 0
 
     def unregister(self, ctx):
         return self._reply_cache.pop(ctx.message.id, None)
