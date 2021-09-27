@@ -122,8 +122,6 @@ class ReplyCache:
             if not self._reply_cache[msg_id]:  # empty list
                 del self._reply_cache[msg_id]
 
-        print('foo')
-
 
 class DataNotFound(commands.CommandError):
     pass
