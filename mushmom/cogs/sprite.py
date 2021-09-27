@@ -33,7 +33,8 @@ class Sprite(commands.Cog):
         name = char.name or "char"
 
         # create sprite
-        data = await api.get_sprite(char, pose=pose, emotion=emotion)
+        data = await api.get_sprite(char, pose=pose, emotion=emotion,
+                                    session=self.bot.session)
 
         if data:
             if not config.DEBUG:

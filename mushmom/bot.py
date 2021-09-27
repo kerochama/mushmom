@@ -1,18 +1,12 @@
 import discord
 import os
 import aiohttp
-import inspect
 
 from discord.ext import commands
-from io import BytesIO
 from dotenv import load_dotenv
-from typing import Optional
 
-from mushmom import config
-from mushmom.utils import database as db
-from mushmom.utils import checks, errors, webhook, converters, io
-from mushmom.mapleio import api, states
-from mushmom.mapleio.character import Character
+from mushmom.utils import checks, errors
+from mushmom.mapleio import states
 
 load_dotenv()  # use env variables from .env
 
@@ -34,6 +28,7 @@ class Core(commands.Cog):
 class Mushmom(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.session = None  # set in on_ready
         self.reply_cache = errors.ReplyCache(garbage_collect_after=50)
 
         # attach some default commands
@@ -41,6 +36,7 @@ class Mushmom(commands.Bot):
 
     async def on_ready(self):
         print(f'{self.user} is ready to mush!')
+        self.session = aiohttp.ClientSession(loop=self.loop)
 
     async def on_message(self, message):
         """
@@ -84,33 +80,6 @@ def setup_bot():
     return bot
 
 
-bot = setup_bot()
-
-
-@bot.group()
-async def emotes(ctx):
-    pass
-
-
-@emotes.command(name='list')
-async def _list(ctx):
-    embed = discord.Embed(
-        description='The following is a list of emotes you can use\n\u200b',
-        color=config.EMBED_COLOR
-    )
-
-    embed.set_author(name='Emotes', icon_url=bot.user.avatar_url)
-    embed.set_thumbnail(url=config.EMOJIS['mushheart'])
-
-    # split emotions into 3 lists
-    emotes = [states.EMOTIONS[i::3] for i in range(3)]  # order not preserved
-    embed.add_field(name='Emotes', value='\n'.join(emotes[0]))
-    embed.add_field(name='\u200b', value='\n'.join(emotes[1]))
-    embed.add_field(name='\u200b', value='\n'.join(emotes[2]))
-
-    await ctx.send(embed=embed)
-
-
 if __name__ == "__main__":
-    # bot = setup_bot()
+    bot = setup_bot()
     bot.run(os.getenv('TOKEN'))

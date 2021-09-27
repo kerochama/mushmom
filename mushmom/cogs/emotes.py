@@ -32,7 +32,8 @@ class Emotes(commands.Cog):
         name = char.name or "char"
 
         # create emote
-        data = await api.get_emote(char, emotion=emote)
+        data = await api.get_emote(char, emotion=emote,
+                                   session=self.bot.session)
 
         if data:
             if not config.DEBUG:
