@@ -11,7 +11,7 @@ from io import BytesIO
 from mushmom import config
 from mushmom.utils import database as db
 from mushmom.utils import converters, errors, webhook
-from mushmom.mapleio import api
+from mushmom.mapleio import api, states
 from mushmom.mapleio.character import Character
 
 
@@ -65,6 +65,24 @@ class Emotes(commands.Cog):
 
         if msg is None:
             raise error
+
+    @commands.command()
+    async def emotes(self, ctx):
+        embed = discord.Embed(
+            description='The following is a list of emotes you can use\n\u200b',
+            color=config.EMBED_COLOR
+        )
+
+        embed.set_author(name='Emotes', icon_url=self.bot.user.avatar_url)
+        embed.set_thumbnail(url=config.EMOJIS['mushheart'])
+
+        # split emotions into 3 lists
+        emotes = [states.EMOTIONS[i::3] for i in range(3)]  # order not preserved
+        embed.add_field(name='Emotes', value='\n'.join(emotes[0]))
+        embed.add_field(name='\u200b', value='\n'.join(emotes[1]))
+        embed.add_field(name='\u200b', value='\n'.join(emotes[2]))
+
+        await ctx.send(embed=embed)
 
 
 def setup(bot):
