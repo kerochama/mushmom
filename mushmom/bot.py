@@ -68,6 +68,10 @@ class Mushmom(commands.Bot):
         else:
             await self.process_commands(message)
 
+    async def close(self):
+        await super().close()
+        await self.session.close()
+
 
 def setup_bot():
     bot = Mushmom(command_prefix=['mush ', '!m '])
