@@ -10,7 +10,7 @@ from io import BytesIO
 
 from mushmom import config
 from mushmom.utils import database as db
-from mushmom.utils import converters, errors, webhook
+from mushmom.utils import converters, errors, io
 from mushmom.mapleio import api, states
 from mushmom.mapleio.character import Character
 
@@ -41,7 +41,7 @@ class Emotes(commands.Cog):
 
             filename = f'{name}_{emote}.png'
             img = discord.File(fp=BytesIO(data), filename=filename)
-            await webhook.send_as_author(ctx, file=img)
+            await io.send_as_author(ctx, file=img)
         else:
             raise errors.MapleIOError
 

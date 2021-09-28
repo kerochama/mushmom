@@ -1,5 +1,5 @@
 """
-Functions related to sending messages with webhook
+Functions related to sending messages or reactions
 
 """
 from mushmom import config
