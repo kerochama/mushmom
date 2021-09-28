@@ -22,6 +22,16 @@ class Emotes(commands.Cog):
     @commands.command(ignore_extra=False)
     async def emote(self, ctx,
                     emote: Optional[converters.EmotionConverter] = 'default'):
+        """
+        Replace message with emote
+
+        Use ignore_extra=False to differentiate improper emotes from default
+        emote (can be used directly without args)
+
+        :param ctx:
+        :param emote:
+        :return:
+        """
         # grab character
         char_data = await db.get_char_data(ctx.author.id)
 

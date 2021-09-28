@@ -23,6 +23,18 @@ class Sprite(commands.Cog):
     async def sprite(self, ctx,
                      emotion: Optional[converters.EmotionConverter] = 'default',
                      pose: Optional[converters.PoseConverter] = 'stand1'):
+        """
+        Replace message with sprite
+
+        Use ignore_extra=False to differentiate improper emotes from default
+        emotions and poses (can be used directly without args)
+
+
+        :param ctx:
+        :param emotion:
+        :param pose:
+        :return:
+        """
         # grab character
         char_data = await db.get_char_data(ctx.author.id)
 
