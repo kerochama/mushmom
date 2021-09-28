@@ -133,6 +133,25 @@ class Characters(commands.Cog):
         user = await db.get_user(ctx.author.id)
         await self.list_chars(ctx, user, 'Your mushable characters\n\u200b')
 
+    @chars.error
+    async def chars_error(self, ctx, error):
+        msg = None
+
+        if isinstance(error, errors.DataNotFound):
+            msg = (f'Welcome! You have no chars. \u200b To import '
+                   ' one use:\n\u200b')
+            cmds = {'Commands': '\n'.join([
+                '`mush add [name] [url: maplestory.io]`',
+                '`mush add [name]` with a JSON file attached',
+                '`mush import [name] [url: maplestory.io]`',
+                '`mush import [name]` with a JSON file attached',
+            ])}
+
+        await errors.send_error(ctx, msg, fields=cmds)
+
+        if msg is None:
+            raise error
+
     @commands.group(alias='select')
     async def set(self, ctx):
         pass
