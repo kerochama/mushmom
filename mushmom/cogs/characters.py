@@ -4,13 +4,14 @@ Character commands
 """
 import discord
 import asyncio
+import inspect
 
 from discord.ext import commands
 from typing import Optional
 
 from mushmom import config
 from mushmom.utils import database as db
-from mushmom.utils import errors
+from mushmom.utils import errors, converters
 
 
 class Characters(commands.Cog):
@@ -96,13 +97,15 @@ class Characters(commands.Cog):
 
         return prompt, sel
 
-    async def get_char_index(self, ctx, user, name=None, cancel_text=''):
+    async def get_char_index(self, ctx, user, name=None, desc='',
+                             cancel_text='Cancelled'):
         """
         Get index from char list
 
         :param ctx:
         :param user:
         :param name:
+        :param desc: text to add before instructions
         :param cancel_text:
         :return:
         """
@@ -160,11 +163,12 @@ class Characters(commands.Cog):
     async def _main(self, ctx, name: Optional[str] = None):
         user = await db.get_user(ctx.author.id)
 
-        if not user['chars']:  # no characters
+        if not user or not user['chars']:  # no characters
             raise errors.NoMoreItems
 
         cancel_text = 'Your main was not changed'
-        new_i = await self.get_char_index(ctx, user, name, cancel_text)
+        new_i = await self.get_char_index(ctx, user, name,
+                                          cancel_text=cancel_text)
 
         if new_i is None:  # cancelled
             self.bot.reply_cache.unregister(ctx)
@@ -215,14 +219,14 @@ class Characters(commands.Cog):
     @commands.command()
     async def delete(self, ctx, name: Optional[str] = None):
         user = await db.get_user(ctx.author.id)
-        chars = user['chars']
-        curr_i = user['default']
 
-        if not chars:
+        if not user or not user['chars']:
             raise errors.NoMoreItems
 
+        curr_i = user['default']
         cancel_text = 'Deletion cancelled'
-        del_i = await self.get_char_index(ctx, user, name, cancel_text)
+        del_i = await self.get_char_index(ctx, user, name,
+                                          cancel_text=cancel_text)
 
         if del_i is None:  # cancelled
             self.bot.reply_cache.unregister(ctx)
@@ -237,8 +241,8 @@ class Characters(commands.Cog):
             new_i = 0  # if deleted main, default to first
 
         char = user['chars'].pop(del_i)
-        ret = await db.set_user(ctx.author.id,
-                                {'default': new_i, 'chars': user['chars']})
+        ret = await db.set_user(ctx.author.id, {'default': new_i,
+                                                'chars': user['chars']})
 
         if ret.acknowledged:
             await ctx.send(f'**{char["name"]}** was deleted')
@@ -261,6 +265,85 @@ class Characters(commands.Cog):
             msg = (f'Could not find **{ctx.args[-1]}**. \u200b To see your'
                    ' characters use:\n\u200b')
             cmds = {'Commands': '`mush chars`'}
+        elif isinstance(error, errors.TimeoutError):
+            msg = 'No character was selected'
+        elif isinstance(error, errors.DataWriteError):
+            msg = 'Problem saving settings. \u200b Try again later'
+
+        await errors.send_error(ctx, msg, fields=cmds)
+
+        if msg is None:
+            raise error
+
+    @commands.command(ignore_extra=False)
+    async def rename(self, ctx,
+                     name: Optional[converters.CharNameConverter] = None,
+                     new_name=None):
+        """
+        Rename char
+
+        Use ignore_extra=False because otherwise may incorrectly capture
+        new_name as name
+
+        e.g.
+        mush rename not_a_char_name Mushmom
+        - new_name = not_a_char_name
+
+        :param ctx:
+        :param name:
+        :param new_name:
+        :return:
+        """
+        if not new_name:
+            raise commands.MissingRequiredArgument(
+                inspect.Parameter('new_name', inspect.Parameter.POSITIONAL_ONLY)
+            )
+
+        user = await db.get_user(ctx.author.id)
+
+        if not user or not user['chars']:
+            raise errors.NoMoreItems
+
+        desc = ('Character was not found. '
+                f'\u200b Who should be renamed **{new_name}**?')
+        cancel_text = 'No character was renamed'
+        i = await self.get_char_index(ctx, user, name, desc, cancel_text)
+
+        if i is None:  # cancelled
+            self.bot.reply_cache.unregister(ctx)
+            return
+
+        _name = user['chars'][i]['name']
+        user['chars'][i]['name'] = new_name
+        ret = await db.set_user(ctx.author.id, {'chars': user['chars']})
+
+        if ret.acknowledged:
+            await ctx.send(f'**{_name}** was renamed **{new_name}**')
+        else:
+            raise errors.DataWriteError
+
+    @rename.error
+    async def rename_error(self, ctx, error):
+        # clean up orphaned prompts
+        self.bot.reply_cache.clean(ctx)
+
+        msg = None
+        cmds = None
+
+        if isinstance(error, commands.TooManyArguments):
+            msg = (f'{config.core.bot_name} did not understand or could not '
+                   'find that character')
+        elif isinstance(error, commands.MissingRequiredArgument):
+            msg = 'You must supply a new name'
+        elif isinstance(error, errors.NoMoreItems):
+            msg = (f'No registered characters. \u200b To import '
+                   ' one use:\n\u200b')
+            cmds = {'Commands': '\n'.join([
+                '`mush add [name] [url: maplestory.io]`',
+                '`mush add [name]` with a JSON file attached',
+                '`mush import [name] [url: maplestory.io]`',
+                '`mush import [name]` with a JSON file attached',
+            ])}
         elif isinstance(error, errors.TimeoutError):
             msg = 'No character was selected'
         elif isinstance(error, errors.DataWriteError):

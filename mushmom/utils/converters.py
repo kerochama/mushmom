@@ -6,6 +6,7 @@ from discord.ext import commands
 
 from mushmom import config
 from mushmom.mapleio import states
+from mushmom.utils import database as db
 
 
 class EmotionConverter(commands.Converter):
@@ -62,3 +63,17 @@ class MapleIOURLConverter(commands.Converter):
 
         message = "Not a valid maplestory.io API call"
         raise commands.BadArgument(message=message)
+
+
+class CharNameConverter(commands.Converter):
+    """
+    Check if existing char
+
+    """
+    async def convert(self, ctx, arg):
+        user = await db.get_user(ctx.author.id)
+
+        if user and arg in [x.name for x in user['chars']]:
+            return arg
+
+        raise commands.BadArgument('Character not found')

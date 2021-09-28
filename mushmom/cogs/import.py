@@ -17,9 +17,9 @@ class Import(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name='import', ignore_extra=False)
+    @commands.command(name='import')
     async def _import(self, ctx, name: converters.ImportNameConverter,
-                      url: Optional[converters.MapleIOURLConverter] = ''):
+                      url: Optional[converters.MapleIOURLConverter] = None):
         # parse char data
         if url:  # maplestory.io char api
             char = Character.from_url(url)
@@ -70,7 +70,7 @@ class Import(commands.Cog):
             self.bot.reply_cache.register(ctx, prompt)
 
             if sel == 'x':
-                await ctx.send(f'{name} was not saved')
+                await ctx.send(f'**{name}** was not saved')
                 ret = None
             else:
                 user['chars'][int(sel) - 1] = char.to_dict()
@@ -78,7 +78,7 @@ class Import(commands.Cog):
 
         if ret:
             if ret.acknowledged:
-                await ctx.send(f'{name} has been successfully mushed')
+                await ctx.send(f'**{name}** has been successfully mushed')
             else:
                 raise errors.DataWriteError
 
