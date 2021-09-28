@@ -1,6 +1,7 @@
 import discord
 import os
 import aiohttp
+import warnings
 
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
@@ -37,7 +38,9 @@ class Mushmom(commands.Bot):
     async def on_ready(self):
         print(f'{self.user} is ready to mush!')
         self.session = aiohttp.ClientSession(loop=self.loop)
-        self.run_garbage_collector.start()
+
+        if not self.run_garbage_collector.is_running:
+            self.run_garbage_collector.start()
 
     async def on_message(self, message):
         """
@@ -69,6 +72,21 @@ class Mushmom(commands.Bot):
         else:
             await self.process_commands(message)
 
+    def get_emoji_url(self, emoji_id):
+        """
+        Convenience wrapper to pull url from emoji
+
+        :param emoji_id:
+        :return:
+        """
+        emoji = self.get_emoji(emoji_id)
+
+        if emoji:
+            return emoji.url
+        else:
+            warnings.warn(f'Emoji<{emoji_id}> was not found', ResourceWarning)
+            return self.user.avatar_url  # fall back on profile pic
+
     @tasks.loop(minutes=10)
     async def run_garbage_collector(self):
         """
@@ -81,7 +99,6 @@ class Mushmom(commands.Bot):
     async def close(self):
         await super().close()
         await self.session.close()
-
 
 
 def setup_bot():

@@ -18,7 +18,7 @@ class Character:
         self.name = name
 
         # can only be populated by from_* funcs
-        self.version = version or config.MAPLEIO_DEFAULT_VERSION
+        self.version = version or config.mapleio.default_version
         self.skin = None
         self.ears = None
         self.equips = []
@@ -47,7 +47,7 @@ class Character:
         if (items and isinstance(items, dict)
                 and all(isinstance(v, dict) for v in items.values())):
             item0 = list(items.values())[0]
-            char.version = item0.get('version', config.MAPLEIO_DEFAULT_VERSION)
+            char.version = item0.get('version', config.mapleio.default_version)
 
             char.equips = [
                 Equip(item.get('id', 0),
@@ -88,7 +88,7 @@ class Character:
 
         if items and all(isinstance(v, dict) for v in items):
             item0 = items[0]
-            char.version = item0.get('version', config.MAPLEIO_DEFAULT_VERSION)
+            char.version = item0.get('version', config.mapleio.default_version)
 
             # identify Body item (id is skinid)
             char.skin = next((Skin.get(x['itemId'])
@@ -172,7 +172,7 @@ class Character:
             {k: str(v).lower() for k, v in query.items()}, safe=','
         )  # keep commas
 
-        return f'{config.MAPLEIO_API}/character/{items_s}/{pose}/0?{qs}'
+        return f'{config.mapleio.api_url}/character/{items_s}/{pose}/0?{qs}'
 
     def to_dict(self):
         """

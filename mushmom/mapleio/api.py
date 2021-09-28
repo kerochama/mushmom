@@ -35,7 +35,7 @@ async def latest_version(region='GMS', session=None):
     :param session:
     :return:
     """
-    u = f'{config.MAPLEIO_API}/wz'
+    u = f'{config.mapleio.api_url}/wz'
 
     async with session.get(u) as r:
         if r.status == 200:
@@ -50,7 +50,7 @@ async def latest_version(region='GMS', session=None):
 
 @with_session
 async def get_item(itemid, region='GMS',
-                   version=config.MAPLEIO_DEFAULT_VERSION,
+                   version=config.mapleio.default_version,
                    session=None):
     """
     Get info about itemid
@@ -61,7 +61,7 @@ async def get_item(itemid, region='GMS',
     :param session:
     :return:
     """
-    u = f'{config.MAPLEIO_API}/{region}/{version}/item/{itemid}'
+    u = f'{config.mapleio.api_url}/{region}/{version}/item/{itemid}'
 
     # http request
     async with session.get(u) as r:
@@ -119,7 +119,7 @@ async def get_emote(char, emotion='default', zoom=1, pad=8, session=None):
             img = Image.open(BytesIO(img_data))
             w, h = img.size
 
-            scaled_body_height = zoom * (config.MAPLEIO_BODY_HEIGHT - pad)
+            scaled_body_height = zoom * (config.mapleio.body_height - pad)
             emote = img.crop((0, 0, w, h - scaled_body_height))
             byte_arr = BytesIO()
             emote.save(byte_arr, format='PNG')

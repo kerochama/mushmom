@@ -44,7 +44,7 @@ class ImportNameConverter(commands.Converter):
 
     """
     async def convert(self, ctx, arg):
-        if not arg.startswith(config.MAPLEIO_API):
+        if not arg.startswith(config.mapleio.api_url):
             return arg
 
         message = "Not a valid character name"
@@ -57,7 +57,7 @@ class MapleIOURLConverter(commands.Converter):
 
     """
     async def convert(self, ctx, arg):
-        if arg.startswith(config.MAPLEIO_API):
+        if arg.startswith(config.mapleio.api_url):
             return arg
 
         message = "Not a valid maplestory.io API call"

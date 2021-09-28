@@ -28,16 +28,16 @@ class Characters(commands.Cog):
         :param user: db user if already retrieved
         :return:
         """
-        embed = discord.Embed(description=text, color=config.EMBED_COLOR)
+        embed = discord.Embed(description=text, color=config.core.embed_color)
         embed.set_author(name='Characters', icon_url=self.bot.user.avatar_url)
 
         if not thumbnail:
-            thumbnail = config.EMOJIS['mushparty']
+            thumbnail = self.bot.get_emoji_url(config.emojis.mushparty)
 
         embed.set_thumbnail(url=thumbnail)
 
         # format char names
-        char_names = ['-'] * config.MAX_CHARS
+        char_names = ['-'] * config.core.max_chars
 
         for i, char in enumerate(user['chars']):
             template = '**{} (default)**' if i == user['default'] else '{}'
@@ -61,14 +61,14 @@ class Characters(commands.Cog):
         :param user: db user if already retrieved
         :return:
         """
-        thumbnail = config.EMOJIS['mushping']
+        thumbnail = self.bot.get_emoji_url(config.emojis.mushping)
         msg = (f'{text}React to select a character or select '
                f'\u200b \u274e \u200b to cancel\n\u200b')
         prompt = await self.list_chars(ctx, user, msg, thumbnail)
 
         # numbered unicode emojis 1 - # max chars
         reactions = {f'{x + 1}': f'{x + 1}\ufe0f\u20e3'
-                     for x in range(min(len(user['chars']), config.MAX_CHARS))}
+                     for x in range(min(len(user['chars']), config.core.max_chars))}
         reactions['x'] = '\u274e'
 
         # add reactions
@@ -83,11 +83,11 @@ class Characters(commands.Cog):
                     check=lambda r, u: (u == ctx.author
                                         and r.message.id == prompt.id
                                         and r.emoji in reactions.values()),
-                    timeout=config.DEFAULT_DELAY
+                    timeout=config.core.default_delay
                 )
             )
         except asyncio.TimeoutError:
-            if not config.DEBUG:
+            if not config.core.debug:
                 await prompt.delete()  # clean up prompt
 
             raise errors.TimeoutError  # handle in command errors
@@ -103,6 +103,7 @@ class Characters(commands.Cog):
         :param ctx:
         :param user:
         :param name:
+        :param cancel_text:
         :return:
         """
         chars = user['chars']

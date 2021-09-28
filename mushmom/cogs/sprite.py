@@ -37,7 +37,7 @@ class Sprite(commands.Cog):
                                     session=self.bot.session)
 
         if data:
-            if not config.DEBUG:
+            if not config.core.debug:
                 await ctx.message.delete()  # delete original message
 
             img = discord.File(fp=BytesIO(data),
@@ -79,11 +79,12 @@ class Sprite(commands.Cog):
         embed = discord.Embed(
             description=('The following is a list of emotions you can use in the '
                          'generation of your emoji or sprite.\n\u200b'),
-            color=config.EMBED_COLOR
+            color=config.core.embed_color
         )
 
         embed.set_author(name='Emotions', icon_url=self.bot.user.avatar_url)
-        embed.set_thumbnail(url=config.EMOJIS['mushheart'])
+        thumbnail = self.bot.get_emoji_url(config.emojis.mushheart)
+        embed.set_thumbnail(url=thumbnail)
         embed.set_footer(text='[GMS v225]')
 
         # split emotions into 3 lists
@@ -99,11 +100,11 @@ class Sprite(commands.Cog):
         embed = discord.Embed(
             description=('The following is a list of poses you can use in the '
                          'generation of your emoji or sprite.\n\u200b'),
-            color=config.EMBED_COLOR
+            color=config.core.embed_color
         )
 
         embed.set_author(name='Poses', icon_url=self.bot.user.avatar_url)
-        embed.set_thumbnail(url=config.EMOJIS['mushdab'])
+        embed.set_thumbnail(url=self.bot.get_emoji_url(config.emojis.mushdab))
         embed.set_footer(text='[GMS v225]')
         embed.add_field(name='Pose', value='\n'.join(states.POSES.keys()))
         embed.add_field(name='Value', value='\n'.join(states.POSES.values()))

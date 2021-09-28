@@ -36,7 +36,7 @@ class Emotes(commands.Cog):
                                    session=self.bot.session)
 
         if data:
-            if not config.DEBUG:
+            if not config.core.debug:
                 await ctx.message.delete()  # delete original message
 
             filename = f'{name}_{emote}.png'
@@ -71,11 +71,12 @@ class Emotes(commands.Cog):
     async def emotes(self, ctx):
         embed = discord.Embed(
             description='The following is a list of emotes you can use\n\u200b',
-            color=config.EMBED_COLOR
+            color=config.core.embed_color
         )
 
         embed.set_author(name='Emotes', icon_url=self.bot.user.avatar_url)
-        embed.set_thumbnail(url=config.EMOJIS['mushheart'])
+        thumbnail = self.bot.get_emoji_url(config.emojis.mushheart)
+        embed.set_thumbnail(url=thumbnail)
 
         # split emotions into 3 lists
         emotes = [states.EMOTIONS[i::3] for i in range(3)]  # order not preserved

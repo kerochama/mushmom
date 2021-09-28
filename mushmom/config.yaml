@@ -1,0 +1,27 @@
+# constants used by the bot
+
+core:
+  debug: False                         # mostly prevents message auto deletion
+  bot_name: Mushmom
+  hook_name: Mushmom
+  embed_color: 0xf49c00                # current color matching pfp
+  max_chars: 5                         # reactions will break if > 9
+  default_delay: 10                    # for auto deletion
+
+emojis:
+  mushshock: 890392463867527228
+  mushheart: 890978701158809671
+  mushdab: 890978611803324487
+  mushping: 890978760780832818
+  mushparty: 890987908633362503
+  mushloading: 892077347925262367
+
+database:                              # mongodb
+  name: mushmom
+
+
+mapleio:
+  api_url: https://maplestory.io/api
+  default_version: "225"               # should be a string
+  body_height: 33                      # unscaled
+                                       # see scripts/get_sprite_sizes.py

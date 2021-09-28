@@ -11,8 +11,8 @@ from mushmom import config
 
 
 # Errors not auto-deleted when DEBUG on
-async def send_error(ctx, text=None, delete_message=not config.DEBUG,
-                     delay=config.DEFAULT_DELAY, append='', fields=None):
+async def send_error(ctx, text=None, delete_message=not config.core.debug,
+                     delay=config.core.default_delay, append='', fields=None):
     """
     Generic function to send formatted error
 
@@ -29,9 +29,9 @@ async def send_error(ctx, text=None, delete_message=not config.DEBUG,
 
     # send error
     embed = discord.Embed(description=text + append,
-                          color=config.EMBED_COLOR)
+                          color=config.core.embed_color)
     embed.set_author(name='Error', icon_url=ctx.bot.user.avatar_url)
-    embed.set_thumbnail(url=config.EMOJIS['mushshock'])
+    embed.set_thumbnail(url=ctx.bot.get_emoji_url(config.emojis.mushshock))
 
     # add fields
     if fields:
@@ -75,7 +75,7 @@ class ReplyCache:
     def unregister(self, ctx):
         return self._reply_cache.pop(ctx.message.id, None)
 
-    def clean(self, ctx, delete=not config.DEBUG):
+    def clean(self, ctx, delete=not config.core.debug):
         """
         Try to delete and remove from cache
 

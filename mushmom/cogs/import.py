@@ -2,8 +2,6 @@
 Import character commands
 
 """
-import discord
-import aiohttp
 import inspect
 
 from discord.ext import commands
@@ -53,7 +51,7 @@ class Import(commands.Cog):
 
         if not user:  # new user
             ret = await db.add_user(ctx.author.id, char.to_dict())
-        elif len(user['chars']) < config.MAX_CHARS:
+        elif len(user['chars']) < config.core.max_chars:
             user['chars'].append(char.to_dict())
             ret = await db.set_user(ctx.author.id, {'chars': user['chars']})
         else:
@@ -62,8 +60,9 @@ class Import(commands.Cog):
             if not chars_cog:
                 raise commands.ExtensionNotLoaded('Characters')
 
-            text = (f'{config.BOT_NAME} can only save {config.MAX_CHARS} '
-                    f'character{"s" if config.MAX_CHARS > 1 else ""}. \u200b'
+            text = (f'{config.core.bot_name} can only save '
+                    f'{config.core.max_chars} character'
+                    f'{"s" if config.core.max_chars > 1 else ""}. \u200b '
                     'Choose a character to replace.')
             prompt, sel = await chars_cog.select_char(ctx, user, text)
 
@@ -100,7 +99,8 @@ class Import(commands.Cog):
         }
 
         if isinstance(error, commands.TooManyArguments):
-            msg = f'{config.BOT_NAME} did not understand. \u200b Try:\n\u200b'
+            msg = (f'{config.core.bot_name} did not understand. \u200b '
+                   'Try:\n\u200b')
         elif isinstance(error, commands.BadArgument):
             msg = ('You must supply a character name to start mushing!'
                    ' \u200b Try:\n\u200b')
@@ -114,7 +114,7 @@ class Import(commands.Cog):
             cmds = None
 
             if isinstance(error, errors.UnexpectedFileTypeError):
-                msg = f'{config.BOT_NAME} only accepts JSON files'
+                msg = f'{config.core.bot_name} only accepts JSON files'
             elif isinstance(error, errors.TimeoutError):
                 msg = 'No character was selected'
             elif isinstance(error, errors.DiscordIOError):

@@ -15,7 +15,7 @@ from mushmom import config
 load_dotenv()  # use env variables from .env
 
 client = AsyncIOMotorClient(os.getenv('MONGO_CONN_STR'))
-db = client[config.DATABASE]
+db = client[config.database.name]
 
 
 async def get_user(userid, proj=None):
