@@ -7,7 +7,7 @@ core:
   embed_color: 0xf49c00                # current color matching pfp
   max_chars: 5                         # reactions will break if > 9
   default_delay: 10                    # for auto deletion
-  delayed_react_time: 3                # default secs to add a delayed reaction
+  delayed_react_time: 2                # default secs to add a delayed reaction
 
 emojis:
   mushshock: 890392463867527228

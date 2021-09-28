@@ -31,9 +31,15 @@ class Emotes(commands.Cog):
         char = Character.from_json(char_data)
         name = char.name or "char"
 
+        # add loading reaction to confirm command is still waiting for api
+        # default: hour glass
+        emoji = self.bot.get_emoji(config.emojis.mushloading) or '\u23f3'
+        react_task = self.bot.loop.create_task(io.delayed_reaction(ctx, emoji))
+
         # create emote
         data = await api.get_emote(char, emotion=emote,
                                    session=self.bot.session)
+        react_task.cancel()  # no need to send if it gets here first
 
         if data:
             if not config.core.debug:

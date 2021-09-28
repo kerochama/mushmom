@@ -32,9 +32,15 @@ class Sprite(commands.Cog):
         char = Character.from_json(char_data)
         name = char.name or "char"
 
+        # add loading reaction to confirm command is still waiting for api
+        # default: hour glass
+        emoji = self.bot.get_emoji(config.emojis.mushloading) or '\u23f3'
+        react_task = self.bot.loop.create_task(io.delayed_reaction(ctx, emoji))
+
         # create sprite
         data = await api.get_sprite(char, pose=pose, emotion=emotion,
                                     session=self.bot.session)
+        react_task.cancel()
 
         if data:
             if not config.core.debug:
