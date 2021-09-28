@@ -120,6 +120,9 @@ class Import(commands.Cog):
             elif isinstance(error, errors.DiscordIOError):
                 msg = (f'Error trying to read attached JSON file.'
                        '\u200b Try again later')
+            elif isinstance(error, commands.ExtensionNotLoaded):
+                msg = (f'{config.core.bot_name} is being serviced right now.'
+                       ' \u200b Try again later')
             elif isinstance(error, errors.DataWriteError):
                 msg = 'Problem saving character. \u200b Try again later'
 
