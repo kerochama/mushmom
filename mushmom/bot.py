@@ -12,28 +12,11 @@ from mushmom.mapleio import states
 load_dotenv()  # use env variables from .env
 
 
-class Core(commands.Cog):
-    def __init__(self, bot):
-        """
-        Basic core commands
-
-        :param bot:
-        """
-        self.bot = bot
-
-    @commands.command()
-    async def hello(self, ctx):
-        await ctx.send('hai')
-
-
 class Mushmom(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.session = None  # set in on_ready
         self.reply_cache = errors.ReplyCache()
-
-        # attach some default commands
-        self.add_cog(Core(self))
 
     async def on_ready(self):
         print(f'{self.user} is ready to mush!')
