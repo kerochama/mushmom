@@ -11,12 +11,27 @@ from mushmom.mapleio import states
 
 load_dotenv()  # use env variables from .env
 
+initial_extensions = (
+    'cogs.core',
+    'cogs.characters',
+    'cogs.emotes',
+    'cogs.import',
+    'cogs.sprite'
+)
+
 
 class Mushmom(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.session = None  # set in on_ready
         self.reply_cache = errors.ReplyCache()
+
+        # add global checks
+        self.add_check(checks.not_bot)
+
+        # load extensions
+        for ext in initial_extensions:
+            self.load_extension(ext)
 
     async def on_ready(self):
         print(f'{self.user} is ready to mush!')
@@ -84,17 +99,6 @@ class Mushmom(commands.Bot):
         await self.session.close()
 
 
-def setup_bot():
-    bot = Mushmom(command_prefix=['mush ', '!m '])
-    bot.add_check(checks.not_bot)
-    bot.load_extension('cogs.characters')
-    bot.load_extension('cogs.emotes')
-    bot.load_extension('cogs.import')
-    bot.load_extension('cogs.sprite')
-
-    return bot
-
-
 if __name__ == "__main__":
-    bot = setup_bot()
+    bot = Mushmom(command_prefix=['mush ', '!m '])
     bot.run(os.getenv('TOKEN'))
