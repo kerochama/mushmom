@@ -17,7 +17,7 @@ class Import(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name='import')
+    @commands.command(name='import', aliases=['add'])
     async def _import(self, ctx, name: converters.ImportNameConverter,
                       url: Optional[converters.MapleIOURLConverter] = None):
         # parse char data
