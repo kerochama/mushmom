@@ -121,7 +121,7 @@ class Characters(commands.Cog):
             prompt, sel = await self.select_char(ctx, user)
 
             # cache in case need to clean up
-            self.bot.reply_cache.register(ctx, prompt)
+            self.bot.reply_cache.add(ctx, prompt)
 
             if sel == 'x':
                 await ctx.send(cancel_text)
@@ -171,7 +171,7 @@ class Characters(commands.Cog):
                                           cancel_text=cancel_text)
 
         if new_i is None:  # cancelled
-            self.bot.reply_cache.unregister(ctx)
+            self.bot.reply_cache.remove(ctx)
             return
 
         ret = await db.set_user(ctx.author.id, {'default': new_i})
@@ -183,12 +183,12 @@ class Characters(commands.Cog):
             raise errors.DataWriteError
 
         # no error, release from cache
-        self.bot.reply_cache.unregister(ctx)
+        self.bot.reply_cache.remove(ctx)
 
     @_main.error
     async def _main_error(self, ctx, error):
         # clean up orphaned prompts
-        self.bot.reply_cache.clean(ctx)
+        await self.bot.reply_cache.clean_up(ctx)
 
         msg = None
         cmds = None
@@ -229,7 +229,7 @@ class Characters(commands.Cog):
                                           cancel_text=cancel_text)
 
         if del_i is None:  # cancelled
-            self.bot.reply_cache.unregister(ctx)
+            self.bot.reply_cache.remove(ctx)
             return
 
         # remove char and handle default
@@ -249,12 +249,12 @@ class Characters(commands.Cog):
         else:
             raise errors.DataWriteError
 
-        self.bot.reply_cache.unregister(ctx)
+        self.bot.reply_cache.remove(ctx)
 
     @delete.error
     async def delete_error(self, ctx, error):
         # clean up orphaned prompts
-        self.bot.reply_cache.clean(ctx)
+        await self.bot.reply_cache.clean_up(ctx)
 
         msg = None
         cmds = None
@@ -310,7 +310,7 @@ class Characters(commands.Cog):
         i = await self.get_char_index(ctx, user, name, desc, cancel_text)
 
         if i is None:  # cancelled
-            self.bot.reply_cache.unregister(ctx)
+            self.bot.reply_cache.remove(ctx)
             return
 
         _name = user['chars'][i]['name']
@@ -325,7 +325,7 @@ class Characters(commands.Cog):
     @rename.error
     async def rename_error(self, ctx, error):
         # clean up orphaned prompts
-        self.bot.reply_cache.clean(ctx)
+        await self.bot.reply_cache.clean_up(ctx)
 
         msg = None
         cmds = None
@@ -357,7 +357,7 @@ class Characters(commands.Cog):
     async def cog_after_invoke(self, ctx):
         # unregister reply cache if successful
         if not ctx.command_failed:
-            self.bot.reply_cache.unregister(ctx)
+            self.bot.reply_cache.remove(ctx)
 
 
 def setup(bot):

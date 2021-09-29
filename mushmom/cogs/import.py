@@ -67,7 +67,7 @@ class Import(commands.Cog):
             prompt, sel = await chars_cog.select_char(ctx, user, text)
 
             # cache in case need to clean up
-            self.bot.reply_cache.register(ctx, prompt)
+            self.bot.reply_cache.add(ctx, prompt)
 
             if sel == 'x':
                 await ctx.send(f'**{name}** was not saved')
@@ -83,12 +83,12 @@ class Import(commands.Cog):
                 raise errors.DataWriteError
 
         # could have been cached in select_char
-        self.bot.reply_cache.unregister(ctx)
+        self.bot.reply_cache.remove(ctx)
 
     @_import.error
     async def _import_error(self, ctx, error):
         # clean up orphaned prompts
-        self.bot.reply_cache.clean(ctx)
+        await self.bot.reply_cache.clean_up(ctx)
 
         msg = None
         cmds = {
@@ -134,7 +134,7 @@ class Import(commands.Cog):
     async def cog_after_invoke(self, ctx):
         # unregister reply cache if successful
         if not ctx.command_failed:
-            self.bot.reply_cache.unregister(ctx)
+            self.bot.reply_cache.remove(ctx)
 
 
 def setup(bot):

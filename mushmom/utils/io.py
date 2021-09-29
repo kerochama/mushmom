@@ -2,9 +2,49 @@
 Functions related to sending messages or reactions
 
 """
+import discord
 import asyncio
+import time
 
 from mushmom import config
+
+
+class ReplyCache:
+    def __init__(self, seconds):
+        """
+        Maintains a cache of messages sent by bot in response to a command
+        so that they can be referenced/cleaned subsequently
+
+        :param seconds:
+        """
+        self.__ttl = seconds
+        self.__cache = {}
+        super().__init__()
+
+    def verify_cache_integrity(self):
+        current_time = time.monotonic()
+        to_remove = [k for (k, (v, t)) in self.__cache.items()
+                     if current_time > (t + self.__ttl)]
+        for k in to_remove:
+            del self.__cache[k]
+
+    def get(self, ctx):
+        return self.__cache.get(ctx.message.id, None)
+
+    def add(self, ctx, reply):
+        self.__cache.set(ctx.message.id, (reply, time.monotonic()))
+
+    def remove(self, ctx):
+        self.__cache.pop(ctx.message.id, None)
+
+    async def clean_up(self, ctx, delete=not config.core.debug):
+        reply = self.__cache.pop(ctx, None)
+
+        if reply and delete:
+            try:
+                await reply.delete()
+            except discord.HTTPException:
+                pass
 
 
 async def send_as_author(ctx, *args, **kwargs):
