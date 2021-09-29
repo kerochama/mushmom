@@ -25,8 +25,9 @@ async def send_as_author(ctx, *args, **kwargs):
     if not webhook:
         webhook = await ctx.channel.create_webhook(name=config.core.hook_name)
 
-    await webhook.send(*args, **kwargs, username=ctx.author.display_name,
-                       avatar_url=ctx.author.avatar_url)
+    return await webhook.send(*args, **kwargs,
+                              username=ctx.author.display_name,
+                              avatar_url=ctx.author.avatar_url)
 
 
 async def delayed_reaction(ctx, reaction,
