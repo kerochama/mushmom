@@ -49,7 +49,7 @@ class Meta(commands.Cog):
         """
         self.bot.unload_extension(f'cogs.{extension}')
         self.bot.load_extension(f'cogs.{extension}')
-        await ctx.send(f'Reloaded`cogs.{extension}`')
+        await ctx.send(f'Reloaded `cogs.{extension}`')
 
 
 def setup(bot):
