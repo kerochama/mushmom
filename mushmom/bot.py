@@ -13,9 +13,10 @@ load_dotenv()  # use env variables from .env
 
 initial_extensions = (
     'cogs.core',
+    'cogs.meta',
     'cogs.characters',
-    'cogs.emotes',
     'cogs.import',
+    'cogs.emotes',
     'cogs.sprite'
 )
 
