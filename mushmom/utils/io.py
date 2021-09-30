@@ -32,7 +32,7 @@ class ReplyCache:
         return self.__cache.get(ctx.message.id, None)
 
     def add(self, ctx, reply):
-        self.__cache.set(ctx.message.id, (reply, time.monotonic()))
+        self.__cache[ctx.message.id] = (reply, time.monotonic())
 
     def remove(self, ctx):
         self.__cache.pop(ctx.message.id, None)
