@@ -6,10 +6,19 @@ from collections import namedtuple
 from mushmom.mapleio import resources, api
 
 
+EquipType = namedtuple('EquipType', 'name category subcategory low high')  # pseudo class
+
+EQUIP_TYPES = [
+    EquipType('Weapon' if 'Weapon' in cat else d['subCategory'], cat, *d.values())
+    for cat, data in resources.EQUIP_RANGES.items()
+    for d in data
+]
+
+
 class Equip:
     def __init__(self, itemid, version, name="", type=None):
         self.itemid = itemid
-        self.type = type or equip_type(itemid)
+        self.type = type or Equip.get_equip_type(itemid)
         self.version = version
 
         # only make requests if needed
@@ -31,48 +40,32 @@ class Equip:
 
         return d
 
+    @classmethod
+    def get_equip_type(cls, itemid):
+        """
+        Gets the EquipType if any
+
+        :param itemid:
+        :return:
+        """
+        iterator = (x for x in EQUIP_TYPES if x.low <= itemid <= x.high)
+        itemtype = next(iterator, None)
+
+        if itemtype:
+            return itemtype.name
+
+    @classmethod
+    def valid_equip(cls, itemid):
+        """
+        Checks if id is in one of the valid equip ranges
+
+        :param itemid:
+        :return:
+        """
+        return cls.get_equip_type(itemid) is not None
+
     def __repr__(self):
         args = {k.strip('_'): v if isinstance(v, int) else '"{}"'.format(v.replace('"', '\\"'))
                 for k, v in self.__dict__.items() if v}
         return 'Equip({})'.format(', '.join(['{}={}'.format(k, v)
                                              for k, v in args.items()]))
-
-
-EquipType = namedtuple('EquipType', 'name category subcategory low high')  # pseudo class
-
-# parse equip_ranges
-_equip_ranges_json = importlib.resources.read_text(resources, 'equip_ranges.json')
-
-EQUIP_RANGES = list()
-
-for cat, subcats in json.loads(_equip_ranges_json).items():
-    for subcat_dict in subcats:
-        subcat, low, high = subcat_dict.values()
-        EQUIP_RANGES.append(
-            EquipType('Weapon' if 'Weapon' in cat else subcat,
-                      cat, subcat, low, high)
-        )
-
-
-def equip_type(itemid):
-    """
-    Gets the EquipType if any
-
-    :param itemid:
-    :return:
-    """
-    iterator = (x for x in EQUIP_RANGES if x.low <= itemid <= x.high)
-    itemtype = next(iterator, None)
-
-    if itemtype:
-        return itemtype.name
-
-
-def valid_equip(itemid):
-    """
-    Checks if id is in one of the valid equip ranges
-
-    :param itemid:
-    :return:
-    """
-    return equip_type(itemid) is not None

@@ -11,7 +11,7 @@ from io import BytesIO
 from mushmom import config
 from mushmom.utils import database as db
 from mushmom.utils import converters, errors, io
-from mushmom.mapleio import api, states
+from mushmom.mapleio import api, resources
 from mushmom.mapleio.character import Character
 
 
@@ -106,7 +106,7 @@ class Sprite(commands.Cog):
         embed.set_footer(text='[GMS v225]')
 
         # split emotions into 3 lists
-        emotions = [states.EMOTIONS[i::3] for i in range(3)]  # order not preserved
+        emotions = [resources.EMOTIONS[i::3] for i in range(3)]  # order not preserved
         embed.add_field(name='Emotions', value='\n'.join(emotions[0]))
         embed.add_field(name='\u200b', value='\n'.join(emotions[1]))
         embed.add_field(name='\u200b', value='\n'.join(emotions[2]))
@@ -124,8 +124,8 @@ class Sprite(commands.Cog):
         embed.set_author(name='Poses', icon_url=self.bot.user.avatar_url)
         embed.set_thumbnail(url=self.bot.get_emoji_url(config.emojis.mushdab))
         embed.set_footer(text='[GMS v225]')
-        embed.add_field(name='Pose', value='\n'.join(states.POSES.keys()))
-        embed.add_field(name='Value', value='\n'.join(states.POSES.values()))
+        embed.add_field(name='Pose', value='\n'.join(resources.POSES.keys()))
+        embed.add_field(name='Value', value='\n'.join(resources.POSES.values()))
 
         await ctx.send(embed=embed)
 

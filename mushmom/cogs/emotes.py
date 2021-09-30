@@ -11,7 +11,7 @@ from io import BytesIO
 from mushmom import config
 from mushmom.utils import database as db
 from mushmom.utils import converters, errors, io
-from mushmom.mapleio import api, states
+from mushmom.mapleio import api, resources
 from mushmom.mapleio.character import Character
 
 
@@ -95,7 +95,7 @@ class Emotes(commands.Cog):
         embed.set_thumbnail(url=thumbnail)
 
         # split emotions into 3 lists
-        emotes = [states.EMOTIONS[i::3] for i in range(3)]  # order not preserved
+        emotes = [resources.EMOTIONS[i::3] for i in range(3)]  # order not preserved
         embed.add_field(name='Emotes', value='\n'.join(emotes[0]))
         embed.add_field(name='\u200b', value='\n'.join(emotes[1]))
         embed.add_field(name='\u200b', value='\n'.join(emotes[2]))

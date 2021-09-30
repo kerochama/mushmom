@@ -4,7 +4,7 @@ from urllib import parse
 from aenum import Enum, IntEnum, auto, extend_enum
 
 from mushmom import config
-from mushmom.mapleio.equip import Equip, equip_type, valid_equip
+from mushmom.mapleio.equip import Equip
 from mushmom.mapleio import resources
 
 
@@ -97,7 +97,7 @@ class Character:
 
             char.equips = [
                 Equip(item.get('itemId', 0), item.get('version', char.version))
-                for item in items if valid_equip(item.get('itemId', 0))
+                for item in items if Equip.valid_equip(item.get('itemId', 0))
             ]
 
         return char
@@ -190,7 +190,7 @@ class Character:
         }
 
         for equip in self.equips:
-            subcat = equip_type(equip.itemid)
+            subcat = Equip.get_equip_type(equip.itemid)
             char['selectedItems'][subcat] = {
                 "id": equip.itemid,
                 "version": equip.version,
@@ -231,12 +231,9 @@ class Skin(IntEnum):
 
 
 # populate Skin enum
-_skins_json = importlib.resources.read_text(resources, 'skins.json')
-_skins_dict = {k.upper().replace(' ', '_'): v  # Pale Pink -> PALE_PINK
-               for k, v in json.loads(_skins_json).items()}
-
-for k, v in _skins_dict.items():
-    extend_enum(Skin, k, v)
+for k, v in resources.SKINS.items():
+    key = k.upper().replace(' ', '_')  # Pale Pink -> PALE_PINK
+    extend_enum(Skin, key, v)
 
 
 class Ears(Enum):

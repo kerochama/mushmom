@@ -9,7 +9,8 @@ from datetime import datetime
 
 from mushmom import config
 from mushmom.utils import checks, io
-from mushmom.mapleio import states
+from mushmom.mapleio import resources
+
 
 load_dotenv()  # use env variables from .env
 
@@ -58,7 +59,7 @@ class Mushmom(commands.Bot):
             args = message.content[len(ctx.prefix):].split(' ')
             cmd = args.pop(0)
 
-            if cmd in states.EMOTIONS:  # manually call as emote command
+            if cmd in resources.EMOTIONS:  # manually call as emote command
                 emotes_cog = self.get_cog('Emotes')
 
                 if emotes_cog:  # emote cog exists
