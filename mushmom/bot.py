@@ -108,7 +108,8 @@ class Mushmom(commands.Bot):
         try:  # search for error
             specs = ref.ERRORS[cog][cmd][err]
             msg, ref_cmds = specs.values()
-        except KeyError as e:  # not defined
+        except KeyError:  # not defined
+            e = error
             print(f'Ignoring exception in command {ctx.command}:', file=sys.stderr)
             traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
             return
