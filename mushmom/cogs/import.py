@@ -20,9 +20,15 @@ class Import(commands.Cog):
     @commands.command(name='import', aliases=['add'])
     async def _import(self, ctx, name: converters.ImportNameConverter,
                       url: Optional[converters.MapleIOURLConverter] = None):
+        # Must supply source data
+        if not (url or ctx.message.attachments):
+            raise commands.MissingRequiredArgument(
+                inspect.Parameter('url', inspect.Parameter.POSITIONAL_ONLY)
+            )
+
         # parse char data
         if url:  # maplestory.io char api
-            char = Character.from_url(url)
+            parser, src = Character.from_url, url
         elif ctx.message.attachments:  # json output of sim and studio
             json_file = next((att for att in ctx.message.attachments
                               if att.filename[-5:] == '.json'), None)
@@ -33,16 +39,16 @@ class Import(commands.Cog):
             # get json
             async with self.bot.session.get(json_file.url) as r:
                 if r.status == 200:
-                    data = await r.json()
+                    data = await r.text()  # handle json parsing in char parser
                 else:
                     raise errors.DiscordIOError
 
-            char = Character.from_json(data)
-        else:
-            # doesnt matter which param.  Handled in error message
-            raise commands.MissingRequiredArgument(
-                inspect.Parameter('url', inspect.Parameter.POSITIONAL_ONLY)
-            )
+            parser, src = Character.from_json, data
+
+        try:
+            char = parser(src)
+        except Exception:
+            raise errors.CharacterParseError
 
         char.name = name
 

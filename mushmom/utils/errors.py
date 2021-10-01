@@ -38,6 +38,11 @@ class UnexpectedFileTypeError(MushmomError):
     pass
 
 
+class CharacterParseError(MushmomError):
+    """Error when parsing source data"""
+    pass
+
+
 class DiscordIOError(MushmomError):
     """Error reading attachments from Discord"""
     pass
