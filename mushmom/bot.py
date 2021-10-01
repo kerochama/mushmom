@@ -1,15 +1,16 @@
 import discord
 import os
+import sys
 import aiohttp
 import warnings
+import traceback
 
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
-from datetime import datetime
 
-from mushmom import config
-from mushmom.utils import checks, io
+from mushmom.utils import checks, io, errors
 from mushmom.mapleio import resources
+from mushmom.cogs import ref
 
 
 load_dotenv()  # use env variables from .env
@@ -17,6 +18,7 @@ load_dotenv()  # use env variables from .env
 initial_extensions = (
     'cogs.core',
     'cogs.meta',
+    'cogs.help',
     'cogs.characters',
     'cogs.import',
     'cogs.emotes',
@@ -24,9 +26,13 @@ initial_extensions = (
 )
 
 
+def _prefix_callable(bot, msg):
+    return ['mush ', '!m ']
+
+
 class Mushmom(commands.Bot):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(command_prefix=_prefix_callable, *args, **kwargs)
         self.session = None  # set in on_ready
         self.reply_cache = io.ReplyCache(seconds=300)
 
@@ -59,20 +65,63 @@ class Mushmom(commands.Bot):
             args = message.content[len(ctx.prefix):].split(' ')
             cmd = args.pop(0)
 
-            if cmd in resources.EMOTIONS:  # manually call as emote command
-                emotes_cog = self.get_cog('Emotes')
+            # manually try to call as emote command
+            if cmd not in resources.EMOTIONS:
+                return
 
-                if emotes_cog:  # emote cog exists
-                    if args:  # handle TooManyArguments manually
-                        error = commands.TooManyArguments()
-                        await emotes_cog.emote_error(ctx, error)
-                    else:
-                        try:
-                            await emotes_cog.emote(ctx, cmd)
-                        except commands.CommandError as e:
-                            await emotes_cog.emote_error(ctx, e)
+            command = self.get_command('emote')
+            if not command:  # not loaded
+                return
+            else:
+                ctx.command = command
+
+            if args:  # handle TooManyArguments manually
+                error = commands.TooManyArguments()
+                await self.on_command_error(ctx, error)
+            else:
+                try:
+                    await ctx.invoke(command, emote=cmd)
+                except commands.CommandError as error:
+                    await self.on_command_error(ctx, error)
         else:
             await self.process_commands(message)
+
+    async def on_command_error(self, ctx, error):
+        """
+        Overwrite default to always run. Searches for error in cogs.ref.ERRORS,
+        which is a nested dict
+
+        :param ctx:
+        :param error:
+        :return:
+        """
+        if ctx in self.reply_cache:  # already sent message
+            self.reply_cache.remove(ctx)
+            return
+
+        cmd = ctx.command.qualified_name
+        cog = ctx.cog.qualified_name.lower()
+        err_ns = ('errors' if isinstance(error, errors.MushmomError)
+                  else 'commands')
+        err = f'{err_ns}.{error.__class__.__name__}'
+
+        try:  # search for error
+            specs = ref.ERRORS[cog][cmd][err]
+            msg, ref_cmds = specs.values()
+        except KeyError as e:  # not defined
+            print(f'Ignoring exception in command {ctx.command}:', file=sys.stderr)
+            traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
+            return
+
+        # format ref_cmds
+        help_cog = self.get_cog('Help')
+        if help_cog:
+            signatures = help_cog.get_signatures(ctx, ref_cmds or [])
+            cmds = {'Commands': '\n'.join(signatures)} if signatures else None
+        else:  # skip cmd help
+            cmds = None
+
+        await errors.send_error(ctx, msg, fields=cmds)
 
     def get_emoji_url(self, emoji_id):
         """
@@ -104,5 +153,5 @@ class Mushmom(commands.Bot):
 
 
 if __name__ == "__main__":
-    bot = Mushmom(command_prefix=['mush ', '!m '])
+    bot = Mushmom()
     bot.run(os.getenv('TOKEN'))

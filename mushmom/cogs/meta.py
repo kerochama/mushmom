@@ -6,6 +6,8 @@ import discord
 
 from discord.ext import commands
 
+from mushmom import config
+
 
 class Meta(commands.Cog):
     def __init__(self, bot):
@@ -50,6 +52,13 @@ class Meta(commands.Cog):
         self.bot.unload_extension(f'cogs.{extension}')
         self.bot.load_extension(f'cogs.{extension}')
         await ctx.send(f'Reloaded `cogs.{extension}`')
+
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    async def quit(self, ctx):
+        name = config.core.bot_name
+        await ctx.message.reply(f'\u2620 {name} has been killed! \u2620')
+        await self.bot.logout()
 
 
 def setup(bot):
