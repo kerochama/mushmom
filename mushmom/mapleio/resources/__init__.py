@@ -2,23 +2,20 @@
 Various json resources from maplestory.io
 
 """
-import os
 import json
 
 from importlib import resources
 
 
-# Defined only to resolve references (pycharm inspection)
-EMOTIONS = None
-EQUIP_RANGES = None
-POSES = None
-SKINS = None
+# load all json resources
+with resources.open_binary(__package__, 'emotions.json') as fp:
+    EMOTIONS = json.load(fp)
 
-# load all json files
-for f in resources.contents(__package__):
-    name, ext = os.path.splitext(f)
+with resources.open_binary(__package__, 'equip_ranges.json') as fp:
+    EQUIP_RANGES = json.load(fp)
 
-    if ext == '.json':
-        with resources.open_binary(__package__, f) as fp:
-            globals()[name.upper()] = json.load(fp)
+with resources.open_binary(__package__, 'poses.json') as fp:
+    POSES = json.load(fp)
 
+with resources.open_binary(__package__, 'skins.json') as fp:
+    SKINS = json.load(fp)
