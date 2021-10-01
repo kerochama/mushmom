@@ -1,0 +1,88 @@
+# contains error messages used in cogs
+
+characters:
+  chars:
+    commands.DataNotFound:  # note this is actually user not being found
+      msg: "Welcome! You have no chars. To import one use:\n\u200b"
+      ref_cmds: [import]
+
+  set main:
+    errors.NoMoreItems: &nochars
+      msg: "No registered characters. To import one use:\n\u200b"
+      ref_cmds: [import]
+    errors.DataNotFound: &missingchar
+      msg: "Could not find character. To see your characters use:\n\u200b"
+      ref_cmds: [chars]
+    errors.TimeoutError: &nosel
+      msg: No character was selected
+      ref_cmds: null
+    errors.DataWriteError: &dberror
+      msg: Problem saving settings. Try again later
+      ref_cmds: null
+
+  delete:
+    errors.NoMoreItems:
+      msg: You have no characters to delete
+      ref_cmds: null
+    errors.DataNotFound:
+      <<: *missingchar
+    errors.TimeoutError:
+      <<: *nosel
+    errors.DataWriteError:
+      <<: *nosel
+
+  rename:
+    commands.TooManyArguments:
+      msg: Did not understand or could not find that character
+      ref_cmds: null
+    commands.MissingRequiredArgument:
+      msg: You need to supply the new name
+      ref_cmds: null
+    errors.NoMoreItems:
+      <<: *nochars
+    errors.TimeoutError:
+      <<: *nosel
+    errors.DataWriteError:
+      <<: *dberror
+
+emotes:
+  emote:
+    commands.TooManyArguments:
+      msg: "Emote was not found. See:\n\u200b"
+      ref_cmds: [emotes]
+    errors.DataNotFound:
+      <<: *nochars
+    errors.MapleIOError: &apierror
+      msg: Could not get maple data. Try again later
+      ref_cmds: null
+
+import:
+  import:
+    commands.TooManyArguments:
+      msg: "Did not understand. Try:\n\u200b"
+      ref_cmds: [import]
+    commands.BadArgument:
+      msg: "Supply a character name to start mushing! Try:\n\u200b"
+      ref_cmds: [import]
+    # commands.MissingArgument handled in command.error
+    errors.UnexpectedFileTypeError:
+      msg: Only JSON files are accepted
+      ref_cmds: null
+    errors.DiscordIOError:
+      msg: Error trying to read attached JSON file. Try again later
+      ref_cmds: null
+    errors.MissingCogError:
+      msg: Bot is being serviced right now. Try again later
+      ref_cmds: null
+    errors.DataWriteError:
+      <<: *dberror
+
+sprite:
+  sprite:
+    commands.TooManyArguments:
+      msg: "Emotion/pose not found. See:\n\u200b"
+      ref_cmds: [sprite emotions, sprite poses]
+    errors.DataNotFound:
+      <<: *nochars
+    errors.MapleIOError:
+      <<: *apierror

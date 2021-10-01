@@ -58,7 +58,7 @@ class Import(commands.Cog):
             chars_cog = self.bot.get_cog('Characters')
 
             if not chars_cog:
-                raise commands.ExtensionNotLoaded('Characters')
+                raise errors.MissingCogError
 
             text = (f'{config.core.bot_name} can only save '
                     f'{config.core.max_chars} character'
@@ -90,51 +90,36 @@ class Import(commands.Cog):
         # clean up orphaned prompts
         await self.bot.reply_cache.clean_up(ctx)
 
-        msg = None
-        cmds = {
-            'Commands': '\n'.join([
-                '`mush import [name] [url: maplestory.io]`',
-                '`mush import [name]` with a JSON file attached'
-            ])
-        }
+        if not isinstance(error, commands.MissingRequiredArgument):
+            return  # other handles handled normally
 
-        if isinstance(error, commands.TooManyArguments):
-            msg = (f'{config.core.bot_name} did not understand. \u200b '
-                   'Try:\n\u200b')
-        elif isinstance(error, commands.BadArgument):
-            msg = ('You must supply a character name to start mushing!'
-                   ' \u200b Try:\n\u200b')
-        elif isinstance(error, commands.MissingRequiredArgument):
-            if error.param.name == 'name':
-                msg = ('You must supply a character name to start mushing!'
-                       ' \u200b Try:\n\u200b')
-            elif error.param.name == 'url':
-                msg = 'Missing source data. \u200b Try:\n\u200b'
-        else:
+        if error.param.name == 'name':
+            msg = 'Supply a character name to start mushing! Try:\n\u200b'
+        elif error.param.name == 'url':
+            msg = 'Missing source data. Try:\n\u200b'
+
+        ref_cmds = ['import']
+
+        # format ref_cmds
+        help_cog = self.bot.get_cog('Help')
+        if help_cog:
+            signatures = help_cog.get_signatures(ctx, ref_cmds or [])
+            cmds = {'Commands': '\n'.join(signatures)} if signatures else None
+        else:  # skip cmd help
             cmds = None
 
-            if isinstance(error, errors.UnexpectedFileTypeError):
-                msg = f'{config.core.bot_name} only accepts JSON files'
-            elif isinstance(error, errors.TimeoutError):
-                msg = 'No character was selected'
-            elif isinstance(error, errors.DiscordIOError):
-                msg = (f'Error trying to read attached JSON file.'
-                       '\u200b Try again later')
-            elif isinstance(error, commands.ExtensionNotLoaded):
-                msg = (f'{config.core.bot_name} is being serviced right now.'
-                       ' \u200b Try again later')
-            elif isinstance(error, errors.DataWriteError):
-                msg = 'Problem saving character. \u200b Try again later'
-
-        await errors.send(ctx, msg, fields=cmds)
-
-        if msg is None:
-            raise error
+        err = await errors.send(ctx, msg, fields=cmds)
+        self.bot.reply_cache.add(ctx, err)  # stop default error handler
 
     async def cog_after_invoke(self, ctx):
         # unregister reply cache if successful
         if not ctx.command_failed:
             self.bot.reply_cache.remove(ctx)
+
+    async def cog_command_error(self, ctx, error):
+        # clean up stray replies
+        if not ctx.command.has_error_handler():
+            await self.bot.reply_cache.clean_up(ctx)
 
 
 def setup(bot):

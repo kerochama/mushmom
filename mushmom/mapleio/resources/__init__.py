@@ -6,7 +6,6 @@ import os
 import json
 
 from importlib import resources
-from collections import namedtuple
 
 
 # Defined only to resolve references (pycharm inspection)

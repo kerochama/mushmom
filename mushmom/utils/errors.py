@@ -8,35 +8,47 @@ from discord.ext import commands
 from mushmom import config
 
 
-class DataNotFound(commands.CommandError):
+class MushmomError(commands.CommandError):
     pass
 
 
-class DataWriteError(commands.CommandError):
+class DataNotFound(MushmomError):
+    """Not found in database"""
     pass
 
 
-class MapleIOError(commands.CommandError):
+class DataWriteError(MushmomError):
+    """Database error when updating"""
     pass
 
 
-class UnexpectedFileTypeError(commands.CommandError):
+class MapleIOError(MushmomError):
+    """General MapleIO error"""
     pass
 
 
-class DiscordIOError(commands.CommandError):
+class MissingCogError(MushmomError):
+    """commands.ExtensionNotLoaded looks like commands.CommandInvokeError
+
+    Using this instead"""
     pass
 
 
-class TimeoutError(commands.CommandError):
+class UnexpectedFileTypeError(MushmomError):
     pass
 
 
-class NoMoreItems(commands.CommandError):
-    """
-    Command error version of discord.NoMoreItems
+class DiscordIOError(MushmomError):
+    """Error reading attachments from Discord"""
+    pass
 
-    """
+
+class TimeoutError(MushmomError):
+    pass
+
+
+class NoMoreItems(MushmomError):
+    """Command error version of discord.NoMoreItems"""
     pass
 
 
@@ -68,11 +80,13 @@ async def send_error(ctx, text=None, delete_message=not config.core.debug,
         for name, value in fields.items():
             embed.add_field(name=name, value=value)
 
-    await ctx.send(embed=embed, delete_after=delay if delete_message else None)
+    error = await ctx.send(embed=embed, delete_after=delay if delete_message else None)
 
-    # delete original message
+    # delete original message after successful send
     if delete_message:
         await ctx.message.delete(delay=delay)
+
+    return error
 
 
 send = send_error  # alias

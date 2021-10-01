@@ -37,6 +37,12 @@ class ReplyCache:
     def remove(self, ctx):
         self.__cache.pop(ctx.message.id, None)
 
+    def contains(self, ctx):
+        return ctx.message.id in self.__cache
+
+    def __contains__(self, ctx):
+        return self.contains(ctx)
+
     async def clean_up(self, ctx, delete=not config.core.debug):
         reply = self.__cache.pop(ctx, None)
 

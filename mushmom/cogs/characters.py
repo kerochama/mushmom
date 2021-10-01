@@ -136,25 +136,6 @@ class Characters(commands.Cog):
         user = await db.get_user(ctx.author.id)
         await self.list_chars(ctx, user, 'Your mushable characters\n\u200b')
 
-    @chars.error
-    async def chars_error(self, ctx, error):
-        msg = None
-
-        if isinstance(error, errors.DataNotFound):
-            msg = (f'Welcome! You have no chars. \u200b To import '
-                   ' one use:\n\u200b')
-            cmds = {'Commands': '\n'.join([
-                '`mush add [name] [url: maplestory.io]`',
-                '`mush add [name]` with a JSON file attached',
-                '`mush import [name] [url: maplestory.io]`',
-                '`mush import [name]` with a JSON file attached',
-            ])}
-
-        await errors.send_error(ctx, msg, fields=cmds)
-
-        if msg is None:
-            raise error
-
     @commands.group(alias='select')
     async def set(self, ctx):
         pass
@@ -184,37 +165,6 @@ class Characters(commands.Cog):
 
         # no error, release from cache
         self.bot.reply_cache.remove(ctx)
-
-    @_main.error
-    async def _main_error(self, ctx, error):
-        # clean up orphaned prompts
-        await self.bot.reply_cache.clean_up(ctx)
-
-        msg = None
-        cmds = None
-
-        if isinstance(error, errors.NoMoreItems):
-            msg = (f'No registered characters. \u200b To import '
-                   ' one use:\n\u200b')
-            cmds = {'Commands': '\n'.join([
-                '`mush add [name] [url: maplestory.io]`',
-                '`mush add [name]` with a JSON file attached',
-                '`mush import [name] [url: maplestory.io]`',
-                '`mush import [name]` with a JSON file attached',
-            ])}
-        elif isinstance(error, errors.DataNotFound):
-            msg = (f'Could not find **{ctx.args[-1]}**. \u200b To see your'
-                   ' characters use:\n\u200b')
-            cmds = {'Commands': '`mush chars`'}
-        elif isinstance(error, errors.DataWriteError):
-            msg = 'Problem saving settings. \u200b Try again later'
-        elif isinstance(error, errors.TimeoutError):
-            msg = 'No character was selected'
-
-        await errors.send(ctx, msg, fields=cmds)
-
-        if msg is None:
-            raise error
 
     @commands.command()
     async def delete(self, ctx, name: Optional[str] = None):
@@ -250,30 +200,6 @@ class Characters(commands.Cog):
             raise errors.DataWriteError
 
         self.bot.reply_cache.remove(ctx)
-
-    @delete.error
-    async def delete_error(self, ctx, error):
-        # clean up orphaned prompts
-        await self.bot.reply_cache.clean_up(ctx)
-
-        msg = None
-        cmds = None
-
-        if isinstance(error, errors.NoMoreItems):
-            msg = 'You have no characters to delete'
-        elif isinstance(error, errors.DataNotFound):
-            msg = (f'Could not find **{ctx.args[-1]}**. \u200b To see your'
-                   ' characters use:\n\u200b')
-            cmds = {'Commands': '`mush chars`'}
-        elif isinstance(error, errors.TimeoutError):
-            msg = 'No character was selected'
-        elif isinstance(error, errors.DataWriteError):
-            msg = 'Problem saving settings. \u200b Try again later'
-
-        await errors.send_error(ctx, msg, fields=cmds)
-
-        if msg is None:
-            raise error
 
     @commands.command(ignore_extra=False)
     async def rename(self, ctx,
@@ -322,42 +248,15 @@ class Characters(commands.Cog):
         else:
             raise errors.DataWriteError
 
-    @rename.error
-    async def rename_error(self, ctx, error):
-        # clean up orphaned prompts
-        await self.bot.reply_cache.clean_up(ctx)
-
-        msg = None
-        cmds = None
-
-        if isinstance(error, commands.TooManyArguments):
-            msg = (f'{config.core.bot_name} did not understand or could not '
-                   'find that character')
-        elif isinstance(error, commands.MissingRequiredArgument):
-            msg = 'You must supply a new name'
-        elif isinstance(error, errors.NoMoreItems):
-            msg = (f'No registered characters. \u200b To import '
-                   ' one use:\n\u200b')
-            cmds = {'Commands': '\n'.join([
-                '`mush add [name] [url: maplestory.io]`',
-                '`mush add [name]` with a JSON file attached',
-                '`mush import [name] [url: maplestory.io]`',
-                '`mush import [name]` with a JSON file attached',
-            ])}
-        elif isinstance(error, errors.TimeoutError):
-            msg = 'No character was selected'
-        elif isinstance(error, errors.DataWriteError):
-            msg = 'Problem saving settings. \u200b Try again later'
-
-        await errors.send_error(ctx, msg, fields=cmds)
-
-        if msg is None:
-            raise error
-
     async def cog_after_invoke(self, ctx):
         # unregister reply cache if successful
         if not ctx.command_failed:
             self.bot.reply_cache.remove(ctx)
+
+    async def cog_command_error(self, ctx, error):
+        # clean up stray replies
+        if not ctx.command.has_error_handler():
+            await self.bot.reply_cache.clean_up(ctx)
 
 
 def setup(bot):
