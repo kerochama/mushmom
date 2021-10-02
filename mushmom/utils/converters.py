@@ -4,9 +4,9 @@ Contains converters for command input validation
 """
 from discord.ext import commands
 
-from mushmom import config
-from mushmom.mapleio import resources
-from mushmom.utils import database as db
+from .. import config
+from . import database as db
+from ..mapleio import resources
 
 
 class EmotionConverter(commands.Converter):

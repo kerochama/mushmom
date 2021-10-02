@@ -10,7 +10,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 from datetime import datetime
 
-from mushmom import config
+from .. import config
 
 load_dotenv()  # use env variables from .env
 

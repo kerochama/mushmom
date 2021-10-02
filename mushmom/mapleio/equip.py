@@ -3,7 +3,7 @@ import importlib.resources
 
 from collections import namedtuple
 
-from mushmom.mapleio import resources, api
+from . import resources, api
 
 
 EquipType = namedtuple('EquipType', 'name category subcategory low high')  # pseudo class

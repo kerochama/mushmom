@@ -7,10 +7,10 @@ import inspect
 from discord.ext import commands
 from typing import Optional
 
-from mushmom import config
-from mushmom.utils import database as db
-from mushmom.utils import converters, errors
-from mushmom.mapleio.character import Character
+from .. import config
+from ..utils import database as db
+from ..utils import converters, errors
+from ..mapleio.character import Character
 
 
 class Import(commands.Cog):

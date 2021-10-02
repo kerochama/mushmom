@@ -6,7 +6,7 @@ import discord
 import asyncio
 import time
 
-from mushmom import config
+from .. import config
 
 
 class ReplyCache:

@@ -3,9 +3,9 @@ import importlib.resources
 from urllib import parse
 from aenum import Enum, IntEnum, auto, extend_enum
 
-from mushmom import config
-from mushmom.mapleio.equip import Equip
-from mushmom.mapleio import resources
+from .. import config
+from . import resources
+from .equip import Equip
 
 
 class Character:

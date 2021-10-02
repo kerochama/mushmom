@@ -8,11 +8,11 @@ from discord.ext import commands
 from typing import Optional
 from io import BytesIO
 
-from mushmom import config
-from mushmom.utils import database as db
-from mushmom.utils import converters, errors, io
-from mushmom.mapleio import api, resources
-from mushmom.mapleio.character import Character
+from .. import config
+from ..utils import database as db
+from ..utils import converters, errors, io
+from ..mapleio import api, resources
+from ..mapleio.character import Character
 
 
 class Sprite(commands.Cog):

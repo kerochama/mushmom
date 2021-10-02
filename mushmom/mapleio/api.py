@@ -4,7 +4,7 @@ import functools
 from PIL import Image
 from io import BytesIO
 
-from mushmom import config
+from .. import config
 
 
 def with_session(coro):

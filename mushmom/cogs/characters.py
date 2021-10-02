@@ -9,9 +9,9 @@ import inspect
 from discord.ext import commands
 from typing import Optional
 
-from mushmom import config
-from mushmom.utils import database as db
-from mushmom.utils import errors, converters
+from .. import config
+from ..utils import database as db
+from ..utils import errors, converters
 
 
 class Characters(commands.Cog):

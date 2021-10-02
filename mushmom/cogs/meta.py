@@ -6,7 +6,7 @@ import discord
 
 from discord.ext import commands
 
-from mushmom import config
+from .. import config
 
 
 class Meta(commands.Cog):
