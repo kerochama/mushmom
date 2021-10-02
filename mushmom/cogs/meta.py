@@ -23,7 +23,8 @@ class Meta(commands.Cog):
         :param extension:
         :return:
         """
-        self.bot.load_extension(f'cogs.{extension}')
+        print(extension)
+        self.bot.load_extension(f'{__package__}.{extension}')
         await ctx.send(f'Loaded `cogs.{extension}`')
 
     @commands.command(hidden=True)
@@ -36,7 +37,7 @@ class Meta(commands.Cog):
         :param extension:
         :return:
         """
-        self.bot.unload_extension(f'cogs.{extension}')
+        self.bot.unload_extension(f'{__package__}.{extension}')
         await ctx.send(f'Unloaded `cogs.{extension}`')
 
     @commands.command(hidden=True)
@@ -49,8 +50,8 @@ class Meta(commands.Cog):
         :param extension:
         :return:
         """
-        self.bot.unload_extension(f'cogs.{extension}')
-        self.bot.load_extension(f'cogs.{extension}')
+        self.bot.unload_extension(f'{__package__}.{extension}')
+        self.bot.load_extension(f'{__package__}.{extension}')
         await ctx.send(f'Reloaded `cogs.{extension}`')
 
     @commands.command(hidden=True)
