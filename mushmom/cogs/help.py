@@ -12,35 +12,47 @@ class Help(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def get_command_base(self, ctx, cmd):
-        prefix = self.bot.command_prefix(self.bot, ctx.message)[0]
-        return f'`{prefix}{cmd.qualified_name}'
+    def main_prefix(self, ctx):
+        # first prefix
+        return self.bot.command_prefix(self.bot, ctx.message)[0]
 
-    def get_signature(self, ctx, cmd, aliases=False):
+    def get_signatures(self, ctx, cmds, aliases=False):
         """
-        Build full signature
-
-        :param ctx:
-        :param cmd:
-        :return:
-        """
-        prefix = ''
-        return (f'`{prefix}{cmd.qualified_name}'
-                f'{" " + cmd.signature if cmd.signature else ""}`')
-
-    def get_signatures(self, ctx,
-                       cmds: (Iterable[Union[commands.Command, str]])):
-        """
-        Get all signatures from command list
+        Build full signatures
 
         :param ctx:
         :param cmds:
-        :return: list of signatures
+        :param aliases:
+        :return:
         """
-        if cmds and isinstance(cmds[0], str):
-            cmds = list(filter(lambda x: x,  # throw away not found
-                               [self.bot.get_command(c) for c in cmds]))
-        return [self.get_signature(ctx, c) for c in cmds]
+        if isinstance(cmds, str):
+            cmds = [self.bot.get_command(cmds)]
+        elif isinstance(cmds, commands.Command):
+            cmds = [cmds]
+        elif all(isinstance(c, str) for c in cmds):
+            cmds = [self.bot.get_command(c) for c in cmds]
+
+        prefix = self.main_prefix(ctx)
+        cmds = list(filter(lambda x: x, cmds))
+        sigs = []
+
+        for cmd in cmds:
+            try:
+                cog = cmd.cog.qualified_name.lower()
+                _sigs = ref.HELP[cog][cmd.qualified_name]['sigs']
+            except KeyError:
+                _sigs = [cmd.signature]
+
+            _cmds = [cmd.qualified_name]
+
+            if aliases:
+                _cmds += [' '.join(_cmds[0].split(' ')[:-1] + [alias])
+                          for alias in cmd.aliases]
+
+            sigs += [f'{prefix}{c}{" " + sig if sig else ""}'
+                     for c in _cmds for sig in _sigs]
+
+        return sigs
 
 
 def setup(bot):
