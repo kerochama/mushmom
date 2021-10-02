@@ -115,7 +115,8 @@ class Mushmom(commands.Bot):
         # format ref_cmds
         help_cog = self.get_cog('Help')
         if help_cog:
-            signatures = help_cog.get_signatures(ctx, ref_cmds or [])
+            signatures = help_cog.get_signatures(ctx, ref_cmds or [],
+                                                 aliases=True)
             cmds = {'Commands': '\n'.join(signatures)} if signatures else None
         else:  # skip cmd help
             cmds = None

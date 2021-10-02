@@ -49,7 +49,7 @@ class Help(commands.Cog):
                 _cmds += [' '.join(_cmds[0].split(' ')[:-1] + [alias])
                           for alias in cmd.aliases]
 
-            sigs += [f'{prefix}{c}{" " + sig if sig else ""}'
+            sigs += [f'`{prefix}{c}{" " + sig if sig else ""}`'
                      for c in _cmds for sig in _sigs]
 
         return sigs

@@ -105,12 +105,10 @@ class Import(commands.Cog):
         elif error.param.name == 'url':
             msg = 'Missing source data. Try:\n\u200b'
 
-        ref_cmds = ['import']
-
         # format ref_cmds
         help_cog = self.bot.get_cog('Help')
         if help_cog:
-            signatures = help_cog.get_signatures(ctx, ref_cmds or [])
+            signatures = help_cog.get_signatures(ctx, 'import', aliases=True)
             cmds = {'Commands': '\n'.join(signatures)} if signatures else None
         else:  # skip cmd help
             cmds = None
