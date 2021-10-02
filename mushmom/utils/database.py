@@ -97,3 +97,6 @@ class Database:
 
             if user_data['chars']:
                 return user_data['chars'][i]
+
+    def close(self):  # not coroutine
+        self.client.close()
