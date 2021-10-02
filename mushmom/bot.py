@@ -5,8 +5,9 @@ import warnings
 import traceback
 
 from discord.ext import commands, tasks
+from motor.motor_asyncio import AsyncIOMotorClient
 
-from .utils import checks, io, errors
+from .utils import checks, io, errors, database as db
 from .mapleio import resources
 from .cogs import ref
 
@@ -27,10 +28,11 @@ def _prefix_callable(bot, msg):
 
 
 class Mushmom(commands.Bot):
-    def __init__(self, *args, **kwargs):
-        super().__init__(command_prefix=_prefix_callable, *args, **kwargs)
+    def __init__(self, db_client: AsyncIOMotorClient):
+        super().__init__(command_prefix=_prefix_callable)
         self.session = None  # set in on_ready
         self.reply_cache = io.ReplyCache(seconds=300)
+        self.db = db.Database(db_client)
 
         # add global checks
         self.add_check(checks.not_bot)

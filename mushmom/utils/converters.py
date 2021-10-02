@@ -5,7 +5,6 @@ Contains converters for command input validation
 from discord.ext import commands
 
 from .. import config
-from . import database as db
 from ..mapleio import resources
 
 
@@ -71,7 +70,7 @@ class CharNameConverter(commands.Converter):
 
     """
     async def convert(self, ctx, arg):
-        user = await db.get_user(ctx.author.id)
+        user = await ctx.bot.db.get_user(ctx.author.id)
 
         if user and arg in [x.name for x in user['chars']]:
             return arg

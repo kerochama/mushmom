@@ -10,7 +10,6 @@ from discord.ext import commands
 from typing import Optional
 
 from .. import config
-from ..utils import database as db
 from ..utils import errors, converters
 
 
@@ -133,7 +132,7 @@ class Characters(commands.Cog):
 
     @commands.command()
     async def chars(self, ctx):
-        user = await db.get_user(ctx.author.id)
+        user = await self.bot.db.get_user(ctx.author.id)
         await self.list_chars(ctx, user, 'Your mushable characters\n\u200b')
 
     @commands.group(alias='select')
@@ -142,7 +141,7 @@ class Characters(commands.Cog):
 
     @set.command(name='main', aliases=['default'])
     async def _main(self, ctx, name: Optional[str] = None):
-        user = await db.get_user(ctx.author.id)
+        user = await self.bot.db.get_user(ctx.author.id)
 
         if not user or not user['chars']:  # no characters
             raise errors.NoMoreItems
@@ -155,7 +154,7 @@ class Characters(commands.Cog):
             self.bot.reply_cache.remove(ctx)
             return
 
-        ret = await db.set_user(ctx.author.id, {'default': new_i})
+        ret = await self.bot.db.set_user(ctx.author.id, {'default': new_i})
 
         if ret.acknowledged:
             name = user['chars'][new_i]['name']
@@ -168,7 +167,7 @@ class Characters(commands.Cog):
 
     @commands.command()
     async def delete(self, ctx, name: Optional[str] = None):
-        user = await db.get_user(ctx.author.id)
+        user = await self.bot.db.get_user(ctx.author.id)
 
         if not user or not user['chars']:
             raise errors.NoMoreItems
@@ -191,8 +190,8 @@ class Characters(commands.Cog):
             new_i = 0  # if deleted main, default to first
 
         char = user['chars'].pop(del_i)
-        ret = await db.set_user(ctx.author.id, {'default': new_i,
-                                                'chars': user['chars']})
+        update = {'default': new_i, 'chars': user['chars']}
+        ret = await self.bot.db.set_user(ctx.author.id, update)
 
         if ret.acknowledged:
             await ctx.send(f'**{char["name"]}** was deleted')
@@ -225,7 +224,7 @@ class Characters(commands.Cog):
                 inspect.Parameter('new_name', inspect.Parameter.POSITIONAL_ONLY)
             )
 
-        user = await db.get_user(ctx.author.id)
+        user = await self.bot.db.get_user(ctx.author.id)
 
         if not user or not user['chars']:
             raise errors.NoMoreItems
@@ -241,7 +240,8 @@ class Characters(commands.Cog):
 
         _name = user['chars'][i]['name']
         user['chars'][i]['name'] = new_name
-        ret = await db.set_user(ctx.author.id, {'chars': user['chars']})
+        update = {'chars': user['chars']}
+        ret = await self.bot.db.set_user(ctx.author.id, update)
 
         if ret.acknowledged:
             await ctx.send(f'**{_name}** was renamed **{new_name}**')

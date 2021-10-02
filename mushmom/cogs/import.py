@@ -8,7 +8,6 @@ from discord.ext import commands
 from typing import Optional
 
 from .. import config
-from ..utils import database as db
 from ..utils import converters, errors
 from ..mapleio.character import Character
 
@@ -53,13 +52,14 @@ class Import(commands.Cog):
         char.name = name
 
         # query database
-        user = await db.get_user(ctx.author.id)
+        user = await self.bot.db.get_user(ctx.author.id)
 
         if not user:  # new user
-            ret = await db.add_user(ctx.author.id, char.to_dict())
+            ret = await self.bot.db.add_user(ctx.author.id, char.to_dict())
         elif len(user['chars']) < config.core.max_chars:
             user['chars'].append(char.to_dict())
-            ret = await db.set_user(ctx.author.id, {'chars': user['chars']})
+            update = {'chars': user['chars']}
+            ret = await self.bot.db.set_user(ctx.author.id, update)
         else:
             chars_cog = self.bot.get_cog('Characters')
 
@@ -80,7 +80,8 @@ class Import(commands.Cog):
                 ret = None
             else:
                 user['chars'][int(sel) - 1] = char.to_dict()
-                ret = await db.set_user(ctx.author.id, {'chars': user['chars']})
+                update = {'chars': user['chars']}
+                ret = await self.bot.db.set_user(ctx.author.id, update)
 
         if ret:
             if ret.acknowledged:

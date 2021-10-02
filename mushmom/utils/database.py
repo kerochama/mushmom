@@ -1,100 +1,99 @@
 """
-Functions related to database connection
+Functions related to database connection.  Keep track data access for all sets,
+but only when getting char data
 
-Keep track data access for all sets, but only when getting char data
+Requires database have `users` and `guilds` collections.  MongoDB autocreates
+when writing if does not exist, though
 
 """
-import os
-
 from motor.motor_asyncio import AsyncIOMotorClient
-from dotenv import load_dotenv
 from datetime import datetime
 
 from .. import config
 
-load_dotenv()  # use env variables from .env
 
-client = AsyncIOMotorClient(os.getenv('MONGO_CONN_STR'))
-db = client[config.database.name]
+class Database:
+    def __init__(self, client: AsyncIOMotorClient):
+        """
+        Wrapper for common database calls. Using MongoDB
 
+        :param client:
+        """
+        self.client = client
+        self.db = self.client[config.database.name]
 
-async def get_user(userid, proj=None):
-    """
+    async def get_user(self, userid, proj=None):
+        """
 
-    :param userid:
-    :param proj: list of fields to return
-    :return:
-    """
-    return await db.users.find_one({'_id': userid}, proj)
+        :param userid:
+        :param proj: list of fields to return
+        :return:
+        """
+        return await self.db.users.find_one({'_id': userid}, proj)
 
+    async def user_exists(self, userid):
+        # not going to update tracking
+        rec = await self.get_user(userid, ['_id'])
+        return rec is not None
 
-async def user_exists(userid):
-    # not going to update tracking
-    rec = await get_user(userid, ['_id'])
-    return rec is not None
+    async def add_user(self, userid, char_data: dict):
+        """
+        When adding user, only allow setting first char
 
+        :param userid:
+        :param char_data:
+        :return:
+        """
+        data = {
+            '_id': userid,
+            'default': 0,
+            'chars': [char_data],
+            'create_time': datetime.utcnow(),
+            'update_time': datetime.utcnow(),
+            'n_access': 1
+        }
 
-async def add_user(userid, char_data: dict):
-    """
-    When adding user, only allow setting first char
+        return await self.db.users.insert_one(data)
 
-    :param userid:
-    :param char_data:
-    :return:
-    """
-    data = {
-        '_id': userid,
-        'default': 0,
-        'chars': [char_data],
-        'create_time': datetime.utcnow(),
-        'update_time': datetime.utcnow(),
-        'n_access': 1
-    }
+    async def set_user(self, userid, data):
+        # set userid/_id manually
+        data.pop('_id', None)
+        data.pop('userid', None)
 
-    return await db['users'].insert_one(data)
+        # update tracking
+        data['update_time'] = datetime.utcnow()
+        update = {
+            '$set': data,
+            '$inc': {'n_access': 1}
+        }
 
+        return await self.db.users.update_one({'_id': userid}, update)
 
-async def set_user(userid, data):
-    # set userid/_id manually
-    data.pop('_id', None)
-    data.pop('userid', None)
+    async def increment_user(self, userid):
+        """
+        Keep track of how often user gets/sets data
 
-    # update tracking
-    data['update_time'] = datetime.utcnow()
-    update = {
-        '$set': data,
-        '$inc': {'n_access': 1}
-    }
+        :param userid:
+        :return:
+        """
+        update = {
+            '$set': {'update_time': datetime.utcnow()},
+            '$inc': {'n_access': 1}
+        }
+        return await self.db.users.update_one({'_id': userid}, update)
 
-    return await db['users'].update_one({'_id': userid}, update)
+    async def get_char_data(self, userid):
+        """
+        Get users default char data (dict)
 
+        :param userid:
+        :return:
+        """
+        user_data = await self.get_user(userid)
 
-async def increment_user(userid):
-    """
-    Keep track of how often user gets/sets data
+        if user_data:
+            await self.increment_user(userid)
+            i = user_data['default']
 
-    :param userid:
-    :return:
-    """
-    update = {
-        '$set': {'update_time': datetime.utcnow()},
-        '$inc': {'n_access': 1}
-    }
-    return await db['users'].update_one({'_id': userid}, update)
-
-
-async def get_char_data(userid):
-    """
-    Get users default char data (dict)
-
-    :param userid:
-    :return:
-    """
-    user_data = await db.users.find_one({'_id': userid})
-
-    if user_data:
-        await increment_user(userid)
-        i = user_data['default']
-
-        if user_data['chars']:
-            return user_data['chars'][i]
+            if user_data['chars']:
+                return user_data['chars'][i]

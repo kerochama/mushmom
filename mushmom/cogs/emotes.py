@@ -9,7 +9,6 @@ from typing import Optional
 from io import BytesIO
 
 from .. import config
-from ..utils import database as db
 from ..utils import converters, errors, io
 from ..mapleio import api, resources
 from ..mapleio.character import Character
@@ -33,7 +32,7 @@ class Emotes(commands.Cog):
         :return:
         """
         # grab character
-        char_data = await db.get_char_data(ctx.author.id)
+        char_data = await self.bot.db.get_char_data(ctx.author.id)
 
         if not char_data:
             raise errors.DataNotFound

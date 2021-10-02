@@ -1,0 +1,7 @@
+# custom help info
+
+import:
+  import:
+    sigs:
+      - "<name> [url: maplestory.io]"
+      - <name> with JSON file attached

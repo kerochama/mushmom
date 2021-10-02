@@ -5,12 +5,18 @@ Custom help command
 from typing import Iterable, Union
 from discord.ext import commands
 
+from . import ref
+
 
 class Help(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def get_signature(self, ctx, cmd):
+    def get_command_base(self, ctx, cmd):
+        prefix = self.bot.command_prefix(self.bot, ctx.message)[0]
+        return f'`{prefix}{cmd.qualified_name}'
+
+    def get_signature(self, ctx, cmd, aliases=False):
         """
         Build full signature
 
@@ -18,8 +24,7 @@ class Help(commands.Cog):
         :param cmd:
         :return:
         """
-        # require callable return list
-        prefix = self.bot.command_prefix(self.bot, ctx.message)[0]
+        prefix = ''
         return (f'`{prefix}{cmd.qualified_name}'
                 f'{" " + cmd.signature if cmd.signature else ""}`')
 
