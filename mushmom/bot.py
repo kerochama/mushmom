@@ -1,19 +1,15 @@
 import discord
-import os
 import sys
 import aiohttp
 import warnings
 import traceback
 
 from discord.ext import commands, tasks
-from dotenv import load_dotenv
 
-from mushmom.utils import checks, io, errors
-from mushmom.mapleio import resources
-from mushmom.cogs import ref
+from .utils import checks, io, errors
+from .mapleio import resources
+from .cogs import ref
 
-
-load_dotenv()  # use env variables from .env
 
 initial_extensions = (
     'cogs.core',
@@ -41,7 +37,7 @@ class Mushmom(commands.Bot):
 
         # load extensions
         for ext in initial_extensions:
-            self.load_extension(ext)
+            self.load_extension(f'{__package__}.{ext}')
 
     async def on_ready(self):
         print(f'{self.user} is ready to mush!')
@@ -151,8 +147,3 @@ class Mushmom(commands.Bot):
     async def close(self):
         await super().close()
         await self.session.close()
-
-
-if __name__ == "__main__":
-    bot = Mushmom()
-    bot.run(os.getenv('TOKEN'))
