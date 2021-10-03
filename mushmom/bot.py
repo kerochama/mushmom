@@ -46,8 +46,8 @@ class Mushmom(commands.Bot):
         print(f'{self.user} is ready to mush!')
         self.session = aiohttp.ClientSession(loop=self.loop)
 
-        if not self.verify_cache_integrity.is_running:
-            self.verify_cache_integrity.start()
+        if not self._verify_cache_integrity.is_running:
+            self._verify_cache_integrity.start()
 
     async def on_message(self, message):
         """
@@ -139,7 +139,7 @@ class Mushmom(commands.Bot):
             return self.user.avatar_url  # fall back on profile pic
 
     @tasks.loop(minutes=10)
-    async def verify_cache_integrity(self):
+    async def _verify_cache_integrity(self):
         """
         Clean up stray cached replies
 
