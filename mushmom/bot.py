@@ -36,6 +36,7 @@ class Mushmom(commands.Bot):
 
         # add global checks
         self.add_check(checks.not_bot)
+        self.remove_command('help')
 
         # load extensions
         for ext in initial_extensions:
@@ -115,9 +116,8 @@ class Mushmom(commands.Bot):
         # format ref_cmds
         help_cog = self.get_cog('Help')
         if help_cog:
-            signatures = help_cog.get_signatures(ctx, ref_cmds or [],
-                                                 aliases=True)
-            cmds = {'Commands': '\n'.join(signatures)} if signatures else None
+            usages = help_cog.get_usages(ctx, ref_cmds or [], aliases=True)
+            cmds = {'Commands': '\n'.join(usages)} if usages else None
         else:  # skip cmd help
             cmds = None
 

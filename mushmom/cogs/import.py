@@ -106,10 +106,10 @@ class Import(commands.Cog):
             msg = 'Missing source data. Try:\n\u200b'
 
         # format ref_cmds
-        help_cog = self.bot.get_cog('Help')
+        help_cog = self.get_cog('Help')
         if help_cog:
-            signatures = help_cog.get_signatures(ctx, 'import', aliases=True)
-            cmds = {'Commands': '\n'.join(signatures)} if signatures else None
+            usages = help_cog.get_usages(ctx, ['import'], aliases=True)
+            cmds = {'Commands': '\n'.join(usages)} if usages else None
         else:  # skip cmd help
             cmds = None
 
