@@ -7,6 +7,7 @@ import traceback
 from discord.ext import commands, tasks
 from motor.motor_asyncio import AsyncIOMotorClient
 
+from . import config
 from .utils import checks, io, errors, database as db
 from .mapleio import resources
 from .cogs import ref
@@ -113,15 +114,7 @@ class Mushmom(commands.Bot):
             traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
             return
 
-        # format ref_cmds
-        help_cog = self.get_cog('Help')
-        if help_cog:
-            usages = help_cog.get_usages(ctx, ref_cmds or [], aliases=True)
-            cmds = {'Commands': '\n'.join(usages)} if usages else None
-        else:  # skip cmd help
-            cmds = None
-
-        await errors.send_error(ctx, msg, fields=cmds)
+        await self.send_error(ctx, msg, ref_cmds)
 
     def get_emoji_url(self, emoji_id):
         """
@@ -137,6 +130,50 @@ class Mushmom(commands.Bot):
         else:
             warnings.warn(f'Emoji<{emoji_id}> was not found', ResourceWarning)
             return self.user.avatar_url  # fall back on profile pic
+
+    async def send_error(self, ctx, text=None, ref_cmds=None,
+                         delete_message=not config.core.debug,
+                         delay=config.core.default_delay):
+        """
+        Generic function to send formatted error.  Deletion will not happen
+        when DEBUG is on
+
+        :param ctx:
+        :param text:
+        :param ref_cmds:
+        :param delete_message:
+        :param delay:
+        :return:
+        """
+        # defaults
+        if text is None:
+            text = 'Mushmom failed *cry*'
+
+        if ref_cmds is None:
+            ref_cmds = []
+
+        # send error
+        embed = discord.Embed(description=text,
+                              color=config.core.embed_color)
+        embed.set_author(name='Error', icon_url=ctx.bot.user.avatar_url)
+        embed.set_thumbnail(url=ctx.bot.get_emoji_url(config.emojis.mushshock))
+
+        # add referenced commands
+        help_cog = self.get_cog('Help')
+
+        if help_cog:
+            usages = help_cog.get_usages(ctx, ref_cmds, aliases=True)
+
+            if usages:
+                embed.add_field(name='Commands', value='\n'.join(usages))
+
+        error = await ctx.send(embed=embed, delete_after=delay if delete_message else None)
+
+        # delete original message after successful send
+        if delete_message:
+            await ctx.message.delete(delay=delay)
+
+        return error
 
     @tasks.loop(minutes=10)
     async def _verify_cache_integrity(self):

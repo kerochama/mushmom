@@ -101,19 +101,11 @@ class Import(commands.Cog):
             return  # other handles handled normally
 
         if error.param.name == 'name':
-            msg = 'Supply a character name to start mushing! Try:\n\u200b'
+            msg = 'Supply a character name to start mushing! See:\n\u200b'
         elif error.param.name == 'url':
-            msg = 'Missing source data. Try:\n\u200b'
+            msg = 'Missing source data. Please use:\n\u200b'
 
-        # format ref_cmds
-        help_cog = self.get_cog('Help')
-        if help_cog:
-            usages = help_cog.get_usages(ctx, ['import'], aliases=True)
-            cmds = {'Commands': '\n'.join(usages)} if usages else None
-        else:  # skip cmd help
-            cmds = None
-
-        err = await errors.send(ctx, msg, fields=cmds)
+        err = await self.bot.send_error(ctx, msg, ref_cmds=['import'])
         self.bot.reply_cache.add(ctx, err)  # stop default error handler
 
     async def cog_after_invoke(self, ctx):
