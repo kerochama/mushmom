@@ -13,6 +13,12 @@ class Core(commands.Cog):
 
     @commands.command()
     async def hello(self, ctx):
+        """
+        Say hello!
+
+        :param ctx:
+        :return:
+        """
         await ctx.send('hai')
 
 

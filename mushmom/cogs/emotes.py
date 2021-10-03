@@ -22,7 +22,8 @@ class Emotes(commands.Cog):
     async def emote(self, ctx,
                     emote: Optional[converters.EmotionConverter] = 'default'):
         """
-        Replace message with emote
+        Replace message with the emote specified. For a list of usable
+        emotes, see `{prefix}emotes`
 
         Use ignore_extra=False to differentiate improper emotes from default
         emote (can be used directly without args)
@@ -64,6 +65,12 @@ class Emotes(commands.Cog):
 
     @commands.command()
     async def emotes(self, ctx):
+        """
+        List all emotes available
+
+        :param ctx:
+        :return:
+        """
         embed = discord.Embed(
             description='The following is a list of emotes you can use\n\u200b',
             color=config.core.embed_color

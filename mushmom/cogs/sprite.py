@@ -23,7 +23,9 @@ class Sprite(commands.Cog):
                      emotion: Optional[converters.EmotionConverter] = 'default',
                      pose: Optional[converters.PoseConverter] = 'stand1'):
         """
-        Replace message with sprite
+        Replace message with the emote specified. For a list of usable
+        emotions and poses, see `{prefix}emotions` and `{prefix}poses`,
+        respectively
 
         Use ignore_extra=False to differentiate improper emotes from default
         emotions and poses (can be used directly without args)
@@ -67,6 +69,12 @@ class Sprite(commands.Cog):
 
     @sprite.command()
     async def emotions(self, ctx):
+        """
+        List the emotions available for characters
+
+        :param ctx:
+        :return:
+        """
         embed = discord.Embed(
             description=('The following is a list of emotions you can use in the '
                          'generation of your emoji or sprite.\n\u200b'),
@@ -88,6 +96,12 @@ class Sprite(commands.Cog):
 
     @sprite.command()
     async def poses(self, ctx):
+        """
+        List the poses available for characters
+
+        :param ctx:
+        :return:
+        """
         embed = discord.Embed(
             description=('The following is a list of poses you can use in the '
                          'generation of your emoji or sprite.\n\u200b'),

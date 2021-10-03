@@ -1,5 +1,10 @@
 # custom help info
 
+characters:
+  rename:
+    sigs:
+      - "[name] <new_name>"
+
 import:
   import:
     sigs:

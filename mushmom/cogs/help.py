@@ -148,7 +148,7 @@ class Help(commands.Cog):
     @commands.command()
     async def help(self, ctx, *, command=None):
         """
-
+        The command that generated this message
 
         :param ctx:
         :param command:
@@ -188,9 +188,10 @@ class Help(commands.Cog):
     async def send_bot_help(self, ctx):
         embed = discord.Embed(
             description=(f'{config.core.bot_name} will send emotes and '
-                         f'actions for you. Type `{ctx.prefix}help <command>` '
-                         f'for more information on a command.\n\n`{ctx.prefix}'
-                         '[args]` without a command will call '
+                         'actions for you. To get started, check out '
+                         f'`{ctx.prefix}import`. Type `{ctx.prefix}help '
+                         '<command>` for more information on a command.\n\n'
+                         f'`{ctx.prefix}[args]` without a command will call '
                          f'`{ctx.prefix}emote [args]`\n\u200b'),
             color=config.core.embed_color
         )
@@ -216,9 +217,15 @@ class Help(commands.Cog):
         if not cmd:  # not a command
             return
 
+        # clean help
+        cmd_help = (cmd.help
+                    .split('\n\n')[0]  # before first empty line
+                    .replace('\n', ' ')  # handle line breaks
+                    .format(prefix=ctx.prefix))
+
         embed = discord.Embed(
             title=f'{ctx.prefix}{command}',
-            description=f'{cmd.help}\n\u200b',
+            description=f'{cmd_help}\n\u200b',
             color=config.core.embed_color
         )
 

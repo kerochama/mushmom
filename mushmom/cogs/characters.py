@@ -54,7 +54,7 @@ class Characters(commands.Cog):
 
     async def select_char(self, ctx, user, text=''):
         """
-        Sends embed with list of chars.  User should react to select
+        Sends embed with list of chars. User should react to select
 
         :param ctx:
         :param text:
@@ -132,6 +132,11 @@ class Characters(commands.Cog):
 
     @commands.command()
     async def chars(self, ctx):
+        """
+        List all characters registered
+
+        :param ctx:
+        """
         user = await self.bot.db.get_user(ctx.author.id)
         await self.list_chars(ctx, user, 'Your mushable characters\n\u200b')
 
@@ -141,6 +146,15 @@ class Characters(commands.Cog):
 
     @set.command(name='main', aliases=['default'])
     async def _main(self, ctx, name: Optional[str] = None):
+        """
+        Set the default character when using emotes/sprites to the
+        character specified.  If no character name is provided, a
+        reactable prompt of registered characters will appear for
+        selection
+
+        :param ctx:
+        :param name:
+        """
         user = await self.bot.db.get_user(ctx.author.id)
 
         if not user or not user['chars']:  # no characters
@@ -167,6 +181,14 @@ class Characters(commands.Cog):
 
     @commands.command()
     async def delete(self, ctx, name: Optional[str] = None):
+        """
+        Delete the specified character from registry. If no character
+        name is provided, a reactable prompt of registered characters
+        will appear for selection
+
+        :param ctx:
+        :param name:
+        """
         user = await self.bot.db.get_user(ctx.author.id)
 
         if not user or not user['chars']:
@@ -205,14 +227,16 @@ class Characters(commands.Cog):
                      name: Optional[converters.CharNameConverter] = None,
                      new_name=None):
         """
-        Rename char
+        Rename a character with the new name give. The existing
+        character name is optional, in which case a reactable prompt
+        of registered characters will appear for selection
 
-        Use ignore_extra=False because otherwise may incorrectly capture
-        new_name as name
+        Use ignore_extra=False because otherwise may incorrectly
+        capture new_name as name
 
         e.g.
         mush rename not_a_char_name Mushmom
-        - new_name = not_a_char_name
+        - new_name would be not_a_char_name
 
         :param ctx:
         :param name:
