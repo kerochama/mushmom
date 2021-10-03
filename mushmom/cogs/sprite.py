@@ -27,8 +27,8 @@ class Sprite(commands.Cog):
         emotions and poses, see `{prefix}emotions` and `{prefix}poses`,
         respectively
 
-        Use ignore_extra=False to differentiate improper emotes from default
-        emotions and poses (can be used directly without args)
+        Use ignore_extra=False to differentiate improper emotes from
+        default emotions and poses (can be used directly without args)
 
 
         :param ctx:
