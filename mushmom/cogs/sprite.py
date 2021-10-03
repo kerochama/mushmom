@@ -9,7 +9,7 @@ from typing import Optional
 from io import BytesIO
 
 from .. import config
-from ..utils import converters, errors, io
+from ..utils import converters, errors
 from ..mapleio import api, resources
 from ..mapleio.character import Character
 
@@ -46,7 +46,9 @@ class Sprite(commands.Cog):
         # add loading reaction to confirm command is still waiting for api
         # default: hour glass
         emoji = self.bot.get_emoji(config.emojis.mushloading) or '\u23f3'
-        react_task = self.bot.loop.create_task(io.delayed_reaction(ctx, emoji))
+        react_task = self.bot.loop.create_task(
+            self.bot.add_delayed_reaction(ctx, emoji)
+        )
 
         # create sprite
         data = await api.get_sprite(char, pose=pose, emotion=emotion,
@@ -59,7 +61,7 @@ class Sprite(commands.Cog):
 
             img = discord.File(fp=BytesIO(data),
                                filename=f'{name}_{emotion}_{pose}.png')
-            await io.send_as_author(ctx, file=img)
+            await self.bot.send_as_author(ctx, file=img)
         else:
             raise errors.MapleIOError
 
