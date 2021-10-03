@@ -23,7 +23,6 @@ class Meta(commands.Cog):
         :param extension:
         :return:
         """
-        print(extension)
         self.bot.load_extension(f'{__package__}.{extension}')
         await ctx.send(f'Loaded `cogs.{extension}`')
 
