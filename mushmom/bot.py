@@ -226,7 +226,7 @@ class Mushmom(commands.Bot):
     async def close(self):
         await super().close()
         await self.session.close()
-        self.db_client.close()
+        self.db.close()
 
 
 class ReplyCache:
