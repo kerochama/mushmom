@@ -96,7 +96,7 @@ class Characters(commands.Cog):
 
         return prompt, sel
 
-    async def get_char_index(self, ctx, user, name=None, desc='',
+    async def get_char_index(self, ctx, user, name=None,
                              cancel_text='Cancelled'):
         """
         Get index from char list
@@ -104,7 +104,6 @@ class Characters(commands.Cog):
         :param ctx:
         :param user:
         :param name:
-        :param desc: text to add before instructions
         :param cancel_text:
         :return:
         """
