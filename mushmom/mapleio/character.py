@@ -58,7 +58,7 @@ class Character:
                       item.get('name', ''))
                 for type, item in items.items() if type not in ['Body', 'Head']
             ]
-        print(char)
+
         return char
 
     @classmethod
