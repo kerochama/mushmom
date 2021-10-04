@@ -16,9 +16,10 @@ EQUIP_TYPES = [
 
 
 class Equip:
-    def __init__(self, itemid, version, name="", type=None):
+    def __init__(self, itemid, version, region='GMS', name='', type=None):
         self.itemid = itemid
         self.type = type or Equip.get_equip_type(itemid)
+        self.region = region
         self.version = version
 
         # only make requests if needed
@@ -34,6 +35,9 @@ class Equip:
 
     def to_dict(self, verbose=False):
         d = {'type': self.type, 'itemId': self.itemid, 'version': self.version}
+
+        if self.region != 'GMS':
+            d['region'] = self.region
 
         if verbose:
             d['name'] = self.name

@@ -9,7 +9,7 @@ from .equip import Equip
 
 
 class Character:
-    def __init__(self, name="", version=""):
+    def __init__(self, name='', version='', region='GMS'):
         """
         Keep track of equips and sprite settings
 
@@ -19,6 +19,7 @@ class Character:
 
         # can only be populated by from_* funcs
         self.version = version or config.mapleio.default_version
+        self.region = region
         self.skin = None
         self.ears = None
         self.equips = []
@@ -48,14 +49,16 @@ class Character:
                 and all(isinstance(v, dict) for v in items.values())):
             item0 = list(items.values())[0]
             char.version = item0.get('version', config.mapleio.default_version)
+            char.region = item0.get('region', 'GMS')
 
             char.equips = [
                 Equip(item.get('id', 0),
                       item.get('version', char.version),
+                      item.get('region', 'GMS'),
                       item.get('name', ''))
                 for type, item in items.items() if type not in ['Body', 'Head']
             ]
-
+        print(char)
         return char
 
     @classmethod
@@ -89,6 +92,7 @@ class Character:
         if items and all(isinstance(v, dict) for v in items):
             item0 = items[0]
             char.version = item0.get('version', config.mapleio.default_version)
+            char.region = item0.get('region', 'GMS')
 
             # identify Body item (id is skinid)
             char.skin = next((Skin.get(x['itemId'])
@@ -96,7 +100,9 @@ class Character:
                              Skin.GREEN)
 
             char.equips = [
-                Equip(item.get('itemId', 0), item.get('version', char.version))
+                Equip(item.get('itemId', 0),
+                      item.get('version', char.version),
+                      item.get('region', 'GMS'))
                 for item in items if Equip.valid_equip(item.get('itemId', 0))
             ]
 
@@ -128,6 +134,10 @@ class Character:
             {'type': 'Body', 'itemId': self.skin.value, 'version': self.version},
             {'type': 'Head', 'itemId': 10000+self.skin.value, 'version': self.version}
         ]
+
+        if self.region != 'GMS':
+            equips[0]['region'] = self.region
+            equips[1]['region'] = self.region
 
         for equip in self.filter(keep, remove):
             equips.append(equip.to_dict())
@@ -182,6 +192,7 @@ class Character:
         char = {
             'name': self.name,
             'version': self.version,
+            'region': self.region,
             'skin': self.skin.value,
             'mercEars': self.ears is Ears.MERCEDES,
             'illiumEars': self.ears is Ears.FLORA,
@@ -196,6 +207,8 @@ class Character:
                 "version": equip.version,
                 "name": equip._name  # no need to make API call
             }
+            if equip.region != 'GMS':
+                char['selectedItems'][subcat]['region'] = equip.region
 
         return char
 
