@@ -72,7 +72,7 @@ class CharNameConverter(commands.Converter):
     async def convert(self, ctx, arg):
         user = await ctx.bot.db.get_user(ctx.author.id)
 
-        if user and arg in [x.name for x in user['chars']]:
+        if user and arg.lower() in [x.name.lower() for x in user['chars']]:
             return arg
 
         raise commands.BadArgument('Character not found')

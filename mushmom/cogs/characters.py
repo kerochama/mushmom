@@ -112,7 +112,7 @@ class Characters(commands.Cog):
 
         if name:
             ind = next((i for i, x in enumerate(chars)
-                        if x['name'] == name), None)
+                        if x['name'].lower() == name.lower()), None)
 
             if ind is None:
                 raise errors.DataNotFound
