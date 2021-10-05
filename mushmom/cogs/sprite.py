@@ -21,7 +21,8 @@ class Sprite(commands.Cog):
     @commands.group(invoke_without_command=True, ignore_extra=False)
     async def sprite(self, ctx,
                      emotion: Optional[converters.EmotionConverter] = 'default',
-                     pose: Optional[converters.PoseConverter] = 'stand1'):
+                     pose: Optional[converters.PoseConverter] = 'stand1',
+                     flags: commands.Greedy[converters.FlagConverter] = None):
         """
         Replace message with the emote specified. For a list of usable
         emotions and poses, see `{prefix}emotions` and `{prefix}poses`,
@@ -33,15 +34,26 @@ class Sprite(commands.Cog):
         :param ctx:
         :param emotion:
         :param pose:
+        :param flags:
         :return:
         """
         # grab character
-        char_data = await self.db.get_char_data(ctx.author.id)
+        user = await self.bot.db.get_user(ctx.author.id)
 
-        if not char_data:
-            raise errors.DataNotFound
+        if not user or not user['chars']:
+            raise errors.NoMoreItems
 
-        char = Character.from_json(char_data)
+        if flags:
+            chars_cog = self.bot.get_cog('Characters')
+
+            if not chars_cog:
+                raise errors.MissingCogError
+
+            i = await chars_cog.get_char_index(ctx, user, flags[0])
+        else:
+            i = user['default']
+
+        char = Character.from_json(user['chars'][i])
         name = char.name or "char"
 
         # add loading reaction to confirm command is still waiting for api

@@ -76,3 +76,15 @@ class CharNameConverter(commands.Converter):
             return arg
 
         raise commands.BadArgument('Character not found')
+
+
+class FlagConverter(commands.Converter):
+    """
+    Used for -- options. May replace with a full parser at some point
+
+    """
+    async def convert(self, ctx, arg):
+        if arg.startswith('--'):
+            return arg[2:]  # strip --
+
+        raise commands.BadArgument('Not a valid flag')

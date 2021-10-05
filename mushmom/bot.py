@@ -10,7 +10,7 @@ from discord.ext import commands, tasks
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from . import config
-from .utils import checks, errors, database as db
+from .utils import checks, errors, database as db, converters
 from .mapleio import resources
 from .cogs import ref
 
@@ -77,14 +77,22 @@ class Mushmom(commands.Bot):
             else:
                 ctx.command = command
 
-            if args:  # handle TooManyArguments manually
+            # process flags
+            conv = converters.FlagConverter()
+
+            try:
+                flags = [await conv.convert(ctx, arg) for arg in args]
+            except commands.BadArgument:
+                # manually simulate emotes command error
                 error = commands.TooManyArguments()
                 await self.on_command_error(ctx, error)
-            else:
-                try:
-                    await ctx.invoke(command, emote=cmd)
-                except commands.CommandError as error:
-                    await self.on_command_error(ctx, error)
+                return
+
+            # invoke emotes command
+            try:
+                await ctx.invoke(command, emote=cmd, flags=flags)
+            except commands.CommandError as error:
+                await self.on_command_error(ctx, error)
         else:
             await self.process_commands(message)
 

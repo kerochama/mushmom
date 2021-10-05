@@ -20,7 +20,8 @@ class Emotes(commands.Cog):
 
     @commands.command(ignore_extra=False)
     async def emote(self, ctx,
-                    emote: Optional[converters.EmotionConverter] = 'default'):
+                    emote: Optional[converters.EmotionConverter] = 'default',
+                    flags: commands.Greedy[converters.FlagConverter] = None):
         """
         Replace message with the emote specified. For a list of usable
         emotes, see `{prefix}emotes`
@@ -30,15 +31,26 @@ class Emotes(commands.Cog):
 
         :param ctx:
         :param emote:
+        :param flags:
         :return:
         """
         # grab character
-        char_data = await self.bot.db.get_char_data(ctx.author.id)
+        user = await self.bot.db.get_user(ctx.author.id)
 
-        if not char_data:
-            raise errors.DataNotFound
+        if not user or not user['chars']:
+            raise errors.NoMoreItems
 
-        char = Character.from_json(char_data)
+        if flags:
+            chars_cog = self.bot.get_cog('Characters')
+
+            if not chars_cog:
+                raise errors.MissingCogError
+
+            i = await chars_cog.get_char_index(ctx, user, flags[0])
+        else:
+            i = user['default']
+
+        char = Character.from_json(user['chars'][i])
         name = char.name or "char"
 
         # add loading reaction to confirm command is still waiting for api

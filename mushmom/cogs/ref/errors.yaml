@@ -50,8 +50,13 @@ emotes:
     commands.TooManyArguments:
       msg: "Emote was not found. See:\n\u200b"
       ref_cmds: [emotes]
-    errors.DataNotFound:
+    errors.NoMoreItems:
       <<: *nochars
+    errors.MissingCogError:
+      msg: Bot is being serviced right now. Try again later
+      ref_cmds: null
+    errors.DataNotFound:
+      <<: *missingchar
     errors.MapleIOError: &apierror
       msg: Could not get maple data. Try again later
       ref_cmds: null
