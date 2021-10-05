@@ -77,11 +77,11 @@ class Mushmom(commands.Bot):
             else:
                 ctx.command = command
 
-            # process flags
-            conv = converters.FlagConverter()
+            # process options
+            conv = converters.OptionConverter()
 
             try:
-                flags = [await conv.convert(ctx, arg) for arg in args]
+                options = [await conv.convert(ctx, arg) for arg in args]
             except commands.BadArgument:
                 # manually simulate emotes command error
                 error = commands.TooManyArguments()
@@ -90,7 +90,7 @@ class Mushmom(commands.Bot):
 
             # invoke emotes command
             try:
-                await ctx.invoke(command, emote=cmd, flags=flags)
+                await ctx.invoke(command, emote=cmd, options=options)
             except commands.CommandError as error:
                 await self.on_command_error(ctx, error)
         else:

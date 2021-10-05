@@ -22,7 +22,7 @@ class Sprite(commands.Cog):
     async def sprite(self, ctx,
                      emotion: Optional[converters.EmotionConverter] = 'default',
                      pose: Optional[converters.PoseConverter] = 'stand1',
-                     flags: commands.Greedy[converters.FlagConverter] = None):
+                     options: commands.Greedy[converters.OptionConverter] = None):
         """
         Replace message with the emote specified. For a list of usable
         emotions and poses, see `{prefix}emotions` and `{prefix}poses`,
@@ -34,7 +34,7 @@ class Sprite(commands.Cog):
         :param ctx:
         :param emotion:
         :param pose:
-        :param flags:
+        :param options:
         :return:
         """
         # grab character
@@ -43,13 +43,13 @@ class Sprite(commands.Cog):
         if not user or not user['chars']:
             raise errors.NoMoreItems
 
-        if flags:
+        if options:
             chars_cog = self.bot.get_cog('Characters')
 
             if not chars_cog:
                 raise errors.MissingCogError
 
-            i = await chars_cog.get_char_index(ctx, user, flags[0])
+            i = await chars_cog.get_char_index(ctx, user, options[0])
         else:
             i = user['default']
 

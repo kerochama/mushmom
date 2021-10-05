@@ -21,7 +21,7 @@ class Emotes(commands.Cog):
     @commands.command(ignore_extra=False)
     async def emote(self, ctx,
                     emote: Optional[converters.EmotionConverter] = 'default',
-                    flags: commands.Greedy[converters.FlagConverter] = None):
+                    options: commands.Greedy[converters.OptionConverter] = None):
         """
         Replace message with the emote specified. For a list of usable
         emotes, see `{prefix}emotes`
@@ -31,7 +31,7 @@ class Emotes(commands.Cog):
 
         :param ctx:
         :param emote:
-        :param flags:
+        :param options:
         :return:
         """
         # grab character
@@ -40,13 +40,13 @@ class Emotes(commands.Cog):
         if not user or not user['chars']:
             raise errors.NoMoreItems
 
-        if flags:
+        if options:
             chars_cog = self.bot.get_cog('Characters')
 
             if not chars_cog:
                 raise errors.MissingCogError
 
-            i = await chars_cog.get_char_index(ctx, user, flags[0])
+            i = await chars_cog.get_char_index(ctx, user, options[0])
         else:
             i = user['default']
 

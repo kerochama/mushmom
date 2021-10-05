@@ -78,7 +78,7 @@ class CharNameConverter(commands.Converter):
         raise commands.BadArgument('Character not found')
 
 
-class FlagConverter(commands.Converter):
+class OptionConverter(commands.Converter):
     """
     Used for -- options. May replace with a full parser at some point
 
@@ -87,4 +87,4 @@ class FlagConverter(commands.Converter):
         if arg.startswith('--'):
             return arg[2:]  # strip --
 
-        raise commands.BadArgument('Not a valid flag')
+        raise commands.BadArgument('Not a valid option')
