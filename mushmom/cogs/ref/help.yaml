@@ -5,8 +5,18 @@ characters:
     sigs:
       - "[name] <new_name>"
 
+emotes:
+  emote:
+    options:
+      - "--[name]"
+
 import:
   import:
     sigs:
       - "<name> [url: maplestory.io]"
       - <name> with JSON file attached
+
+sprite:
+  sprite:
+    options:
+      - "--[name]"

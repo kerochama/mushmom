@@ -68,7 +68,7 @@ class Help(commands.Cog):
             return
 
         try:
-            cog = cmd.cog.qualified_name.lower()
+            cog = cmd.cog_name.lower()
             sigs = ref.HELP[cog][cmd.qualified_name]['sigs']
         except KeyError:
             sigs = [cmd.signature]
@@ -237,6 +237,15 @@ class Help(commands.Cog):
         # show usage
         usage = self.get_usage(ctx, command) + ['\u200b']  # extra white space
         embed.add_field(name='Usage', value='\n'.join(usage), inline=False)
+
+        # show options
+        try:
+            cog = cmd.cog_name.lower()
+            _options = ref.HELP[cog][cmd.qualified_name]['options']
+            options = [f'`{option}`' for option in _options]
+            embed.add_field(name='Options', value='\n'.join(options))
+        except KeyError:
+            pass
 
         if cmd.aliases:
             aliases = self.get_cmd_names(ctx, [command], aliases=True)
