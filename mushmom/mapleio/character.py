@@ -1,7 +1,14 @@
+"""
+Representation of a maplestory character.  Attributes stored are those needed
+in order to read in and recreate API calls
+
+"""
+from __future__ import annotations
+
 import json
-import importlib.resources
 from urllib import parse
 from aenum import Enum, IntEnum, auto, extend_enum
+from typing import Union, Optional, Any
 
 from .. import config
 from . import resources
@@ -9,28 +16,60 @@ from .equip import Equip
 
 
 class Character:
-    def __init__(self, name='', version='', region='GMS'):
-        """
-        Keep track of equips and sprite settings
+    """
+    Representation of a maplestory/maplestory.io character sprite
 
-        """
+    Attributes
+    ----------
+    name: str
+        the characters name
+    version: str
+        the maplestory version
+    region: region
+        maplestory region
+    skin: `Skin`
+        Enum value of skins from skins.json
+    ears: `Ears`
+        Enum value of ears from maplestory.io representation
+    equips: list[`Equip`, ...]
+        equips worn by character
 
+    """
+    def __init__(
+            self,
+            name: Optional[str] = None,
+            version: Optional[str] = None,
+            region: Optional[str] = 'GMS'
+    ) -> None:
         self.name = name
-
-        # can only be populated by from_* funcs
         self.version = version or config.mapleio.default_version
         self.region = region
+
+        # can only be populated by from_* funcs
         self.skin = None
         self.ears = None
         self.equips = []
 
     @classmethod
-    def from_json(cls, data):
+    def from_json(cls, data: Union[str, dict]) -> Character:
         """
         Parse from maples.im/maplestory.studio json
 
-        :param data: json string or dict
-        :return:
+        Parameters
+        ----------
+        data: Union[str, dict]
+            JSON character data (export from maples.im or
+            beta.maplestory.studio)
+
+        Returns
+        -------
+        `Character`
+            parsed character object
+
+        Notes
+        -----
+        JSON refers to itemids as `id`
+
         """
         if isinstance(data, (str, bytes)):
             data = json.loads(data)
@@ -55,19 +94,31 @@ class Character:
                 Equip(item.get('id', 0),
                       item.get('version', char.version),
                       item.get('region', 'GMS'),
-                      item.get('name', ''))
+                      item.get('name', None))
                 for type, item in items.items() if type not in ['Body', 'Head']
             ]
 
         return char
 
     @classmethod
-    def from_url(cls, url):
+    def from_url(cls, url: str) -> Character:
         """
-        Parse directly from a preexisting API call
+        Parse directly from a preexisting API call/url
 
-        :param url:
-        :return:
+        Parameters
+        ----------
+        url: str
+            https://maplestory.io/api/character/...
+
+        Returns
+        -------
+        `Character`
+            parsed character object
+
+        Notes
+        -----
+        url refers to itemids as `itemId`
+
         """
         parsed = parse.urlparse(url)
         query = dict(parse.parse_qsl(parsed.query, keep_blank_values=True))
@@ -108,13 +159,26 @@ class Character:
 
         return char
 
-    def filter(self, keep=None, remove=None):
+    def filtered_equips(
+            self,
+            keep: Optional[list[str, ...]] = None,
+            remove: Optional[list[str, ...]] = None
+    ) -> list[Equip, ...]:
         """
-        Keep is prioritized over remove
+        Filtered equips. Keep is prioritized over remove
 
-        :param keep:
-        :param remove:
-        :return:
+        Parameters
+        ----------
+        keep: Optional[list[str, ...]]
+            list of equip types to keep
+        remove: Optional[list[str, ...]]
+            list of equip types to remove
+
+        Returns
+        -------
+        list[`Equip`, ...]
+            list of equips worn by character
+
         """
         if keep:
             return [equip for equip in self.equips if equip.type in keep]
@@ -123,51 +187,56 @@ class Character:
 
         return self.equips
 
-    def item_dicts(self, keep=None, remove=None):
+    def url(
+            self,
+            pose: str = 'stand1',
+            emotion: str = 'default',
+            zoom: float = 1,
+            flipx: bool = False,
+            bgcolor: tuple[int, int, int, int] = (0, 0, 0, 0),
+            remove: Optional[list[str, ...]] = None
+    ) -> str:
         """
-        Equipment dicts formatted for API call
+        Build API call to get char sprite data
 
-        :return:
+        Parameters
+        ----------
+        pose: str
+            pose from poses.json
+        emotion: str
+            emotion from emotions.json
+        zoom: float
+            how zoomed in the image should be (1 = 100%)
+        flipx: bool
+            whether or not to flip sprite horizontally
+        bgcolor: tuple[int, int, int, int]
+            rgba color tuple
+        remove: Optional[list[str, ...]]
+            list of equip types to remove
+
+        Returns
+        -------
+        str
+            API call to get sprite data (url)
+
         """
-        # build Body and Head
-        equips = [
+        # format equips. emotion placed in face/face accessory dicts
+        items = [
             {'type': 'Body', 'itemId': self.skin.value, 'version': self.version},
             {'type': 'Head', 'itemId': 10000+self.skin.value, 'version': self.version}
         ]
 
         if self.region != 'GMS':
-            equips[0]['region'] = self.region
-            equips[1]['region'] = self.region
+            items = [dict(item, region=self.region) for item in items]
 
-        for equip in self.filter(keep, remove):
-            equips.append(equip.to_dict())
+        for equip in self.filtered_equips(remove=remove):
+            equip = equip.to_dict()
+            _type = equip.pop('type')
 
-        return equips
+            if _type in ['Face', 'Face Accessory']:
+                equip['animationName'] = emotion
 
-    def url(self, pose='stand1', emotion='default',
-            zoom=1, flipx=False, bgcolor=(0, 0, 0, 0), remove=None):
-        """
-        Build API call to get char sprite data
-
-        :param pose:
-        :param emotion:
-        :param zoom:
-        :param flipx:
-        :param bgcolor:
-        :param remove:
-        :return:
-        """
-        # format equips. emotion placed in face/face accessory dicts
-        items = []
-
-        for item in self.item_dicts(remove=remove):
-            i = item.copy()
-
-            if i['type'] in ['Face', 'Face Accessory']:
-                i['animationName'] = emotion
-
-            i.pop('type')
-            items.append(i)
+            items.append(equip)
 
         items_s = parse.quote(
             json.dumps(items).lstrip('[').rstrip(']').replace(', ', ',').replace(': ', ':')
@@ -184,10 +253,20 @@ class Character:
 
         return f'{config.mapleio.api_url}/character/{items_s}/{pose}/0?{qs}'
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         """
+        Transform self into a dict. Output can be used as input of a
+        new Character instance (stripped down version of JSON)
 
-        :return:
+        Returns
+        -------
+        dict[str, Any]
+            key-value pairs of attributes
+
+        Notes
+        -----
+        JSON refers to itemids as `id`
+
         """
         char = {
             'name': self.name,
@@ -197,18 +276,11 @@ class Character:
             'mercEars': self.ears is Ears.MERCEDES,
             'illiumEars': self.ears is Ears.FLORA,
             'highFloraEars': self.ears is Ears.HIGH_FLORA,
-            'selectedItems': {}
-        }
-
-        for equip in self.equips:
-            subcat = Equip.get_equip_type(equip.itemid)
-            char['selectedItems'][subcat] = {
-                "id": equip.itemid,
-                "version": equip.version,
-                "name": equip._name  # no need to make API call
+            'selectedItems': {
+                eq.type: eq.to_dict(map={'itemId': 'id'}, exclude=['type'])
+                for eq in self.equips
             }
-            if equip.region != 'GMS':
-                char['selectedItems'][subcat]['region'] = equip.region
+        }
 
         return char
 
@@ -220,8 +292,6 @@ class Skin(IntEnum):
     """
     Set skin tones. Will be populated after reading in json
 
-    e.g.
-
     LIGHT = 2000
     ASHEN = 2004
     PALE_PINK = 2010
@@ -230,11 +300,34 @@ class Skin(IntEnum):
 
     """
     @property
-    def label(self):
+    def label(self) -> str:
+        """
+        Human readable version of skin name
+
+        Returns
+        -------
+        str
+            skin label
+
+        """
         return self.name.title().replace('_', ' ')
 
     @classmethod
-    def get(cls, skinid):
+    def get(cls, skinid: int) -> Skin:
+        """
+        Get the `Skin` enum from id
+
+        Parameters
+        ----------
+        skinid: int
+            the skin id
+
+        Returns
+        -------
+        `Skin`
+            the associated skin enum
+
+        """
         try:
             skin = cls(skinid)
         except ValueError:
@@ -250,12 +343,26 @@ for k, v in resources.SKINS.items():
 
 
 class Ears(Enum):
+    """
+    maplestory.io ear representation. Can be converted to bools for
+    API calls
+
+    """
     REGULAR = auto()
     MERCEDES = auto()  # mercedes
     FLORA = auto()  # illium
     HIGH_FLORA = auto()  # ark, adele
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, bool]:
+        """
+        Convert an enum to a dict
+
+        Returns
+        -------
+        dict[str, bool]
+            maplestory.io dict representation
+
+        """
         """
         Format dict for query string/maplestory.io API call
 
@@ -268,14 +375,24 @@ class Ears(Enum):
         }
 
     @classmethod
-    def get(cls, showears, showLefEars, showHighLefEars):
+    def get(cls, showears: bool, showLefEars: bool, showHighLefEars: bool) -> Ears:
         """
-        From 3 flags return the correct enum
+        From 3 bools, get the specified Ears enum
 
-        :param showears:
-        :param showLefEars:
-        :param showHighLefEars:
-        :return:
+        Parameters
+        ----------
+        showears: bool
+            has mercedes ears
+        showLefEars: bool
+            has flora ears
+        showHighLefEars: bool
+            has high flora ears
+
+        Returns
+        -------
+        Ears
+            the matching ears enum
+
         """
         ears = Ears.REGULAR
 
