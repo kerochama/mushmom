@@ -110,7 +110,7 @@ class Mushmom(commands.Bot):
             return
 
         cmd = ctx.command.qualified_name
-        cog = cmd.cog_name.lower()
+        cog = ctx.command.cog_name.lower()
         err_ns = ('errors' if isinstance(error, errors.MushmomError)
                   else 'commands')
         err = f'{err_ns}.{error.__class__.__name__}'
