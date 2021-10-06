@@ -13,49 +13,66 @@ class Meta(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    async def cog_check(self, ctx: commands.Context):
+        # only owner can run commands from this cog
+        return await self.bot.is_owner(ctx.author)
+
     @commands.command(hidden=True)
-    @commands.is_owner()
-    async def load(self, ctx, extension):
+    async def load(self, ctx: commands.Context, extension: str) -> None:
         """
         Load an extension dynamically from cogs
 
-        :param ctx:
-        :param extension:
-        :return:
+        Parameters
+        ----------
+        ctx: commands.Context
+        extension: str
+            extension name (filename without .py)
+
         """
         self.bot.load_extension(f'{__package__}.{extension}')
         await ctx.send(f'Loaded `cogs.{extension}`')
 
     @commands.command(hidden=True)
-    @commands.is_owner()
-    async def unload(self, ctx, extension):
+    async def unload(self, ctx: commands.Context, extension: str) -> None:
         """
-        Load an extesion dynamically from cogs
+        Unload an extension dynamically from cogs
 
-        :param ctx:
-        :param extension:
-        :return:
+        Parameters
+        ----------
+        ctx: commands.Context
+        extension: str
+            extension name (filename without .py)
+
         """
         self.bot.unload_extension(f'{__package__}.{extension}')
         await ctx.send(f'Unloaded `cogs.{extension}`')
 
     @commands.command(hidden=True)
-    @commands.is_owner()
-    async def reload(self, ctx, extension):
+    async def reload(self, ctx: commands.Context, extension: str) -> None:
         """
-        Load an extesion dynamically from cogs
+        Reload an extension dynamically from cogs
 
-        :param ctx:
-        :param extension:
-        :return:
+        Parameters
+        ----------
+        ctx: commands.Context
+        extension: str
+            extension name (filename without .py)
+
         """
         self.bot.unload_extension(f'{__package__}.{extension}')
         self.bot.load_extension(f'{__package__}.{extension}')
         await ctx.send(f'Reloaded `cogs.{extension}`')
 
     @commands.command(hidden=True)
-    @commands.is_owner()
-    async def quit(self, ctx):
+    async def quit(self, ctx: commands.Context) -> None:
+        """
+        Turn off bot from command
+
+        Parameters
+        ----------
+        ctx: commands.Context
+
+        """
         name = config.core.bot_name
         await ctx.message.reply(f'\u2620 {name} has been killed! \u2620')
         await self.bot.logout()
