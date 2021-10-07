@@ -14,7 +14,7 @@ from ..mapleio import api, resources
 from ..mapleio.character import Character
 
 
-class Sprite(commands.Cog):
+class Sprites(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -143,4 +143,4 @@ class Sprite(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Sprite(bot))
+    bot.add_cog(Sprites(bot))
