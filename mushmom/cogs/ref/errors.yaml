@@ -91,7 +91,7 @@ help:
       msg: Could not find command
       ref_cmds: null
 
-sprite:
+sprites:
   sprite:
     commands.TooManyArguments:
       msg: "Emotion/pose not found. See:\n\u200b"

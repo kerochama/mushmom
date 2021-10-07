@@ -16,6 +16,6 @@ import:
       - "<name> [url: maplestory.io]"
       - <name> with JSON file attached
 
-sprite:
+sprites:
   sprite:
     options: *imflags

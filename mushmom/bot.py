@@ -26,7 +26,7 @@ initial_extensions = (
     'cogs.characters',
     'cogs.import',
     'cogs.emotes',
-    'cogs.sprite'
+    'cogs.sprites'
 )
 
 
