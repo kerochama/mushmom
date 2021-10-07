@@ -2,6 +2,8 @@
 Character commands
 
 """
+from __future__ import annotations
+
 import discord
 import asyncio
 import inspect
@@ -17,16 +19,31 @@ class Characters(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def list_chars(self, ctx, user, text, thumbnail=None):
+    async def list_chars(
+            self,
+            ctx: commands.Context,
+            user: dict,
+            text: str,
+            thumbnail: str = None
+    ) -> discord.Message:
         """
-        List users chars. Returns user and prompt
+        List users chars
 
-        :param ctx:
-        :param text:
-        :param thumbnail:
-        :param reply: if message sent as reply or not
-        :param user: db user if already retrieved
-        :return:
+        Parameters
+        ----------
+        ctx: commands.Context
+        user: dict
+            user data from database
+        text: str
+            description displayed in embed
+        thumbnail: str
+            url to the embed thumbnail
+
+        Returns
+        -------
+        discord.Message
+            the message, if sent
+
         """
         embed = discord.Embed(description=text, color=config.core.embed_color)
         embed.set_author(name='Characters', icon_url=self.bot.user.avatar_url)
@@ -52,23 +69,37 @@ class Characters(commands.Cog):
 
         return msg
 
-    async def select_char(self, ctx, user, text=''):
+    async def select_char(
+            self, ctx: commands.Context,
+            user: dict,
+            text: Optional[str] = None
+    ) -> tuple[discord.Message, str]:
         """
         Sends embed with list of chars. User should react to select
 
-        :param ctx:
-        :param text:
-        :param user: db user if already retrieved
-        :return:
+        Parameters
+        ----------
+        ctx: commands.Context
+        user: dict
+            user data from database
+        text:
+            description displayed in embed prior to instructions
+
+        Returns
+        -------
+        tuple[discord.Message, str]
+            prompt message, selection ('1', '2', ..., 'x')
+
         """
         thumbnail = self.bot.get_emoji_url(config.emojis.mushping)
-        msg = (f'{text}React to select a character or select '
+        msg = (f'{text or ""}React to select a character or select '
                f'\u200b \u274e \u200b to cancel\n\u200b')
         prompt = await self.list_chars(ctx, user, msg, thumbnail)
 
         # numbered unicode emojis 1 - # max chars
+        max_chars = config.core.max_chars
         reactions = {f'{x + 1}': f'{x + 1}\ufe0f\u20e3'
-                     for x in range(min(len(user['chars']), config.core.max_chars))}
+                     for x in range(min(len(user['chars']), max_chars))}
         reactions['x'] = '\u274e'
 
         # add reactions
@@ -96,16 +127,36 @@ class Characters(commands.Cog):
 
         return prompt, sel
 
-    async def get_char_index(self, ctx, user, name=None,
-                             cancel_text='Cancelled'):
+    async def get_char_index(
+            self, ctx: commands.Context,
+            user: dict,
+            name: Optional[str] = None,
+            cancel_text: str = 'Cancelled'
+    ) -> int:
         """
         Get index from char list
 
-        :param ctx:
-        :param user:
-        :param name:
-        :param cancel_text:
-        :return:
+        :param ctx: discord context
+        :param user: user data from database
+        :param name: a character name
+        :param cancel_text: text sent when selection cancelled
+        :return: the index of given character name
+
+        Parameters
+        ----------
+        ctx: commands.Context
+        user: dict
+            user data from database
+        name: str
+            the character to be found
+        cancel_text:
+            text to send when cancelled
+
+        Returns
+        -------
+        int
+            the character's index
+
         """
         chars = user['chars']
 
@@ -130,11 +181,14 @@ class Characters(commands.Cog):
         return ind
 
     @commands.command()
-    async def chars(self, ctx):
+    async def chars(self, ctx: commands.Context) -> None:
         """
         List all characters registered
 
-        :param ctx:
+        Parameters
+        ----------
+        ctx: commands.Context
+
         """
         user = await self.bot.db.get_user(ctx.author.id)
         await self.list_chars(ctx, user, 'Your mushable characters\n\u200b')
@@ -144,15 +198,23 @@ class Characters(commands.Cog):
         pass
 
     @set.command(name='main', aliases=['default'])
-    async def _main(self, ctx, name: Optional[str] = None):
+    async def _main(
+            self,
+            ctx: commands.Context,
+            name: Optional[str] = None
+    ) -> None:
         """
         Set the default character when using emotes/sprites to the
         character specified.  If no character name is provided, a
         reactable prompt of registered characters will appear for
         selection
 
-        :param ctx:
-        :param name:
+        Parameters
+        ----------
+        ctx: commands.Context
+        name: Optional[str]
+            the character's name. If none, send prompt
+
         """
         user = await self.bot.db.get_user(ctx.author.id)
 
@@ -168,7 +230,7 @@ class Characters(commands.Cog):
             return
 
         ret = await self.bot.db.set_user(ctx.author.id, {'default': new_i})
-
+        print(ret)
         if ret.acknowledged:
             name = user['chars'][new_i]['name']
             await ctx.send(f'Your main was changed to **{name}**')
@@ -179,14 +241,22 @@ class Characters(commands.Cog):
         self.bot.reply_cache.remove(ctx)
 
     @commands.command()
-    async def delete(self, ctx, name: Optional[str] = None):
+    async def delete(
+            self,
+            ctx: commands.Context,
+            name: Optional[str] = None
+    ) -> None:
         """
         Delete the specified character from registry. If no character
         name is provided, a reactable prompt of registered characters
         will appear for selection
 
-        :param ctx:
-        :param name:
+        Parameters
+        ----------
+        ctx: commands.Context
+        name: Optional[str]
+            the character's name. If none, send prompt
+
         """
         user = await self.bot.db.get_user(ctx.author.id)
 
@@ -222,25 +292,34 @@ class Characters(commands.Cog):
         self.bot.reply_cache.remove(ctx)
 
     @commands.command(ignore_extra=False)
-    async def rename(self, ctx,
-                     name: Optional[converters.CharNameConverter] = None,
-                     new_name=None):
+    async def rename(
+            self,
+            ctx: commands.Context,
+            name: Optional[converters.CharNameConverter] = None,
+            new_name: str = None
+    ) -> None:
         """
         Rename a character with the new name give. The existing
         character name is optional, in which case a reactable prompt
         of registered characters will appear for selection
 
+        Parameters
+        ----------
+        ctx: commands.Context
+        name: Optional[str]
+            the character's name. If none, send prompt
+        new_name: str
+            new character name
+
+        Notes
+        -----
         Use ignore_extra=False because otherwise may incorrectly
         capture new_name as name
 
         e.g.
-        mush rename not_a_char_name Mushmom
-        - new_name would be not_a_char_name
+        `>>> mush rename not_a_char_name Mushmom
+            - new_name would be populated by not_a_char_name
 
-        :param ctx:
-        :param name:
-        :param new_name:
-        :return:
         """
         if not new_name:
             raise commands.MissingRequiredArgument(
@@ -271,12 +350,16 @@ class Characters(commands.Cog):
         else:
             raise errors.DataWriteError
 
-    async def cog_after_invoke(self, ctx):
+    async def cog_after_invoke(self, ctx: commands.Context) -> None:
         # unregister reply cache if successful
         if not ctx.command_failed:
             self.bot.reply_cache.remove(ctx)
 
-    async def cog_command_error(self, ctx, error):
+    async def cog_command_error(
+            self,
+            ctx: commands.Context,
+            error: Exception
+    ) -> None:
         # clean up stray replies
         if not ctx.command.has_error_handler():
             await self.bot.reply_cache.clean_up(ctx)

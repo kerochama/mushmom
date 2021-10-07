@@ -5,13 +5,18 @@ Custom help command
 from __future__ import annotations
 
 import discord
+import builtins
 
-from typing import Iterable, Union, Optional
+from typing import Iterable, Union, Optional, Callable
 from discord.ext import commands
 
 from .. import config
 from . import ref
 from ..utils import converters
+
+
+def _not_hidden(command):
+    return not command.hidden
 
 
 class Help(commands.Cog):
@@ -257,28 +262,46 @@ class Help(commands.Cog):
         """
         The command that generated this message
 
-        :param ctx:
-        :param command:
-        :return:
+        Parameters
+        ----------
+        ctx: commands.Context
+        command: Optional[str]
+            the command for which to get help
+
+        Returns
+        -------
+        discord.Message
+            the help message sent
+
         """
         if command is None:
             return await self.send_bot_help(ctx)
         else:
             return await self.send_command_help(ctx, command)
 
-    def get_bot_mapping(self, filter=lambda cmd: not cmd.hidden):
+    def get_bot_mapping(
+            self,
+            filter: Callable[[commands.Command], bool] = _not_hidden
+    ) -> dict[str, list[commands.Command]]:
         """
-        Get dict of cog: [command, ...] of bot
+        Get dict of cog_name: [command, ...] of bot
 
-        :param filter:
-        :return:
+        Parameters
+        ----------
+        filter: Callable[[commands.Command], bool]
+            Condition to filter commands returned
+
+        Returns
+        -------
+        dict[str, list[commands.Command]]
+            a mapping of cog_name to list of commands in cog including
+            subcommands
+
         """
         mapping = {}
 
-        for cmd in self.bot.commands:  # include subcommands and aliases
-            if not filter(cmd):  # skip hidden commands by default
-                continue
-
+        # include subcommands and aliases
+        for cmd in builtins.filter(filter, self.bot.commands):
             cog_name = cmd.cog_name or 'Other'
 
             if isinstance(cmd, commands.Group):
@@ -292,7 +315,21 @@ class Help(commands.Cog):
 
         return mapping
 
-    async def send_bot_help(self, ctx):
+    async def send_bot_help(self, ctx: commands.Context) -> discord.Message:
+        """
+        Creates embed with list of all commands in bot categorized by
+        cog_name as fields and send
+
+        Parameters
+        ----------
+        ctx: commands.Context
+
+        Returns
+        -------
+        discord.Message
+            the help message sent
+
+        """
         embed = discord.Embed(
             description=(f'{config.core.bot_name} will send emotes and '
                          'actions for you. To get started, check out '
@@ -317,10 +354,29 @@ class Help(commands.Cog):
 
         return await ctx.send(embed=embed)
 
-    async def send_command_help(self, ctx, command):
+    async def send_command_help(
+            self,
+            ctx: commands.Context,
+            command: str
+    ) -> discord.Message:
+        """
+        Create and embed with information about command and send.
+        Includes description, usage, options, and aliases
+
+        Parameters
+        ----------
+        ctx: commands.Context
+        command: str
+            full qualified command name
+
+        Returns
+        -------
+        discord.Message
+            the help message sent
+
+        """
         # check if exists
         cmd = self.bot.get_command(command)
-
         if not cmd:  # not a command
             return
 

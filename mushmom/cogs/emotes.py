@@ -19,20 +19,29 @@ class Emotes(commands.Cog):
         self.bot = bot
 
     @commands.command(ignore_extra=False)
-    async def emote(self, ctx,
-                    emote: Optional[converters.EmotionConverter] = 'default',
-                    options: commands.Greedy[converters.OptionConverter] = None):
+    async def emote(
+            self,
+            ctx: commands.Context,
+            emote: Optional[converters.EmotionConverter] = 'default',
+            options: commands.Greedy[converters.OptionConverter] = None
+    ) -> None:
         """
         Replace message with the emote specified. For a list of usable
         emotes, see `{prefix}emotes`
 
+        Parameters
+        ----------
+        ctx: commands.Context
+        emote: Optional[str]
+            a word listed in in emotions.json
+        options: commands.Greedy[flag] (str: --flag)
+            flags that begin with long/double dashes
+
+        Notes
+        -----
         Use ignore_extra=False to differentiate improper emotes from default
         emote (can be used directly without args)
 
-        :param ctx:
-        :param emote:
-        :param options:
-        :return:
         """
         # grab character
         user = await self.bot.db.get_user(ctx.author.id)
@@ -76,12 +85,14 @@ class Emotes(commands.Cog):
             raise errors.MapleIOError
 
     @commands.command()
-    async def emotes(self, ctx):
+    async def emotes(self, ctx: commands.Context) -> None:
         """
         List all emotes available
 
-        :param ctx:
-        :return:
+        Parameters
+        ----------
+        ctx: commands.Context
+
         """
         embed = discord.Embed(
             description='The following is a list of emotes you can use\n\u200b',

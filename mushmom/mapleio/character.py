@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 from urllib import parse
 from aenum import Enum, IntEnum, auto, extend_enum
-from typing import Union, Optional, Any
+from typing import Union, Optional, Any, Iterable
 
 from .. import config
 from . import resources
@@ -27,11 +27,11 @@ class Character:
         the maplestory version
     region: region
         maplestory region
-    skin: `Skin`
+    skin: Skin
         Enum value of skins from skins.json
-    ears: `Ears`
+    ears: Ears
         Enum value of ears from maplestory.io representation
-    equips: list[`Equip`, ...]
+    equips: list[Equip]
         equips worn by character
 
     """
@@ -63,7 +63,7 @@ class Character:
 
         Returns
         -------
-        `Character`
+        Character
             parsed character object
 
         Notes
@@ -112,7 +112,7 @@ class Character:
 
         Returns
         -------
-        `Character`
+        Character
             parsed character object
 
         Notes
@@ -161,22 +161,22 @@ class Character:
 
     def filtered_equips(
             self,
-            keep: Optional[list[str, ...]] = None,
-            remove: Optional[list[str, ...]] = None
-    ) -> list[Equip, ...]:
+            keep: Optional[Iterable[str]] = None,
+            remove: Optional[Iterable[str]] = None
+    ) -> list[Equip]:
         """
         Filtered equips. Keep is prioritized over remove
 
         Parameters
         ----------
-        keep: Optional[list[str, ...]]
+        keep: Optional[Iterable[str]]
             list of equip types to keep
-        remove: Optional[list[str, ...]]
+        remove: Optional[Iterable[str]]
             list of equip types to remove
 
         Returns
         -------
-        list[`Equip`, ...]
+        list[Equip]
             list of equips worn by character
 
         """
@@ -194,7 +194,7 @@ class Character:
             zoom: float = 1,
             flipx: bool = False,
             bgcolor: tuple[int, int, int, int] = (0, 0, 0, 0),
-            remove: Optional[list[str, ...]] = None
+            remove: Optional[Iterable[str]] = None
     ) -> str:
         """
         Build API call to get char sprite data
@@ -211,7 +211,7 @@ class Character:
             whether or not to flip sprite horizontally
         bgcolor: tuple[int, int, int, int]
             rgba color tuple
-        remove: Optional[list[str, ...]]
+        remove: Optional[Iterable[str]]
             list of equip types to remove
 
         Returns
@@ -315,7 +315,7 @@ class Skin(IntEnum):
     @classmethod
     def get(cls, skinid: int) -> Skin:
         """
-        Get the `Skin` enum from id
+        Get the Skin enum from id
 
         Parameters
         ----------
@@ -324,7 +324,7 @@ class Skin(IntEnum):
 
         Returns
         -------
-        `Skin`
+        Skin
             the associated skin enum
 
         """

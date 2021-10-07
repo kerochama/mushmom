@@ -12,12 +12,14 @@ class Core(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def hello(self, ctx):
+    async def hello(self, ctx: commands.Context) -> None:
         """
         Say hello!
 
-        :param ctx:
-        :return:
+        Parameters
+        ----------
+        ctx: commands.Context
+
         """
         await ctx.send('hai')
 

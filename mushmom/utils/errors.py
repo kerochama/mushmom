@@ -27,7 +27,7 @@ class MapleIOError(MushmomError):
 
 
 class MissingCogError(MushmomError):
-    """commands.ExtensionNotLoaded looks like commands.CommandInvokeError
+    """commands.ExtensionNotLoaded triggers commands.CommandInvokeError
 
     Using this instead"""
     pass
@@ -48,6 +48,7 @@ class DiscordIOError(MushmomError):
 
 
 class TimeoutError(MushmomError):
+    """Same as regular time, but inherits commands.CommandError"""
     pass
 
 

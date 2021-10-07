@@ -1,18 +1,30 @@
+"""
+Functions related to making API calls to maplestory.io
+
+"""
+from __future__ import annotations
+
 import aiohttp
 import functools
 
 from PIL import Image
 from io import BytesIO
+from typing import Callable, Coroutine, Any, Optional, Union
 
 from .. import config
 
 
-def with_session(coro):
+def with_session(coro: Callable[[Any, Any], Coroutine[Any]]):
     """
     Decorator to handle adding aiohttp session if not provided
 
-    :param coro:
-    :return:
+    Parameters
+    ----------
+    coro: Callable[[Any, Any], Coroutine[Any]]
+
+    Returns
+    -------
+
     """
     @functools.wraps(coro)
     async def wrapper(*args, **kwargs):
@@ -27,13 +39,25 @@ def with_session(coro):
 
 
 @with_session
-async def latest_version(region='GMS', session=None):
+async def latest_version(
+        region: str = 'GMS',
+        session: Optional[aiohttp.ClientSession] = None
+) -> str:
     """
     Get the latest version for region
 
-    :param region:
-    :param session:
-    :return:
+    Parameters
+    ----------
+    region: str
+        maplestory region
+    session: session: Optional[aiohttp.ClientSession]
+        session to use when issuing http get
+
+    Returns
+    -------
+    str
+        the latest version found
+
     """
     u = f'{config.mapleio.api_url}/wz'
 
@@ -49,17 +73,31 @@ async def latest_version(region='GMS', session=None):
 
 
 @with_session
-async def get_item(itemid, region='GMS',
-                   version=config.mapleio.default_version,
-                   session=None):
+async def get_item(
+        itemid: Union[int, str],
+        region: str = 'GMS',
+        version: str = config.mapleio.default_version,
+        session: aiohttp.ClientSession = None
+) -> dict:
     """
     Get info about itemid
 
-    :param itemid:
-    :param region:
-    :param version:
-    :param session:
-    :return:
+    Parameters
+    ----------
+    itemid: Union[int, str]
+        the item's id
+    region: str
+        region to pull info from
+    version: str
+        version to pull info from
+    session: Optional[aiohttp.ClientSession]
+        session to use when issuing http get
+
+    Returns
+    -------
+    dict
+        the json returned by maplestory.io
+
     """
     u = f'{config.mapleio.api_url}/{region}/{version}/item/{itemid}'
 
@@ -70,20 +108,40 @@ async def get_item(itemid, region='GMS',
 
 
 @with_session
-async def get_sprite(char, pose='stand1', emotion='default',
-                     zoom=1, flipx=False, bgcolor=(0, 0, 0, 0),
-                     session=None):
+async def get_sprite(
+        char: 'Character',
+        pose: str = 'stand1',
+        emotion: str = 'default',
+        zoom: float = 1,
+        flipx: bool = False,
+        bgcolor: tuple[int, int, int, int] = (0, 0, 0, 0),
+        session: aiohttp.ClientSession = None
+) -> bytes:
     """
     Make API call to get char sprite data
 
-    :param char:
-    :param pose:
-    :param emotion:
-    :param zoom:
-    :param flipx:
-    :param bgcolor:
-    :param session:
-    :return:
+    Parameters
+    ----------
+    char: Character
+        The character from which to generate the sprite
+    pose: str
+        pose from poses.json
+    emotion: str
+        emotion from emotions.json
+    zoom: float
+        how zoomed in the image should be (1 = 100%)
+    flipx: bool
+        whether or not to flip sprite horizontally
+    bgcolor: tuple[int, int, int, int]
+        rgba color tuple
+    session: Optional[aiohttp.ClientSession]
+        session to use when issuing http get
+
+    Returns
+    -------
+    bytes
+        the byte data from the generated sprite
+
     """
     args = locals().copy()
     args.pop('char')
@@ -97,17 +155,35 @@ async def get_sprite(char, pose='stand1', emotion='default',
 
 
 @with_session
-async def get_emote(char, emotion='default', zoom=1, pad=8, session=None):
+async def get_emote(
+        char: 'Character',
+        emotion: str = 'default',
+        zoom: float = 1,
+        pad: int = 8,
+        session: aiohttp.ClientSession = None
+) -> bytes:
     """
-    Make API call to get char sprite data, crop out body,
-    and return bytes.  Remove cape and weapon
+    Make API call to get char sprite data, crop out body, and return
+    bytes.  Remove cape and weapon
 
-    :param char:
-    :param emotion:
-    :param zoom:
-    :param pad:
-    :param session:
-    :return:
+    Parameters
+    ----------
+    char: Character
+        The character from which to generate the sprite
+    emotion: str
+        emotion from emotions.json
+    zoom: float
+        how zoomed in the image should be (1 = 100%)
+    pad: int
+        number of pixels to pad below head to show body
+    session: Optional[aiohttp.ClientSession]
+        session to use when issuing http get
+
+    Returns
+    -------
+    bytes
+        the byte data from the generated emote
+
     """
     u = char.url(emotion=emotion, zoom=zoom, remove=['Cape', 'Weapon'])
 

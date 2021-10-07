@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import discord
 import sys
 import aiohttp
@@ -7,7 +9,9 @@ import traceback
 import time
 
 from discord.ext import commands, tasks
+from discord import Emoji, Reaction, PartialEmoji
 from motor.motor_asyncio import AsyncIOMotorClient
+from typing import Optional, Union, Iterable
 
 from . import config
 from .utils import checks, errors, database as db, converters
@@ -31,6 +35,26 @@ def _prefix_callable(bot, msg):
 
 
 class Mushmom(commands.Bot):
+    """
+    Bot used to send emotes and sprites by making API calls to
+    maplestory.io
+
+    Parameters
+    ----------
+    db_client: AsyncIOMotorClient
+        an active client connected to MongoDB
+
+    Attributes
+    ----------
+    session: aiohttp.ClientSession
+        client for making async http requests
+    reply_cache: ReplyCache
+        an expiring cache of replies to processed messages for
+        subsequent interaction or clean up
+    db: AsyncIOMotorDatabase
+        the MongoDB database holding collections
+
+    """
     def __init__(self, db_client: AsyncIOMotorClient):
         super().__init__(command_prefix=_prefix_callable)
         self.session = None  # set in on_ready
@@ -52,12 +76,14 @@ class Mushmom(commands.Bot):
         if not self._verify_cache_integrity.is_running:
             self._verify_cache_integrity.start()
 
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message) -> None:
         """
-        Call emotes if no command and emote names are passed
+        Call emotes if no command found and emote name is passed
 
-        :param message:
-        :return:
+        Parameters
+        ----------
+        message: discord.Message
+
         """
         ctx = await self.get_context(message)
 
@@ -96,14 +122,24 @@ class Mushmom(commands.Bot):
         else:
             await self.process_commands(message)
 
-    async def on_command_error(self, ctx, error):
+    async def on_command_error(
+            self,
+            ctx: commands.Context,
+            error: Exception
+    ) -> None:
         """
-        Overwrite default to always run. Searches for error in cogs.ref.ERRORS,
-        which is a nested dict
+        Override default error handler to always run. Errors messages
+        are pulled from cogs.ref.ERRORS.
 
-        :param ctx:
-        :param error:
-        :return:
+        Local error handlers can still be used. If a reply already
+        exists in self.reply_cache, on_command_error will assume it has
+        handled notifying user of the issue and pass
+
+        Parameters
+        ----------
+        ctx: commands.Context
+        error: Exception
+
         """
         if ctx in self.reply_cache:  # already sent message
             self.reply_cache.remove(ctx)
@@ -126,19 +162,36 @@ class Mushmom(commands.Bot):
 
         await self.send_error(ctx, msg, ref_cmds)
 
-    async def send_error(self, ctx, text=None, ref_cmds=None,
-                         delete_message=not config.core.debug,
-                         delay=config.core.default_delay):
+    async def send_error(
+            self,
+            ctx: commands.Context,
+            text: Optional[str] = None,
+            ref_cmds: Optional[Iterable[str]] = None,
+            delete_message: bool = not config.core.debug,
+            delay: int = config.core.default_delay
+    ) -> discord.Message:
         """
-        Generic function to send formatted error.  Deletion will not happen
-        when DEBUG is on
+        Send a message to ctx.channel with an error message. The
+        original message and the error message will auto-delete after
+        a few seconds to keep channel clean
 
-        :param ctx:
-        :param text:
-        :param ref_cmds:
-        :param delete_message:
-        :param delay:
-        :return:
+        Parameters
+        ----------
+        ctx: commands.Context
+        text: Optional[str]
+            the message to send
+        ref_cmds: Optional[Iterable[str]]
+            list of fully qualified command names to reference
+        delete_message: bool
+            whether or not to auto delete message
+        delay: int
+            seconds to wait before deleting
+
+        Returns
+        -------
+        discord.Message
+            the error message that was sent
+
         """
         # defaults
         if text is None:
@@ -171,15 +224,28 @@ class Mushmom(commands.Bot):
         return error
 
     @staticmethod
-    async def send_as_author(ctx, *args, **kwargs):
+    async def send_as_author(
+            ctx: commands.Context,
+            *args,
+            **kwargs
+    ) -> discord.Message:
         """
-        Use webhook to send a message with authors name and pfp.  Create one
-        if does not exist
+        Use webhook to send a message with author's name and pfp.
+        Create one if does not exist
 
-        :param ctx:
-        :param args:
-        :param kwargs:
-        :return:
+        Parameters
+        ----------
+        ctx: commands.Context
+        args
+            passed to discord.Webhook.send
+        kwargs
+            passed to discord.Webhook.send
+
+        Returns
+        -------
+        discord.Message
+            the message that was sent
+
         """
         webhooks = await ctx.channel.webhooks()
         webhook = next((wh for wh in webhooks if wh.name == config.core.hook_name),
@@ -194,25 +260,40 @@ class Mushmom(commands.Bot):
                                   avatar_url=ctx.author.avatar_url)
 
     @staticmethod
-    async def add_delayed_reaction(ctx, reaction,
-                                   delay=config.core.delayed_react_time):
+    async def add_delayed_reaction(
+            ctx: commands.Context,
+            reaction: Union[Emoji, Reaction, PartialEmoji, str],
+            delay: int = config.core.delayed_react_time
+    ) -> None:
         """
         Add a reaction after some time
 
-        :param ctx:
-        :param reaction:
-        :param delay:
-        :return:
+        Parameters
+        ----------
+        ctx: commands.Context
+        reaction: Union[Emoji, Reaction, PartialEmoji, str]
+            the reaction/emoji to add
+        delay: int
+            seconds to wait before adding reaction
+
         """
         await asyncio.sleep(delay)
         await ctx.message.add_reaction(reaction)
 
-    def get_emoji_url(self, emoji_id):
+    def get_emoji_url(self, emoji_id: int) -> str:
         """
         Convenience wrapper to pull url from emoji
 
-        :param emoji_id:
-        :return:
+        Parameters
+        ----------
+        emoji_id: int
+            the discord emoji id
+
+        Returns
+        -------
+        str
+            the emoji url or bot avatar url
+
         """
         emoji = self.get_emoji(emoji_id)
 
@@ -224,54 +305,67 @@ class Mushmom(commands.Bot):
 
     @tasks.loop(minutes=10)
     async def _verify_cache_integrity(self):
-        """
-        Clean up stray cached replies
-
-        :return:
-        """
+        """Clean up stray cached replies"""
         self.reply_cache.verify_cache_integrity()
 
     async def close(self):
+        """Ensure all connections are closed"""
         await super().close()
         await self.session.close()
         self.db.close()
 
 
 class ReplyCache:
-    def __init__(self, seconds):
-        """
-        Maintains a cache of messages sent by bot in response to a command
-        so that they can be referenced/cleaned subsequently
+    """
+    Maintains a cache of messages sent by bot in response to a
+    command so that they can be referenced/cleaned subsequently.
+    Entries will expire after some time
 
-        :param seconds:
-        """
+    Parameters
+    ----------
+    seconds: int
+        the number of seconds to wait before expiring
+
+    """
+    def __init__(self, seconds: int):
         self.__ttl = seconds
         self.__cache = {}
         super().__init__()
 
-    def verify_cache_integrity(self):
+    def verify_cache_integrity(self) -> None:
+        """Loop through cache and remove all expired keys"""
         current_time = time.monotonic()
         to_remove = [k for (k, (v, t)) in self.__cache.items()
                      if current_time > (t + self.__ttl)]
         for k in to_remove:
             del self.__cache[k]
 
-    def get(self, ctx):
-        return self.__cache.get(ctx.message.id, None)
+    def get(self, ctx: commands.Context) -> Optional[discord.Message]:
+        reply, t = self.__cache.get(ctx.message.id, (None, None))
+        current_time = time.monotonic()
+        if reply and (t + self.__ttl) <= current_time:
+            return reply
 
-    def add(self, ctx, reply):
+    def add(self, ctx: commands.Context, reply: discord.Message) -> None:
         self.__cache[ctx.message.id] = (reply, time.monotonic())
 
-    def remove(self, ctx):
+    def remove(self, ctx: commands.Context) -> None:
         self.__cache.pop(ctx.message.id, None)
 
-    def contains(self, ctx):
-        return ctx.message.id in self.__cache
+    def contains(self, ctx: commands.Context) -> bool:
+        reply, t = self.__cache.get(ctx.message.id, (None, None))
+        current_time = time.monotonic()
+        return reply and (t + self.__ttl) <= current_time
 
-    def __contains__(self, ctx):
+    def __contains__(self, ctx: commands.Context) -> bool:
         return self.contains(ctx)
 
-    async def clean_up(self, ctx, delete=not config.core.debug):
+    async def clean_up(
+            self,
+            ctx: commands.Context,
+            delete: bool = not config.core.debug
+    ) -> None:
+        """Delete key if exists. Also delete reply from discord"""
         reply = self.__cache.pop(ctx, None)
 
         if reply and delete:

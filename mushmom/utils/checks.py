@@ -2,14 +2,22 @@
 Contains command checks
 
 """
+from discord.ext import commands
 
 
-async def not_bot(ctx):
+async def not_bot(ctx: commands.Context) -> bool:
     """
-    Check if send is a bot
+    Check if author is a bot
 
-    :param ctx:
-    :return:
+    Parameters
+    ----------
+    ctx: commands.Context
+
+    Returns
+    -------
+    bool
+        whether or not the author is a bot
+
     """
     message = ctx.message
 

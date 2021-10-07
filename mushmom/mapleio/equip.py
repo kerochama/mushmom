@@ -6,7 +6,7 @@ in order to read in and recreate API calls
 from __future__ import annotations
 
 from collections import namedtuple
-from typing import Optional, Union, Any
+from typing import Optional, Union, Any, Iterable
 
 from . import resources, api
 
@@ -73,7 +73,7 @@ class Equip:
     def to_dict(
             self,
             map: dict[str, str] = None,
-            exclude: Optional[list[str, ...]] = None
+            exclude: Optional[Iterable[str]] = None
     ) -> dict[str, Any]:
         """
 
@@ -81,7 +81,7 @@ class Equip:
         ----------
         map: dict[str, str]
             mapping of key to new key
-        exclude: Optional[list[str, ...]]
+        exclude: Optional[Iterable[str]]
             list of keys to exclude
 
         Returns

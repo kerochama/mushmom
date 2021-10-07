@@ -19,23 +19,33 @@ class Sprite(commands.Cog):
         self.bot = bot
 
     @commands.group(invoke_without_command=True, ignore_extra=False)
-    async def sprite(self, ctx,
-                     emotion: Optional[converters.EmotionConverter] = 'default',
-                     pose: Optional[converters.PoseConverter] = 'stand1',
-                     options: commands.Greedy[converters.OptionConverter] = None):
+    async def sprite(
+            self,
+            ctx: commands.Context,
+            emotion: Optional[converters.EmotionConverter] = 'default',
+            pose: Optional[converters.PoseConverter] = 'stand1',
+            options: commands.Greedy[converters.OptionConverter] = None
+    ) -> None:
         """
         Replace message with the emote specified. For a list of usable
         emotions and poses, see `{prefix}emotions` and `{prefix}poses`,
         respectively
 
-        Use ignore_extra=False to differentiate improper emotes from
-        default emotions and poses (can be used directly without args)
+        Parameters
+        ----------
+        ctx: commands.Context
+        emotion: Optional[str]
+            a word listed in in emotions.json
+        pose: Optional[str]
+            a word listed in in poses.json
+        options: commands.Greedy[flag] (str: --flag)
+            flags that begin with long/double dashes
 
-        :param ctx:
-        :param emotion:
-        :param pose:
-        :param options:
-        :return:
+        Notes
+        -----
+        Use ignore_extra=False to differentiate improper emotes from default
+        emote (can be used directly without args)
+
         """
         # grab character
         user = await self.bot.db.get_user(ctx.author.id)
@@ -79,12 +89,14 @@ class Sprite(commands.Cog):
             raise errors.MapleIOError
 
     @sprite.command()
-    async def emotions(self, ctx):
+    async def emotions(self, ctx: commands.Context) -> None:
         """
         List the emotions available for characters
 
-        :param ctx:
-        :return:
+        Parameters
+        ----------
+        ctx: commands.Context
+
         """
         embed = discord.Embed(
             description=('The following is a list of emotions you can use in the '
@@ -106,12 +118,14 @@ class Sprite(commands.Cog):
         await ctx.send(embed=embed)
 
     @sprite.command()
-    async def poses(self, ctx):
+    async def poses(self, ctx: commands.Context) -> None:
         """
         List the poses available for characters
 
-        :param ctx:
-        :return:
+        Parameters
+        ----------
+        ctx: commands.Context
+
         """
         embed = discord.Embed(
             description=('The following is a list of poses you can use in the '
