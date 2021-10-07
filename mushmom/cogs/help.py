@@ -2,26 +2,42 @@
 Custom help command
 
 """
+from __future__ import annotations
+
 import discord
 
-from typing import Iterable, Union
+from typing import Iterable, Union, Optional
 from discord.ext import commands
 
 from .. import config
 from . import ref
+from ..utils import converters
 
 
 class Help(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def _qualified_name(self, command, alias_of=None):
+    def _qualified_name(
+            self,
+            command: Union[commands.Command, str],
+            alias_of: Optional[commands.Command] = None
+    ) -> Optional[str]:
         """
         Format qualified name of command, even if alias given
 
-        :param command:
-        :param alias_of: if known, to resolve leaf alias name given
-        :return:
+        Parameters
+        ----------
+        command: Union[commands.Command, str]
+            the command or command name
+        alias_of: Optional[commands.Command]
+            the aliased command if known
+
+        Returns
+        -------
+        Optional[str]
+            qualified command/alias name or None if not found
+
         """
         if isinstance(command, str):
             cmd = alias_of or self.bot.get_command(command)
@@ -38,29 +54,61 @@ class Help(commands.Cog):
 
         return name
 
-    def get_cmd_name(self, ctx, command, alias_of=None, formatted=True):
+    def get_cmd_name(
+            self,
+            ctx: commands.Context,
+            command: Union[commands.Command, str],
+            alias_of: Optional[commands.Command] = None,
+            formatted: bool = True
+    ) -> Optional[str]:
         """
-        Get prefixed, qualified command name.  If alias passed return the
-        alias name
 
-        :param ctx:
-        :param command:
-        :param alias_of: if known, to resolve leaf alias name given
-        :param formatted: whether to wrap in ``
-        :return:
+        Parameters
+        ----------
+        ctx: commands.Context
+        command: Union[commands.Command, str]
+            the command or command name
+        alias_of: Optional[commands.Command]
+            the aliased command if known
+        formatted: bool
+            whether or not to wrap in code `s
+
+        Returns
+        -------
+        Optional[str]
+            prefix + command name or None if not found
+
         """
         name = self._qualified_name(command, alias_of)
+        if not name:  # command not found in bot
+            return
+
         full_name = f'{ctx.prefix}{name}'
         return f'`{full_name}`' if formatted else full_name
 
-    def get_signature(self, command, alias_of=None):
+    def get_signature(
+            self,
+            command: Union[commands.Command, str],
+            alias_of: Optional[commands.Command] = None
+    ) -> Optional[list[str]]:
         """
         Get all signatures for command.  If alias passed, return the
         alias signature
 
-        :param command:
-        :param alias_of: if known, to resolve leaf alias name given
-        :return:
+        Searches for signatures in cogs.ref.HELP first
+
+        Parameters
+        ----------
+        command: Union[commands.Command, str]
+            the command or command name
+        alias_of: Optional[commands.Command]
+            the aliased command if known
+
+        Returns
+        -------
+        Optional[list[str]]
+            signatures
+
         """
         cmd = (alias_of or self.bot.get_command(command)
                if isinstance(command, str) else command)
@@ -75,15 +123,28 @@ class Help(commands.Cog):
 
         return sigs
 
-    def get_usage(self, ctx, command, alias_of=None):
+    def get_usage(self,
+            ctx: commands.Context,
+            command: Union[commands.Command, str],
+            alias_of: Optional[commands.Command] = None
+    ) -> Optional[list[str]]:
         """
         Full call (command + signature).  If alias passed, return the
         alias signature
 
-        :param ctx:
-        :param command:
-        :param alias_of: if known, to resolve leaf alias name given
-        :return:
+        Parameters
+        ----------
+        ctx: commands.Context
+        command: Union[commands.Command, str]
+            the command or command name
+        alias_of: Optional[commands.Command]
+            the aliased command if known
+
+        Returns
+        -------
+        Optional[list[str]]
+            prefix + command + signature or None if not found
+
         """
         name = self.get_cmd_name(ctx, command, alias_of, formatted=False)
         sigs = self.get_signature(command, alias_of)
@@ -93,13 +154,26 @@ class Help(commands.Cog):
 
         return [f'`{name}{" " + sig if sig else sig}`' for sig in sigs]
 
-    def _prepare_cmds(self, commands, aliases=False):
+    def _prepare_cmds(
+            self,
+            commands: Iterable[Union[commands.Command, str]],
+            aliases: bool = False
+    ) -> Iterable[Union[commands.Command, str]]:
         """
         Expand to include alias in aliases=True
 
-        :param commands:
-        :param aliases:
-        :return:
+        Parameters
+        ----------
+        commands: Iterable[Union[commands.Command, str]]
+            list of commands or command names
+        aliases: bool
+            whether or not to include aliases
+
+        Returns
+        -------
+        Iterable[Union[commands.Command, str]]
+            the expanded list of commands or command names
+
         """
         if aliases:
             cmds = [self.bot.get_command(c) if isinstance(c, str) else c
@@ -113,14 +187,28 @@ class Help(commands.Cog):
 
         return cmds
 
-    def get_cmd_names(self, ctx, commands, aliases=False):
+    def get_cmd_names(
+            self,
+            ctx: commands.Context,
+            commands: Iterable[Union[commands.Command, str]],
+            aliases: bool = False
+    ) -> Iterable[str]:
         """
         Get full command names without parameters
 
-        :param ctx:
-        :param commands:
-        :param aliases:
-        :return:
+        Parameters
+        ----------
+        ctx: commands.Context
+        commands: Iterable[Union[commands.Command, str]]
+            list of commands or command names
+        aliases: bool
+            whether or not to include aliases
+
+        Returns
+        -------
+        Iterable[str]
+            the expanded list of command names with prefix
+
         """
         cmds = self._prepare_cmds(commands, aliases=aliases)
         names = list(filter(  # filter out None
@@ -129,14 +217,28 @@ class Help(commands.Cog):
         ))
         return list(dict.fromkeys(names))  # ordered dict keys = set
 
-    def get_usages(self, ctx, commands, aliases=False):
+    def get_usages(
+            self,
+            ctx: commands.Context,
+            commands: Iterable[Union[commands.Command, str]],
+            aliases: bool = False
+    ) -> Iterable[str]:
         """
-        Get full command names without parameters
+        Get command calls for all commands given
 
-        :param ctx:
-        :param commands:
-        :param aliases:
-        :return:
+        Parameters
+        ----------
+        ctx: commands.Context
+        commands: Iterable[Union[commands.Command, str]]
+            list of commands or command names
+        aliases: bool
+            whether or not to include aliases
+
+        Returns
+        -------
+        Iterable[str]
+            the expanded list of command calls
+
         """
         cmds = self._prepare_cmds(commands, aliases=aliases)
         usages = list(filter(  # filter out None
@@ -145,8 +247,13 @@ class Help(commands.Cog):
         ))
         return list(dict.fromkeys(usages))  # ordered dict keys = set
 
-    @commands.command()
-    async def help(self, ctx, *, command=None):
+    @commands.command(ignore_extra=False)
+    async def help(
+            self,
+            ctx: commands.Context,
+            *,
+            command: Optional[converters.CommandConverter] = None
+    ) -> discord.Message:
         """
         The command that generated this message
 

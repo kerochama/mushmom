@@ -9,12 +9,8 @@ from ..mapleio import resources
 
 
 class EmotionConverter(commands.Converter):
-    """
-    Check if string is in list of emotions from maplestory.io.
-    Used with typing.Optional
-
-    """
-    async def convert(self, ctx, arg):
+    """String in list of emotions from maplestory.io"""
+    async def convert(self, ctx: commands.Context, arg: str) -> str:
         if arg in resources.EMOTIONS:
             return arg
 
@@ -22,12 +18,8 @@ class EmotionConverter(commands.Converter):
 
 
 class PoseConverter(commands.Converter):
-    """
-    Check if string is in list of poses from maplestory.io.
-    Used with typing.Optional
-
-    """
-    async def convert(self, ctx, arg):
+    """String is in list of poses from maplestory.io"""
+    async def convert(self, ctx: commands.Context, arg: str) -> str:
         # poses use O instead of 0
         arg = arg.replace('0', 'O')
 
@@ -38,12 +30,8 @@ class PoseConverter(commands.Converter):
 
 
 class ImportNameConverter(commands.Converter):
-    """
-    Used to differentiate name from url.  Maybe can add regex to match valid
-    maplestory character names
-
-    """
-    async def convert(self, ctx, arg):
+    """Used to differentiate name from API call"""
+    async def convert(self, ctx: commands.Context, arg: str) -> str:
         if not arg.startswith(config.mapleio.api_url):
             return arg
 
@@ -52,11 +40,8 @@ class ImportNameConverter(commands.Converter):
 
 
 class MapleIOURLConverter(commands.Converter):
-    """
-    Check if valid maplestory.io api call
-
-    """
-    async def convert(self, ctx, arg):
+    """A valid maplestory.io api call"""
+    async def convert(self, ctx: commands.Context, arg: str) -> str:
         if arg.startswith(config.mapleio.api_url):
             return arg
 
@@ -65,11 +50,8 @@ class MapleIOURLConverter(commands.Converter):
 
 
 class CharNameConverter(commands.Converter):
-    """
-    Check if existing char
-
-    """
-    async def convert(self, ctx, arg):
+    """Existing character"""
+    async def convert(self, ctx: commands.Context, arg: str) -> str:
         user = await ctx.bot.db.get_user(ctx.author.id)
 
         if user and arg.lower() in [x.name.lower() for x in user['chars']]:
@@ -79,12 +61,18 @@ class CharNameConverter(commands.Converter):
 
 
 class OptionConverter(commands.Converter):
-    """
-    Used for -- options. May replace with a full parser at some point
-
-    """
-    async def convert(self, ctx, arg):
+    """Used for -- options"""
+    async def convert(self, ctx: commands.Context, arg: str) -> str:
         if arg.startswith('--'):
             return arg[2:]  # strip --
 
         raise commands.BadArgument('Not a valid option')
+
+
+class CommandConverter(commands.Converter):
+    """Check if command exists"""
+    async def convert(self, ctx: commands.Context, arg: str) -> str:
+        if ctx.bot.get_command(arg):
+            return arg
+
+        raise commands.BadArgument('Command not found')

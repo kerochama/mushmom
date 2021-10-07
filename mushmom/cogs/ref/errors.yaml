@@ -85,6 +85,12 @@ import:
     errors.DataWriteError:
       <<: *dberror
 
+help:
+  help:
+    commands.TooManyArguments:
+      msg: Could not find command
+      ref_cmds: null
+
 sprite:
   sprite:
     commands.TooManyArguments:
