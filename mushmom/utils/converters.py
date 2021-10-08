@@ -52,7 +52,8 @@ class MapleIOURLConverter(commands.Converter):
 class CharNameConverter(commands.Converter):
     """Existing character"""
     async def convert(self, ctx: commands.Context, arg: str) -> str:
-        user = await ctx.bot.db.get_user(ctx.author.id)
+        # dont track. will get user in command
+        user = await ctx.bot.db.get_user(ctx.author.id, track=False)
 
         if user and arg.lower() in [x.name.lower() for x in user['chars']]:
             return arg
