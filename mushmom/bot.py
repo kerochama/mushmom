@@ -279,6 +279,70 @@ class Mushmom(commands.Bot):
         await asyncio.sleep(delay)
         await ctx.message.add_reaction(reaction)
 
+    def get_command(
+            self,
+            name: str,
+            default: bool = False
+    ) -> Optional[commands.Command]:
+        """
+        Overwrite default to check cogs.ref.HELP for the command name
+        first.  Also overwrite default behavior of allowing extraneous
+        tokens after command.
+
+        Parameters
+        ----------
+        name: str
+            the name of command to get
+        default: bool
+            whether or not to use the default implementation
+
+        Returns
+        -------
+        commands.Command
+            the found command or None
+
+        Notes
+        -----
+        Default implementation would allow the following
+
+        >>> bot.get_command('hello asdf')
+        Command(name=hello, ...)
+
+        """
+        if default:
+            return super().get_command(name)
+
+        # check cogs.ref.HELP
+        ref_cmds = {cmd: cog for cog in ref.HELP.keys()
+                    for cmd in ref.HELP[cog].keys()}
+
+        try:  # look for command in ref.HELP
+            cog = ref_cmds[name]
+            _name = ref.HELP[cog][name]['command']
+        except KeyError:
+            pass
+
+        if default:
+            return super().get_command()
+        # fast path, no space in name.
+        if ' ' not in _name:
+            return self.all_commands.get(_name)
+
+        names = _name.split()
+        if not names:
+            return None
+        obj = self.all_commands.get(names[0])
+        if not isinstance(obj, commands.GroupMixin):
+            return obj if len(names) == 1 else None
+
+        for i, name in enumerate(names[1:]):
+            try:
+                obj = obj.all_commands[name]
+            except (AttributeError, KeyError):
+                return None
+
+        return obj if i == len(names)-2 else None
+
     def get_emoji_url(self, emoji_id: int) -> str:
         """
         Convenience wrapper to pull url from emoji
