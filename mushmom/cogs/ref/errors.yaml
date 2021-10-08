@@ -45,6 +45,12 @@ characters:
     errors.DataWriteError:
       <<: *dberror
 
+core:
+  set:
+    commands.MissingPermissions:
+      msg: You are not an admin
+      ref_cmds: null
+
 emotes:
   emote:
     commands.TooManyArguments:

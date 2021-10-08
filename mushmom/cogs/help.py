@@ -19,7 +19,11 @@ def _show_help(
         command: commands.Command,
         show_hidden: bool = False
 ) -> bool:
-    pass_checks = all(check(ctx) for check in command.checks)
+    try:
+        pass_checks = all(check(ctx) for check in command.checks)
+    except commands.CheckFailure:
+        return False
+
     return pass_checks and (not command.hidden or show_hidden)
 
 

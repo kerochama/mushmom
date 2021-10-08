@@ -5,6 +5,10 @@ characters:
     sigs:
       - "[name] <new_name>"
 
+core:
+  "set prefixes":
+    command: _set_prefixes
+
 emotes:
   emote:
     options: &imflags

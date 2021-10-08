@@ -2,9 +2,14 @@
 Basic commands related to bot
 
 """
+from __future__ import annotations
+
 import discord
 
 from discord.ext import commands
+
+from .. import config
+from ..utils import errors
 
 
 class Core(commands.Cog):
@@ -22,6 +27,84 @@ class Core(commands.Cog):
 
         """
         await ctx.send('hai')
+
+    @commands.command()
+    async def prefixes(self, ctx: commands.Context) -> None:
+        """
+        Send the current list of prefixes
+
+        Parameters
+        ----------
+        ctx: commands.Context
+
+        """
+        _prefixes = await self.bot.command_prefix(self.bot, ctx.message)
+        prefixes = [f'`{prefix}`' for prefix in _prefixes]
+
+        embed = discord.Embed(description='\n'.join(prefixes),
+                              color=config.core.embed_color)
+        embed.set_author(name='Prefixes', icon_url=self.bot.user.avatar_url)
+        thumbnail = self.bot.get_emoji_url(config.emojis.mushparty)
+        embed.set_thumbnail(url=thumbnail)
+        await ctx.send(embed=embed)
+
+    @commands.command(name='set')
+    @commands.has_permissions(administrator=True)
+    async def _set(self, ctx: commands.Context, setting: str, *args) -> None:
+        """
+        Sets specified guild setting
+
+        Parameters
+        ----------
+        ctx: commands.Context
+        setting: str
+            the setting to set
+
+        Returns
+        -------
+
+        Notes
+        -----
+        This command manually acts like a group since 'set prefixes'
+        would name clash with the 'prefixes' command.  Help still
+        functions as if this were a group call by directly aliasing the
+        hidden commands in help.yaml
+
+        """
+        if setting == 'prefixes':
+            await self._set_prefixes(ctx, *args)
+
+    @commands.command(hidden=True)
+    @commands.has_permissions(administrator=True)
+    async def _set_prefixes(
+            self,
+            ctx: commands.Context,
+            *prefixes
+    ) -> None:
+        """
+        Set guild prefixes
+
+        Parameters
+        ----------
+        ctx: commands.Context
+        prefixes: list[str]
+            list of prefixes to add
+
+        """
+        guild = await self.bot.db.get_guild(ctx.guild.id)
+        data = {'prefixes': prefixes}
+
+        if not guild:
+            ret = await self.bot.db.add_guild(ctx.guild.id, data)
+        else:
+            ret = await self.bot.db.set_guild(ctx.guild.id, data)
+
+        if ret.acknowledged:
+            _prefixes = await self.bot.command_prefix(self.bot, ctx.message)
+            prefixes = [f'`{prefix}`' for prefix in _prefixes]
+            await ctx.send(f'Prefixes were set to: {", ".join(prefixes)}')
+        else:
+            raise errors.DataWriteError
 
 
 def setup(bot):
