@@ -18,7 +18,6 @@ from .utils import checks, errors, database as db, converters
 from .mapleio import resources
 from .cogs import ref
 
-from copy import deepcopy
 initial_extensions = (
     'cogs.core',
     'cogs.meta',
@@ -31,7 +30,7 @@ initial_extensions = (
 
 
 async def _prefix_callable(
-        bot: commands.Bot,
+        bot: Mushmom,
         message: discord.Message
 ) -> Iterable[str]:
     """
@@ -48,7 +47,13 @@ async def _prefix_callable(
         list of prefixes
 
     """
-    return ['mush ', '!m ']
+    default = ['mush ']
+    guild = await bot.db.get_guild(message.guild.id)
+
+    if not guild:
+        return default
+    else:
+        return guild['prefixes'] + default
 
 
 class Mushmom(commands.Bot):
