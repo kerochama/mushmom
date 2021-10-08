@@ -85,9 +85,10 @@ class Mushmom(commands.Bot):
 
         # add global checks
         self.add_check(checks.not_bot)
-        self.remove_command('help')
+        self.add_check(checks.in_guild_channel)
 
         # load extensions
+        self.remove_command('help')
         for ext in initial_extensions:
             self.load_extension(f'{__package__}.{ext}')
 
