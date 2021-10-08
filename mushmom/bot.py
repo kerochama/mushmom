@@ -18,7 +18,7 @@ from .utils import checks, errors, database as db, converters
 from .mapleio import resources
 from .cogs import ref
 
-
+from copy import deepcopy
 initial_extensions = (
     'cogs.core',
     'cogs.meta',
@@ -30,7 +30,24 @@ initial_extensions = (
 )
 
 
-def _prefix_callable(bot, msg):
+async def _prefix_callable(
+        bot: commands.Bot,
+        message: discord.Message
+) -> Iterable[str]:
+    """
+    Get guild prefixes if exist else use defaults
+
+    Parameters
+    ----------
+    bot: commands.Bot
+    message: discord.Message
+
+    Returns
+    -------
+    Iterable[str]
+        list of prefixes
+
+    """
     return ['mush ', '!m ']
 
 
@@ -90,35 +107,17 @@ class Mushmom(commands.Bot):
         # not handled by other commands
         if (ctx.prefix and not ctx.command
                 and all([await check(ctx) for check in self._checks])):
-            args = message.content[len(ctx.prefix):].split(' ')
+            no_prefix = message.content[len(ctx.prefix):]
+            args = no_prefix.split(' ')
             cmd = args.pop(0)
 
             # manually try to call as emote command
             if cmd not in resources.EMOTIONS:
                 return
 
-            command = self.get_command('emote')
-            if not command:  # not loaded
-                return
-            else:
-                ctx.command = command
-
-            # process options
-            conv = converters.OptionConverter()
-
-            try:
-                options = [await conv.convert(ctx, arg) for arg in args]
-            except commands.BadArgument:
-                # manually simulate emotes command error
-                error = commands.TooManyArguments()
-                await self.on_command_error(ctx, error)
-                return
-
-            # invoke emotes command
-            try:
-                await ctx.invoke(command, emote=cmd, options=options)
-            except commands.CommandError as error:
-                await self.on_command_error(ctx, error)
+            message.content = f'{ctx.prefix}emote {no_prefix}'
+            new_ctx = await self.get_context(message)
+            await self.invoke(new_ctx)
         else:
             await self.process_commands(message)
 
