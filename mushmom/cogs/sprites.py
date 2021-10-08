@@ -43,8 +43,8 @@ class Sprites(commands.Cog):
 
         Notes
         -----
-        Use ignore_extra=False to differentiate improper emotes from default
-        emote (can be used directly without args)
+        Use ignore_extra=False to differentiate improper emotes from
+        default emote (can be used directly without args)
 
         """
         # grab character

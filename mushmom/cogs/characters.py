@@ -308,13 +308,11 @@ class Characters(commands.Cog):
             new character name
 
         Notes
-        -----
-        Use ignore_extra=False because otherwise may incorrectly
-        capture new_name as name
+        --------
+        new_name would be populated by not_a_char_name without
+        ignore_extra=False
 
-        e.g.
-        `>>> mush rename not_a_char_name Mushmom
-            - new_name would be populated by not_a_char_name
+        >>> mush rename not_a_char_name Mushmom
 
         """
         if not new_name:
