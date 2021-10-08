@@ -325,7 +325,7 @@ class Mushmom(commands.Bot):
             cog = ref_cmds[name]
             _name = ref.HELP[cog][name]['command']
         except KeyError:
-            pass
+            _name = name
 
         if default:
             return super().get_command()
