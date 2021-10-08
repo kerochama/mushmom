@@ -6,7 +6,7 @@ characters:
       msg: "Welcome! You have no chars. To import one use:\n\u200b"
       ref_cmds: [import]
 
-  set main:
+  reroll:
     errors.NoMoreItems: &nochars
       msg: "No registered characters. To import one use:\n\u200b"
       ref_cmds: [import]

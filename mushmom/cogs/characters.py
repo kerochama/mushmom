@@ -193,18 +193,14 @@ class Characters(commands.Cog):
         user = await self.bot.db.get_user(ctx.author.id)
         await self.list_chars(ctx, user, 'Your mushable characters\n\u200b')
 
-    @commands.group(alias='select')
-    async def set(self, ctx):
-        pass
-
-    @set.command(name='main', aliases=['default'])
-    async def _main(
+    @commands.command(aliases=['rr'])
+    async def reroll(
             self,
             ctx: commands.Context,
             name: Optional[str] = None
     ) -> None:
         """
-        Set the default character when using emotes/sprites to the
+        Switch your main character when using emotes/sprites to the
         character specified.  If no character name is provided, a
         reactable prompt of registered characters will appear for
         selection
@@ -230,7 +226,7 @@ class Characters(commands.Cog):
             return
 
         ret = await self.bot.db.set_user(ctx.author.id, {'default': new_i})
-        print(ret)
+
         if ret.acknowledged:
             name = user['chars'][new_i]['name']
             await ctx.send(f'Your main was changed to **{name}**')
