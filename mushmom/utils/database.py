@@ -228,7 +228,7 @@ class Database:
         _data = {
             '_id': guildid,
             'prefixes': [],
-            'channels': None,
+            'channel': None,
             'create_time': datetime.utcnow(),
             'update_time': datetime.utcnow(),
             'n_access': 1
