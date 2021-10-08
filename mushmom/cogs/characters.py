@@ -308,7 +308,7 @@ class Characters(commands.Cog):
             new character name
 
         Notes
-        --------
+        -----
         new_name would be populated by not_a_char_name without
         ignore_extra=False
 
