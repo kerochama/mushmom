@@ -94,7 +94,7 @@ class Character:
                 Equip(item.get('id', 0),
                       item.get('version', char.version),
                       item.get('region', 'GMS'),
-                      item.get('name', None))
+                      item.get('name'))
                 for type, item in items.items() if type not in ['Body', 'Head']
             ]
 
