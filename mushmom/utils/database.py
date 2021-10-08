@@ -207,7 +207,7 @@ class Database:
     async def add_guild(
             self,
             guildid: int,
-            data: Optional[dict]
+            data: Optional[dict] = None
     ) -> InsertOneResult:
         """
         Add a new guild to database with provided data
@@ -233,7 +233,7 @@ class Database:
             'update_time': datetime.utcnow(),
             'n_access': 1
         }
-        _data.update(data)
+        _data.update(data or {})
 
         return await self.guilds.insert_one(_data)
 
