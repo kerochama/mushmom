@@ -5,9 +5,8 @@ Custom help command
 from __future__ import annotations
 
 import discord
-import builtins
 
-from typing import Iterable, Union, Optional, Callable
+from typing import Iterable, Union, Optional
 from discord.ext import commands
 
 from .. import config
@@ -15,8 +14,13 @@ from . import ref
 from ..utils import converters
 
 
-def _not_hidden(command):
-    return not command.hidden
+def _show_help(
+        ctx: commands.Context,
+        command: commands.Command,
+        show_hidden: bool = False
+) -> bool:
+    pass_checks = all(check(ctx) for check in command.checks)
+    return pass_checks and (not command.hidden or show_hidden)
 
 
 class Help(commands.Cog):
@@ -250,7 +254,7 @@ class Help(commands.Cog):
             lambda x: x,
             [usage for c in cmds for usage in self.get_usage(ctx, c)]
         ))
-        return list(dict.fromkeys(usages))  # ordered dict keys = set
+        return list(dict.fromkeys(usages))  # ordered dict keys = ordered set
 
     @commands.command(ignore_extra=False)
     async def help(
@@ -279,17 +283,9 @@ class Help(commands.Cog):
         else:
             return await self.send_command_help(ctx, command)
 
-    def get_bot_mapping(
-            self,
-            filter: Callable[[commands.Command], bool] = _not_hidden
-    ) -> dict[str, list[commands.Command]]:
+    def get_bot_mapping(self) -> dict[str, list[commands.Command]]:
         """
         Get dict of cog_name: [command, ...] of bot
-
-        Parameters
-        ----------
-        filter: Callable[[commands.Command], bool]
-            Condition to filter commands returned
 
         Returns
         -------
@@ -301,7 +297,7 @@ class Help(commands.Cog):
         mapping = {}
 
         # include subcommands and aliases
-        for cmd in builtins.filter(filter, self.bot.commands):
+        for cmd in self.bot.commands:
             cog_name = cmd.cog_name or 'Other'
 
             if isinstance(cmd, commands.Group):
@@ -317,8 +313,10 @@ class Help(commands.Cog):
 
     async def send_bot_help(self, ctx: commands.Context) -> discord.Message:
         """
-        Creates embed with list of all commands in bot categorized by
-        cog_name as fields and send
+        Creates embed with list of all commands that are callable in bot
+        categorized by cog_name and send.  ref.HELP is checked and commands
+        are listed even if the underlying command is hidden so long as it
+        passes all checks
 
         Parameters
         ----------
@@ -348,9 +346,23 @@ class Help(commands.Cog):
         # add commands as fields by cog
         mapping = self.get_bot_mapping()
 
-        for cog in sorted(mapping.keys()):  # in alphabetical order
-            cmd_names = self.get_cmd_names(ctx, mapping[cog], aliases=True)
-            embed.add_field(name=cog, value='\n'.join(cmd_names))
+        for cog in sorted(mapping):  # in alphabetical order
+            cmds = filter(lambda c: _show_help(ctx, c), mapping[cog])
+            cmd_names = self.get_cmd_names(ctx, cmds, aliases=True)
+
+            try:  # check ref.HELP
+                cog_map = ref.HELP[cog.lower()]
+                ref_map = {k: self.bot.get_command(v['command'])
+                           for k, v in cog_map.items() if 'command' in v}
+                _cmds = [self.get_cmd_name(ctx, k, v) for k, v in ref_map.items()
+                         if _show_help(ctx, v, show_hidden=True)]
+                cmd_names += _cmds
+            except KeyError:
+                pass
+
+            if cmd_names:  # ordered dict keys = ordered set
+                unique = list(dict.fromkeys(cmd_names))
+                embed.add_field(name=cog, value='\n'.join(cmd_names))
 
         return await ctx.send(embed=embed)
 
