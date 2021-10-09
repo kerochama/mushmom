@@ -43,7 +43,7 @@ class Core(commands.Cog):
 
         embed = discord.Embed(description='\n'.join(prefixes),
                               color=config.core.embed_color)
-        embed.set_author(name='Prefixes', icon_url=self.bot.user.avatar_url)
+        embed.set_author(name='Prefixes', icon_url=self.bot.user.avatar.url)
         thumbnail = self.bot.get_emoji_url(config.emojis.mushparty)
         embed.set_thumbnail(url=thumbnail)
         await ctx.send(embed=embed)

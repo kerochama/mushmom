@@ -46,7 +46,7 @@ class Characters(commands.Cog):
 
         """
         embed = discord.Embed(description=text, color=config.core.embed_color)
-        embed.set_author(name='Characters', icon_url=self.bot.user.avatar_url)
+        embed.set_author(name='Characters', icon_url=self.bot.user.avatar.url)
 
         if not thumbnail:
             thumbnail = self.bot.get_emoji_url(config.emojis.mushparty)

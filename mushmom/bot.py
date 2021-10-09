@@ -209,7 +209,7 @@ class Mushmom(commands.Bot):
         # send error
         embed = discord.Embed(description=text,
                               color=config.core.embed_color)
-        embed.set_author(name='Error', icon_url=ctx.bot.user.avatar_url)
+        embed.set_author(name='Error', icon_url=ctx.bot.user.avatar.url)
         embed.set_thumbnail(url=ctx.bot.get_emoji_url(config.emojis.mushshock))
 
         # add referenced commands
@@ -263,7 +263,7 @@ class Mushmom(commands.Bot):
 
         return await webhook.send(*args, **kwargs,
                                   username=ctx.author.display_name,
-                                  avatar_url=ctx.author.avatar_url)
+                                  avatar_url=ctx.author.avatar.url)
 
     @staticmethod
     async def add_delayed_reaction(
@@ -371,7 +371,7 @@ class Mushmom(commands.Bot):
             return emoji.url
         else:
             warnings.warn(f'Emoji<{emoji_id}> was not found', ResourceWarning)
-            return self.user.avatar_url  # fall back on profile pic
+            return self.user.avatar.url  # fall back on profile pic
 
     @tasks.loop(minutes=10)
     async def _verify_cache_integrity(self):

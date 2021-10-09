@@ -104,7 +104,7 @@ class Sprites(commands.Cog):
             color=config.core.embed_color
         )
 
-        embed.set_author(name='Emotions', icon_url=self.bot.user.avatar_url)
+        embed.set_author(name='Emotions', icon_url=self.bot.user.avatar.url)
         thumbnail = self.bot.get_emoji_url(config.emojis.mushheart)
         embed.set_thumbnail(url=thumbnail)
         embed.set_footer(text='[GMS v225]')
@@ -133,7 +133,7 @@ class Sprites(commands.Cog):
             color=config.core.embed_color
         )
 
-        embed.set_author(name='Poses', icon_url=self.bot.user.avatar_url)
+        embed.set_author(name='Poses', icon_url=self.bot.user.avatar.url)
         embed.set_thumbnail(url=self.bot.get_emoji_url(config.emojis.mushdab))
         embed.set_footer(text='[GMS v225]')
         embed.add_field(name='Pose', value='\n'.join(resources.POSES.keys()))
