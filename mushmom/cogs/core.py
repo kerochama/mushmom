@@ -48,7 +48,7 @@ class Core(commands.Cog):
         embed.set_thumbnail(url=thumbnail)
         await ctx.send(embed=embed)
 
-    @commands.command(name='set')
+    @commands.command(name='set', hidden=True)
     @commands.has_permissions(administrator=True)
     async def _set(self, ctx: commands.Context, setting: str, *args) -> None:
         """
@@ -82,7 +82,7 @@ class Core(commands.Cog):
             *prefixes
     ) -> None:
         """
-        Set guild prefixes
+        Set guild prefixes. **Admin only***
 
         Parameters
         ----------
@@ -105,6 +105,29 @@ class Core(commands.Cog):
             await ctx.send(f'Prefixes were set to: {", ".join(prefixes)}')
         else:
             raise errors.DataWriteError
+
+    @commands.command()
+    async def channel(self, ctx: commands.Context) -> None:
+        """
+        Reply with the guild channel set. Commands other than emotes,
+        sprites, and actions can only be run here.  If no channel is set,
+        command can be run in all channels
+
+        Parameters
+        ----------
+        ctx: commands.Context
+
+        """
+        guild = await self.bot.db.get_guild(ctx.guild.id)
+
+        if guild and guild['channel']:
+            msg = (f'The designated **{config.core.bot_name}** command channel'
+                   f' is <#{guild["channel"]}>')
+        else:
+            msg = (f'**{ctx.guild.name}** has no designated '
+                   f'**{config.core.bot_name}** command channel')
+
+        await ctx.send(msg)
 
 
 def setup(bot):

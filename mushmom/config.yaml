@@ -16,6 +16,7 @@ emojis:
   mushping: 890978760780832818
   mushparty: 890987908633362503
   mushloading: 892077347925262367
+  mushcool: 896196206282305546
 
 database:                              # mongodb
   name: mushmom

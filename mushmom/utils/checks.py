@@ -46,12 +46,10 @@ async def in_guild_channel(ctx: commands.Context) -> bool:
         whether or not message is in an acceptable channel
 
     """
-    guild = ctx.bot.get_guild(ctx.guild.id)
+    guild = await ctx.bot.db.get_guild(ctx.guild.id)
     command = ctx.command.qualified_name
 
-    if (not guild
-            or not guild['channel']
-            or command in global_commands):
+    if guild and guild['channel'] and command not in global_commands:
+        return ctx.channel.id == guild['channel']
+    else:
         return True
-
-    return ctx.channel.id == guild['channel']
