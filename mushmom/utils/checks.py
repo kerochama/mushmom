@@ -8,7 +8,9 @@ from discord.ext import commands
 global_commands = (  # commands that will bypass channel check
     'emote',
     'sprite',
-    'set'
+    'set',
+    'reset',
+    'channel'  # can be run anywhere to find channel
 )
 
 
@@ -47,9 +49,11 @@ async def in_guild_channel(ctx: commands.Context) -> bool:
 
     """
     guild = await ctx.bot.db.get_guild(ctx.guild.id)
-    command = ctx.command.qualified_name
+    command = ctx.command.qualified_name if ctx.command else None
 
-    if guild and guild['channel'] and command not in global_commands:
+    # has guild setting and command sent thats not in global_commands
+    if (guild and guild['channel'] and command
+            and command not in global_commands):
         return ctx.channel.id == guild['channel']
     else:
         return True

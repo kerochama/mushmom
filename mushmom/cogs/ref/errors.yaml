@@ -50,6 +50,14 @@ core:
     commands.MissingPermissions:
       msg: You are not an admin
       ref_cmds: null
+    errors.DataWriteError:
+      <<: *dberror
+  reset:
+    commands.MissingPermissions:
+      msg: You are not an admin
+      ref_cmds: null
+    errors.DataWriteError:
+      <<: *dberror
 
 emotes:
   emote:

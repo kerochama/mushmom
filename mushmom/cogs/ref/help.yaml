@@ -8,6 +8,12 @@ characters:
 core:
   "set prefixes":
     command: _set_prefixes
+  "set channel":
+    command: _set_channel
+  "reset prefixes":
+    command: _reset_prefixes
+  "reset channel":
+    command: _reset_channel
 
 emotes:
   emote:
