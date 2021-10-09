@@ -4,6 +4,7 @@ core:
   debug: False                         # mostly prevents message auto deletion
   bot_name: Mushmom                    # change bot class name and errors
   hook_name: Mushmom
+  default_prefix: "mush "
   embed_color: 0xf49c00                # current color matching pfp
   max_chars: 5                         # reactions will break if > 9
   default_delay: 10                    # for auto deletion

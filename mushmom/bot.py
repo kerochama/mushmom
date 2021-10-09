@@ -47,7 +47,7 @@ async def _prefix_callable(
         list of prefixes
 
     """
-    default = ['mush ']
+    default = [config.core.default_prefix]
     guild = await bot.db.get_guild(message.guild.id)
 
     if not guild:
@@ -161,8 +161,9 @@ class Mushmom(commands.Bot):
             msg, ref_cmds = specs.values()
         except KeyError:  # not defined
             e = error
-            print(f'Ignoring exception in command {ctx.command}:', file=sys.stderr)
-            traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
+            if not isinstance(e, commands.CheckFailure) or config.core.debug:
+                print(f'Ignoring exception in command {ctx.command}:', file=sys.stderr)
+                traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
             return
 
         await self.send_error(ctx, msg, ref_cmds)
