@@ -3,8 +3,6 @@ Representation of a maplestory equip.  Attributes stored are those needed
 in order to read in and recreate API calls
 
 """
-from __future__ import annotations
-
 from collections import namedtuple
 from typing import Optional, Union, Any, Iterable
 

@@ -2,8 +2,6 @@
 Functions related to making API calls to maplestory.io
 
 """
-from __future__ import annotations
-
 import aiohttp
 import functools
 
@@ -14,13 +12,13 @@ from typing import Callable, Coroutine, Any, Optional, Union
 from .. import config
 
 
-def with_session(coro: Callable[[Any, Any], Coroutine[Any]]):
+def with_session(coro: Callable[[Any, Any], Coroutine[Any, Any, Any]]):
     """
     Decorator to handle adding aiohttp session if not provided
 
     Parameters
     ----------
-    coro: Callable[[Any, Any], Coroutine[Any]]
+    coro: Callable[[Any, Any], Coroutine[Any, Any, Any]]
 
     Returns
     -------

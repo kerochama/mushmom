@@ -2,8 +2,6 @@
 Custom help command
 
 """
-from __future__ import annotations
-
 import discord
 
 from typing import Iterable, Union, Optional

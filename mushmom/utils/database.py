@@ -3,8 +3,6 @@ Functions related to database connection.  Currently using MongoDB,
 but could be replaced easily as long as functionality is the same
 
 """
-from __future__ import annotations
-
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 from pymongo.results import InsertOneResult, UpdateResult
 from datetime import datetime
