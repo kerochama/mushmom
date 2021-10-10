@@ -3,8 +3,10 @@ Contains converters for command input validation
 
 """
 from discord.ext import commands
+from typing import Optional, TypeVar, Type
 
 from .. import config
+from . import errors
 from ..mapleio import resources
 
 
@@ -77,3 +79,52 @@ class CommandConverter(commands.Converter):
             return arg
 
         raise commands.BadArgument('Command not found')
+
+
+# Flag Converters
+SF = TypeVar('SF', bound='FlagConverter')
+
+
+class StrictFlagConverter(commands.FlagConverter):
+    @classmethod
+    async def convert(cls, ctx: commands.Context, argument: str) -> SF:
+        """
+        Flag values cannot contain delimiter. Flags must start at
+        beginning of argument
+
+        Parameters
+        ----------
+        ctx: commands.Context
+        argument: str
+            the argument to convert
+
+        Returns
+        -------
+        StrictFlagConverter
+            The flag converter instance with all flags parsed
+
+        """
+        self = await super().convert(ctx, argument)
+
+        # delimiter cannot be in flag value
+        for flag in cls.__commands_flags__.values():
+            vals = getattr(self, flag.attribute)
+            vals = [vals] if isinstance(vals, str) else vals
+            if any(cls.__commands_flag_delimiter__ in v for v in vals or []):
+                raise errors.FlagParseError
+
+        # if first flag not at beginning the something was sent before flags
+        flag_iter = (x for x in cls.__commands_flag_regex__.finditer(argument))
+        match = next(flag_iter, None)
+        if match and match.start() > 0:
+            raise errors.UnparsedArgsError
+
+        return self
+
+
+class ImgFlags(StrictFlagConverter, delimiter=' '):
+    char: Optional[str] = commands.flag(
+        name='--char',
+        aliases=['-c'],
+        default=None
+    )

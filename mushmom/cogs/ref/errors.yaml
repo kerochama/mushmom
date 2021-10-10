@@ -61,9 +61,12 @@ core:
 
 emotes:
   emote:
-    commands.TooManyArguments:
+    errors.UnparsedArgsError:
       msg: "Emote was not found. See:\n\u200b"
       ref_cmds: [emotes]
+    errors.FlagParseError: &flagerr
+      msg: "Problem parsing options. Check:\n\u200b"
+      ref_cmds: [help]
     errors.NoMoreItems:
       <<: *nochars
     errors.MissingCogError:
@@ -107,9 +110,11 @@ help:
 
 sprites:
   sprite:
-    commands.TooManyArguments:
+    errors.UnparsedArgsError:
       msg: "Emotion/pose not found. See:\n\u200b"
       ref_cmds: [sprite emotions, sprite poses]
+    errors.FlagParseError:
+      <<: *flagerr
     errors.DataNotFound:
       <<: *nochars
     errors.MapleIOError:

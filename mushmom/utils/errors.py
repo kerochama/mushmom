@@ -55,3 +55,12 @@ class TimeoutError(MushmomError):
 class NoMoreItems(MushmomError):
     """Command error version of discord.NoMoreItems"""
     pass
+
+
+class UnparsedArgsError(MushmomError):
+    """Unparsed args before flags"""
+    pass
+
+
+class FlagParseError(MushmomError):
+    """Extraneous flags or args found"""

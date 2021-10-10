@@ -18,13 +18,14 @@ class Sprites(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.group(invoke_without_command=True, ignore_extra=False)
+    @commands.group(invoke_without_command=True)
     async def sprite(
             self,
             ctx: commands.Context,
             emotion: Optional[converters.EmotionConverter] = 'default',
             pose: Optional[converters.PoseConverter] = 'stand1',
-            options: commands.Greedy[converters.OptionConverter] = None
+            *,
+            options: converters.ImgFlags = None
     ) -> None:
         """
         Replace message with the emote specified. For a list of usable
@@ -38,13 +39,8 @@ class Sprites(commands.Cog):
             a word listed in in emotions.json
         pose: Optional[str]
             a word listed in in poses.json
-        options: commands.Greedy[flag] (str: --flag)
-            flags that begin with long/double dashes
-
-        Notes
-        -----
-        Use ignore_extra=False to differentiate improper emotes from
-        default emote (can be used directly without args)
+        options: converters.ImgFlags
+            --char, -c: character to use
 
         """
         # grab character
@@ -53,13 +49,13 @@ class Sprites(commands.Cog):
         if not user or not user['chars']:
             raise errors.NoMoreItems
 
-        if options:
+        if options.char:
             chars_cog = self.bot.get_cog('Characters')
 
             if not chars_cog:
                 raise errors.MissingCogError
 
-            i = await chars_cog.get_char_index(ctx, user, options[0])
+            i = await chars_cog.get_char_index(ctx, user, options.char)
         else:
             i = user['default']
 

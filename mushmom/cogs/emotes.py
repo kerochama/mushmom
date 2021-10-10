@@ -18,12 +18,13 @@ class Emotes(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(ignore_extra=False)
+    @commands.command()
     async def emote(
             self,
             ctx: commands.Context,
             emote: Optional[converters.EmotionConverter] = 'default',
-            options: commands.Greedy[converters.OptionConverter] = None
+            *,
+            options: converters.ImgFlags
     ) -> None:
         """
         Replace message with the emote specified. For a list of usable
@@ -34,13 +35,8 @@ class Emotes(commands.Cog):
         ctx: commands.Context
         emote: Optional[str]
             a word listed in in emotions.json
-        options: commands.Greedy[flag] (str: --flag)
-            flags that begin with long/double dashes
-
-        Notes
-        -----
-        Use ignore_extra=False to differentiate improper emotes from default
-        emote (can be used directly without args)
+        options: converters.ImgFlags
+            --char, -c: character to use
 
         """
         # grab character
@@ -49,13 +45,13 @@ class Emotes(commands.Cog):
         if not user or not user['chars']:
             raise errors.NoMoreItems
 
-        if options:
+        if options.char:
             chars_cog = self.bot.get_cog('Characters')
 
             if not chars_cog:
                 raise errors.MissingCogError
 
-            i = await chars_cog.get_char_index(ctx, user, options[0])
+            i = await chars_cog.get_char_index(ctx, user, options.char)
         else:
             i = user['default']
 
