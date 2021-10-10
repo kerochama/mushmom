@@ -50,7 +50,7 @@ async def _prefix_callable(
     default = [config.core.default_prefix]
     guild = await bot.db.get_guild(message.guild.id)
     prefixes = default + guild['prefixes'] if guild else []
-    return commands.when_mentioned_or(prefixes)(bot, message)
+    return commands.when_mentioned_or(*prefixes)(bot, message)
 
 
 class Mushmom(commands.Bot):
