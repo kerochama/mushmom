@@ -389,9 +389,10 @@ class Help(commands.Cog):
             cmd_names = self.get_all_cmd_names(ctx, cmds, aliases=True)
 
             try:  # check ref.HELP
+                _ref = {k: v for k, v in self.bot.ref_aliases.items()
+                        if _show_help(ctx, v, show_hidden=True)}
                 _cmds = [self.get_cmd_name(ctx, alias, cmd)
-                         for alias, cmd in self.bot.ref_aliases.items()
-                         if cmd.cog_name == cog]
+                         for alias, cmd in _ref.items() if cmd.cog_name == cog]
                 cmd_names += _cmds
             except KeyError:
                 pass
