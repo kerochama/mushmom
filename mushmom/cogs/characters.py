@@ -338,7 +338,7 @@ class Characters(commands.Cog):
 
         text = ('Character was not found. '
                 f'\u200b Who should be renamed **{new_name}**?')
-        i = await self.get_char_index(ctx, user, name=name, text=text)
+        i = await self.select_char(ctx, user, name=name, text=text)
 
         if i is None:  # cancelled
             self.bot.reply_cache.remove(ctx)
