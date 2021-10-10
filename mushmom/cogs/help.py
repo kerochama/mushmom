@@ -198,7 +198,7 @@ class Help(commands.Cog):
 
         return cmds
 
-    def get_cmd_names(
+    def get_all_cmd_names(
             self,
             ctx: commands.Context,
             commands: Iterable[Union[commands.Command, str]],
@@ -227,36 +227,6 @@ class Help(commands.Cog):
             [self.get_cmd_name(ctx, c) for c in cmds]
         ))
         return list(dict.fromkeys(names))  # ordered dict keys = set
-
-    def get_usages(
-            self,
-            ctx: commands.Context,
-            commands: Iterable[Union[commands.Command, str]],
-            aliases: bool = False
-    ) -> Iterable[str]:
-        """
-        Get command calls for all commands given
-
-        Parameters
-        ----------
-        ctx: commands.Context
-        commands: Iterable[Union[commands.Command, str]]
-            list of commands or command names
-        aliases: bool
-            whether or not to include aliases
-
-        Returns
-        -------
-        Iterable[str]
-            the expanded list of command calls
-
-        """
-        cmds = self._prepare_cmds(commands, aliases=aliases)
-        usages = list(filter(  # filter out None
-            lambda x: x,
-            [usage for c in cmds for usage in self.get_usage(ctx, c)]
-        ))
-        return list(dict.fromkeys(usages))  # ordered dict keys = ordered set
 
     @commands.command(ignore_extra=False)
     async def help(
@@ -350,7 +320,7 @@ class Help(commands.Cog):
 
         for cog in sorted(mapping):  # in alphabetical order
             cmds = filter(lambda c: _show_help(ctx, c), mapping[cog])
-            cmd_names = self.get_cmd_names(ctx, cmds, aliases=True)
+            cmd_names = self.get_all_cmd_names(ctx, cmds, aliases=True)
 
             try:  # check ref.HELP
                 cog_map = ref.HELP[cog.lower()]
@@ -425,7 +395,7 @@ class Help(commands.Cog):
             pass
 
         if cmd.aliases:
-            aliases = self.get_cmd_names(ctx, [command], aliases=True)
+            aliases = self.get_all_cmd_names(ctx, [command], aliases=True)
             aliases.remove(f'`{ctx.prefix}{command}`')
             embed.add_field(name='Aliases', value='\n'.join(aliases))
 
