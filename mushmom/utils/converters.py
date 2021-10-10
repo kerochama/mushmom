@@ -103,10 +103,10 @@ class StrictFlagConverter(commands.FlagConverter):
             if any(cls.__commands_flag_delimiter__ in v for v in vals or []):
                 raise errors.FlagParseError
 
-        # if first flag not at beginning the something was sent before flags
+        # if first flag not at beginning then something was sent before flags
         flag_iter = (x for x in cls.__commands_flag_regex__.finditer(argument))
         match = next(flag_iter, None)
-        if match and match.start() > 0:
+        if (match and match.start() > 0) or (argument and not match):
             raise errors.UnparsedArgsError
 
         return self
