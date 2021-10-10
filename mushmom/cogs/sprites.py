@@ -55,7 +55,7 @@ class Sprites(commands.Cog):
             if not chars_cog:
                 raise errors.MissingCogError
 
-            i = await chars_cog.get_char_index(ctx, user, options.char)
+            i = await chars_cog.get_char(ctx, user, name=options.char)
         else:
             i = user['default']
 
