@@ -6,6 +6,7 @@ import discord
 
 from typing import Iterable, Union, Optional
 from discord.ext import commands
+from inspect import isclass
 
 from .. import config
 from . import ref
@@ -134,7 +135,8 @@ class Help(commands.Cog):
 
         return sigs
 
-    def get_usage(self,
+    def get_usage(
+            self,
             ctx: commands.Context,
             command: Union[commands.Command, str],
             alias_of: Optional[commands.Command] = None
@@ -164,6 +166,43 @@ class Help(commands.Cog):
             return
 
         return [f'`{name}{" " + sig if sig else sig}`' for sig in sigs]
+
+    def get_options(
+            self,
+            command: Union[commands.Command, str],
+            alias_of: Optional[commands.Command] = None
+    ) -> Optional[list[str]]:
+        """
+        Check annotations for FlagConverter. Return list of flags
+        and aliases
+
+        Parameters
+        ----------
+        command: Union[commands.Command, str]
+            the command or command name
+        alias_of: Optional[commands.Command]
+            the aliased command if known
+
+        Returns
+        -------
+        Optional[list[str]]
+            list of flags. each item will be a csl of name, aliases
+
+        """
+        cmd = (alias_of or self.bot.get_command(command)
+               if isinstance(command, str) else command)
+        if not cmd:  # command not found in bot
+            return
+
+        anno_iter = (x for x in cmd.callback.__annotations__.values()
+                     if isclass(x) and issubclass(x, commands.FlagConverter))
+        _options = next(anno_iter, None)
+
+        # FlagConverter object found
+        if _options:
+            opts = [[k] + v.aliases for k, v in _options.get_flags().items()]
+            fmt = [', '.join([f'`{flag}`' for flag in x]) for x in opts]
+            return fmt
 
     def _prepare_cmds(
             self,
@@ -333,8 +372,8 @@ class Help(commands.Cog):
                 pass
 
             if cmd_names:  # ordered dict keys = ordered set
-                unique = list(dict.fromkeys(cmd_names))
-                embed.add_field(name=cog, value='\n'.join(cmd_names))
+                unique = list(dict.fromkeys(cmd_names)) + ['\u200b']
+                embed.add_field(name=cog, value='\n'.join(unique))
 
         return await ctx.send(embed=embed)
 
@@ -386,14 +425,11 @@ class Help(commands.Cog):
         embed.add_field(name='Usage', value='\n'.join(usage), inline=False)
 
         # show options
-        try:
-            cog = cmd.cog_name.lower()
-            _options = ref.HELP[cog][cmd.qualified_name]['options']
-            options = [f'`{option}`' for option in _options]
+        options = self.get_options(cmd)
+        if options:
             embed.add_field(name='Options', value='\n'.join(options))
-        except KeyError:
-            pass
 
+        # show aliases
         if cmd.aliases:
             aliases = self.get_all_cmd_names(ctx, [command], aliases=True)
             aliases.remove(f'`{ctx.prefix}{command}`')

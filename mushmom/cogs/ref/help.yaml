@@ -15,17 +15,8 @@ core:
   "reset channel":
     command: _reset_channel
 
-emotes:
-  emote:
-    options: &imflags
-      - "--[name]"
-
 import:
   import:
     sigs:
       - "<name> [url: maplestory.io]"
       - <name> with JSON file attached
-
-sprites:
-  sprite:
-    options: *imflags
