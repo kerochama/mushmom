@@ -70,53 +70,12 @@ class Characters(commands.Cog):
     async def select_char(
             self, ctx: commands.Context,
             user: dict,
-            text: Optional[str] = None
-    ) -> tuple[discord.Message, str]:
-        """
-        Sends embed with list of chars. User should react to select
-
-        Parameters
-        ----------
-        ctx: commands.Context
-        user: dict
-            user data from database
-        text:
-            description displayed in embed prior to instructions
-
-        Returns
-        -------
-        tuple[discord.Message, str]
-            prompt message, selection ('1', '2', ..., 'x')
-
-        """
-        thumbnail = self.bot.get_emoji_url(config.emojis.mushping)
-        msg = (f'{text or ""}React to select a character or select '
-               f'\u200b \u274e \u200b to cancel\n\u200b')
-        prompt = await self.list_chars(ctx, user, msg, thumbnail)
-
-        # numbered unicode emojis 1 - # max chars
-        max_chars = config.core.max_chars
-        reactions = {f'{x + 1}': f'{x + 1}\ufe0f\u20e3'
-                     for x in range(min(len(user['chars']), max_chars))}
-        reactions['x'] = '\u274e'
-        sel = await self.wait_for_reaction(prompt, reactions)
-
-        return prompt, sel
-
-    async def get_char_index(
-            self, ctx: commands.Context,
-            user: dict,
             name: Optional[str] = None,
-            cancel_text: str = 'Cancelled'
-    ) -> int:
+            text: Optional[str] = None
+    ) -> Optional[int]:
         """
-        Get index from char list
-
-        :param ctx: discord context
-        :param user: user data from database
-        :param name: a character name
-        :param cancel_text: text sent when selection cancelled
-        :return: the index of given character name
+        Gets char index if name passed. Otherwise, sends embed with
+        list of chars. User should react to select
 
         Parameters
         ----------
@@ -125,36 +84,41 @@ class Characters(commands.Cog):
             user data from database
         name: str
             the character to be found
-        cancel_text:
-            text to send when cancelled
+        text:
+            description displayed in embed prior to instructions
 
         Returns
         -------
-        int
-            the character's index
+        Optional[int]
+            character index or None if cancelled
 
         """
-        chars = user['chars']
-
         if name:
-            ind = next((i for i, x in enumerate(chars)
-                        if x['name'].lower() == name.lower()), None)
+            chars = user['chars']
+            char_iter = (i for i, x in enumerate(chars)
+                         if x['name'].lower() == name.lower())
+            ind = next(char_iter, None)
 
             if ind is None:
                 raise errors.DataNotFound
-        else:
-            prompt, sel = await self.select_char(ctx, user)
-
-            # cache in case need to clean up
-            self.bot.reply_cache.add(ctx, prompt)
-
-            if sel == 'x':
-                await ctx.send(cancel_text)
-                ind = None
             else:
-                ind = int(sel)-1
+                return ind
 
-        return ind
+        # prompt if no name given
+        thumbnail = self.bot.get_emoji_url(config.emojis.mushping)
+        msg = (f'{text or ""}React to select a character or select '
+               f'\u200b \u274e \u200b to cancel\n\u200b')
+        prompt = await self.list_chars(ctx, user, msg, thumbnail)
+        self.bot.reply_cache.add(ctx, prompt)  # cache for clean up
+
+        # numbered unicode emojis 1 - # max chars
+        max_chars = config.core.max_chars
+        reactions = {f'{x + 1}': f'{x + 1}\ufe0f\u20e3'
+                     for x in range(min(len(user['chars']), max_chars))}
+        reactions['x'] = '\u274e'
+        sel = await self.wait_for_reaction(ctx, prompt, reactions)
+
+        return None if sel == 'x' else int(sel)-1
 
     @staticmethod
     async def wait_for_reaction(
@@ -195,9 +159,6 @@ class Characters(commands.Cog):
                 )
             )
         except asyncio.TimeoutError:
-            if not config.core.debug:
-                await prompt.delete()  # clean up prompt immediately
-
             raise errors.TimeoutError  # handle in command errors
 
         return next(k for k, v in reactions.items() if reaction.emoji == v)
@@ -223,10 +184,11 @@ class Characters(commands.Cog):
         thumbnail = self.bot.get_emoji_url(config.emojis.mushping)
         embed.set_thumbnail(url=thumbnail)
         prompt = ctx.send(embed=embed)
+        self.bot.reply_cache.add(ctx, prompt)  # cache for clean up
 
         # wait for reaction
         reactions = {'true': '\u2705', 'false': '\u274e'}
-        sel = await self.wait_for_reaction(prompt, reactions)
+        sel = await self.wait_for_reaction(ctx, prompt, reactions)
 
         return sel == 'true'  # other reactions will timeout
 
@@ -267,12 +229,11 @@ class Characters(commands.Cog):
         if not user or not user['chars']:  # no characters
             raise errors.NoMoreItems
 
-        cancel_text = 'Your main was not changed'
-        new_i = await self.get_char_index(ctx, user, name,
-                                          cancel_text=cancel_text)
+        new_i = await self.select_char(ctx, user, name=name)
 
         if new_i is None:  # cancelled
             self.bot.reply_cache.remove(ctx)
+            await ctx.send('Your main was not changed')
             return
 
         ret = await self.bot.db.set_user(ctx.author.id, {'default': new_i})
@@ -310,12 +271,11 @@ class Characters(commands.Cog):
             raise errors.NoMoreItems
 
         curr_i = user['default']
-        cancel_text = 'Deletion cancelled'
-        del_i = await self.get_char_index(ctx, user, name,
-                                          cancel_text=cancel_text)
+        del_i = await self.select_char(ctx, user, name=name)
 
         if del_i is None:  # cancelled
             self.bot.reply_cache.remove(ctx)
+            await ctx.send('Deletion cancelled')
             return
 
         # remove char and handle default
@@ -335,6 +295,7 @@ class Characters(commands.Cog):
         else:
             raise errors.DataWriteError
 
+        # no error, release from cache
         self.bot.reply_cache.remove(ctx)
 
     @commands.command(ignore_extra=False)
@@ -375,13 +336,13 @@ class Characters(commands.Cog):
         if not user or not user['chars']:
             raise errors.NoMoreItems
 
-        desc = ('Character was not found. '
+        text = ('Character was not found. '
                 f'\u200b Who should be renamed **{new_name}**?')
-        cancel_text = 'No character was renamed'
-        i = await self.get_char_index(ctx, user, name, desc, cancel_text)
+        i = await self.get_char_index(ctx, user, name=name, text=text)
 
         if i is None:  # cancelled
             self.bot.reply_cache.remove(ctx)
+            await ctx.send('No character was renamed')
             return
 
         _name = user['chars'][i]['name']
@@ -393,6 +354,9 @@ class Characters(commands.Cog):
             await ctx.send(f'**{_name}** was renamed **{new_name}**')
         else:
             raise errors.DataWriteError
+
+        # no error, release from cache
+        self.bot.reply_cache.remove(ctx)
 
     async def cog_after_invoke(self, ctx: commands.Context) -> None:
         # unregister reply cache if successful

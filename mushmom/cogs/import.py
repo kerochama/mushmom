@@ -93,16 +93,14 @@ class Import(commands.Cog):
                     f'{config.core.max_chars} character'
                     f'{"s" if config.core.max_chars > 1 else ""}. \u200b '
                     'Choose a character to replace.')
-            prompt, sel = await chars_cog.select_char(ctx, user, text)
+            i = await chars_cog.select_char(ctx, user, text)
 
-            # cache in case need to clean up
-            self.bot.reply_cache.add(ctx, prompt)
-
-            if sel == 'x':
+            if i is None:
+                self.bot.reply_cache.remove(ctx)  # clean up select prompt
                 await ctx.send(f'**{name}** was not saved')
-                ret = None
+                return
             else:
-                user['chars'][int(sel) - 1] = char.to_dict()
+                user['chars'][i] = char.to_dict()
                 update = {'chars': user['chars']}
                 ret = await self.bot.db.set_user(ctx.author.id, update)
 
@@ -112,7 +110,7 @@ class Import(commands.Cog):
             else:
                 raise errors.DataWriteError
 
-        # could have been cached in select_char
+        # no error, release from cache
         self.bot.reply_cache.remove(ctx)
 
     @_import.error
