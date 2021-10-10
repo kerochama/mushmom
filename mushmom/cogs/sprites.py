@@ -25,7 +25,7 @@ class Sprites(commands.Cog):
             emotion: Optional[converters.EmotionConverter] = 'default',
             pose: Optional[converters.PoseConverter] = 'stand1',
             *,
-            options: converters.ImgFlags = None
+            options: converters.ImgFlags
     ) -> None:
         """
         Replace message with the emote specified. For a list of usable
