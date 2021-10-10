@@ -69,7 +69,7 @@ class Core(commands.Cog):
 
         await ctx.send(msg)
 
-    @commands.command(name='set')
+    @commands.command(name='set', hidden=True)
     @commands.has_permissions(administrator=True)
     async def _set(self, ctx: commands.Context, setting: str, *args) -> None:
         """

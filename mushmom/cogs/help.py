@@ -267,6 +267,33 @@ class Help(commands.Cog):
         ))
         return list(dict.fromkeys(names))  # ordered dict keys = set
 
+    def get_all_usages(
+            self,
+            ctx: commands.Context,
+            commands: Iterable[Union[commands.Command, str]],
+            aliases: bool = False
+    ) -> Iterable[str]:
+        """
+        Get command calls for all commands given
+        Parameters
+        ----------
+        ctx: commands.Context
+        commands: Iterable[Union[commands.Command, str]]
+            list of commands or command names
+        aliases: bool
+            whether or not to include aliases
+        Returns
+        -------
+        Iterable[str]
+            the expanded list of command calls
+        """
+        cmds = self._prepare_cmds(commands, aliases=aliases)
+        usages = list(filter(  # filter out None
+            lambda x: x,
+            [usage for c in cmds for usage in self.get_usage(ctx, c)]
+        ))
+        return list(dict.fromkeys(usages))  # ordered dict keys = ordered set
+
     @commands.command(ignore_extra=False)
     async def help(
             self,
@@ -360,6 +387,14 @@ class Help(commands.Cog):
         for cog in sorted(mapping):  # in alphabetical order
             cmds = filter(lambda c: _show_help(ctx, c), mapping[cog])
             cmd_names = self.get_all_cmd_names(ctx, cmds, aliases=True)
+
+            try:  # check ref.HELP
+                _cmds = [self.get_cmd_name(ctx, alias, cmd)
+                         for alias, cmd in self.bot.ref_aliases.items()
+                         if cmd.cog_name == cog]
+                cmd_names += _cmds
+            except KeyError:
+                pass
 
             if cmd_names:  # ordered dict keys = ordered set
                 unique = list(dict.fromkeys(cmd_names)) + ['\u200b']

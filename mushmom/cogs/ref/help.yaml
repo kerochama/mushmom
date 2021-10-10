@@ -1,4 +1,6 @@
-# custom help info
+# custom signature info
+# aliases here are always listed, even for hidden commands
+# aliases can also have spaces
 
 characters:
   rename:
@@ -6,14 +8,10 @@ characters:
       - "[name] <new_name>"
 
 core:
-  "set prefixes":
-    command: _set_prefixes
-  "set channel":
-    command: _set_channel
-  "reset prefixes":
-    command: _reset_prefixes
-  "reset channel":
-    command: _reset_channel
+  _set_prefixes:
+    aliases: ['set prefixes']
+  _set_channel:
+    aliases: ['set channel']
 
 import:
   import:

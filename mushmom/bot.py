@@ -213,7 +213,7 @@ class Mushmom(commands.Bot):
         help_cog = self.get_cog('Help')
 
         if help_cog:
-            usages = help_cog.get_usages(ctx, ref_cmds, aliases=True)
+            usages = help_cog.get_all_usages(ctx, ref_cmds, aliases=True)
 
             if usages:
                 embed.add_field(name='Commands', value='\n'.join(usages))
@@ -283,6 +283,22 @@ class Mushmom(commands.Bot):
         await asyncio.sleep(delay)
         await ctx.message.add_reaction(reaction)
 
+    @property
+    def ref_aliases(self) -> dict[str, commands.Command]:
+        """
+        Checks ref.HELP for commands with aliases listed
+
+        Returns
+        -------
+        dict[str, commands.Command]
+            key is alias, value is command
+
+        """
+        return {alias: self.get_command(cmd, default=True)
+                for cog, cmds in ref.HELP.items()
+                for cmd, info in cmds.items() if 'aliases' in info
+                for alias in info['aliases']}
+
     def get_command(
             self,
             name: str,
@@ -290,7 +306,8 @@ class Mushmom(commands.Bot):
     ) -> Optional[commands.Command]:
         """
         Overwrite default behavior of allowing extraneous tokens
-        after command.
+        after command. Also checks ref.HELP for looser alias naming
+        (e.g. can have spaces)
 
         Parameters
         ----------
@@ -319,6 +336,10 @@ class Mushmom(commands.Bot):
         if ' ' not in name:
             return self.all_commands.get(name)
 
+        if name in self.ref_aliases:  # check ref.HELP
+            return self.ref_aliases[name]
+
+        # handle groups
         names = name.split()
         if not names:
             return None
