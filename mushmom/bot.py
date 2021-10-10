@@ -430,7 +430,7 @@ class ReplyCache:
     def contains(self, ctx: commands.Context) -> bool:
         reply, t = self.__cache.get(ctx.message.id, (None, None))
         current_time = time.monotonic()
-        return reply and (t + self.__ttl) <= current_time
+        return reply and current_time <= (t + self.__ttl)
 
     def __contains__(self, ctx: commands.Context) -> bool:
         return self.contains(ctx)
