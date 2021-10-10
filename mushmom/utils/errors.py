@@ -34,6 +34,7 @@ class MissingCogError(MushmomError):
 
 
 class UnexpectedFileTypeError(MushmomError):
+    """Wrong file type"""
     pass
 
 
