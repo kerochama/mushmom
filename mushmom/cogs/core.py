@@ -69,7 +69,7 @@ class Core(commands.Cog):
 
         await ctx.send(msg)
 
-    @commands.command(name='set', hidden=True)
+    @commands.command(name='set')
     @commands.has_permissions(administrator=True)
     async def _set(self, ctx: commands.Context, setting: str, *args) -> None:
         """
@@ -153,7 +153,7 @@ class Core(commands.Cog):
         else:
             raise errors.DataWriteError
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.has_permissions(administrator=True)
     async def reset(self, ctx: commands.Context, setting: str) -> None:
         """

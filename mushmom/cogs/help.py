@@ -361,16 +361,6 @@ class Help(commands.Cog):
             cmds = filter(lambda c: _show_help(ctx, c), mapping[cog])
             cmd_names = self.get_all_cmd_names(ctx, cmds, aliases=True)
 
-            try:  # check ref.HELP
-                cog_map = ref.HELP[cog.lower()]
-                ref_map = {k: self.bot.get_command(v['command'])
-                           for k, v in cog_map.items() if 'command' in v}
-                _cmds = [self.get_cmd_name(ctx, k, v) for k, v in ref_map.items()
-                         if _show_help(ctx, v, show_hidden=True)]
-                cmd_names += _cmds
-            except KeyError:
-                pass
-
             if cmd_names:  # ordered dict keys = ordered set
                 unique = list(dict.fromkeys(cmd_names)) + ['\u200b']
                 embed.add_field(name=cog, value='\n'.join(unique))

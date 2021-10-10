@@ -289,9 +289,8 @@ class Mushmom(commands.Bot):
             default: bool = False
     ) -> Optional[commands.Command]:
         """
-        Overwrite default to check cogs.ref.HELP for the command name
-        first.  Also overwrite default behavior of allowing extraneous
-        tokens after command.
+        Overwrite default behavior of allowing extraneous tokens
+        after command.
 
         Parameters
         ----------
@@ -316,23 +315,11 @@ class Mushmom(commands.Bot):
         if default:
             return super().get_command(name)
 
-        # check cogs.ref.HELP
-        ref_cmds = {cmd: cog for cog in ref.HELP.keys()
-                    for cmd in ref.HELP[cog].keys()}
-
-        try:  # look for command in ref.HELP
-            cog = ref_cmds[name]
-            _name = ref.HELP[cog][name]['command']
-        except KeyError:
-            _name = name
-
-        if default:
-            return super().get_command()
         # fast path, no space in name.
-        if ' ' not in _name:
-            return self.all_commands.get(_name)
+        if ' ' not in name:
+            return self.all_commands.get(name)
 
-        names = _name.split()
+        names = name.split()
         if not names:
             return None
         obj = self.all_commands.get(names[0])
