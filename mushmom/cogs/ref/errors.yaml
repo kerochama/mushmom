@@ -45,7 +45,7 @@ characters:
     errors.DataWriteError:
       <<: *dberror
 
-core:
+server:
   set:
     commands.MissingPermissions:
       msg: You are not an admin

@@ -10,7 +10,7 @@ from .. import config
 from ..utils import errors
 
 
-class Core(commands.Cog):
+class Server(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -230,4 +230,4 @@ class Core(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Core(bot))
+    bot.add_cog(Server(bot))

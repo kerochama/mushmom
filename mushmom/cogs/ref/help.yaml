@@ -7,7 +7,7 @@ characters:
     sigs:
       - "[name] <new_name>"
 
-core:
+server:
   _set_prefixes:
     aliases: ['set prefixes']
   _set_channel:

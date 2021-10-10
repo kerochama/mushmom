@@ -19,12 +19,12 @@ from .mapleio import resources
 from .cogs import ref
 
 initial_extensions = (
-    'cogs.core',
     'cogs.meta',
     'cogs.help',
     'cogs.characters',
     'cogs.import',
     'cogs.emotes',
+    'cogs.server',
     'cogs.sprites'
 )
 
