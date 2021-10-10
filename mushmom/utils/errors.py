@@ -58,6 +58,11 @@ class NoMoreItems(MushmomError):
     pass
 
 
+class CharacterAlreadyExists(MushmomError):
+    """Character already exists"""
+    pass
+
+
 class UnparsedArgsError(MushmomError):
     """Unparsed args before flags"""
     pass

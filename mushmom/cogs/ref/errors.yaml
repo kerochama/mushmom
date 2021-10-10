@@ -32,16 +32,17 @@ characters:
       <<: *nosel
 
   rename:
-    commands.TooManyArguments:
-      msg: Did not understand or could not find that character
-      ref_cmds: null
     commands.MissingRequiredArgument:
-      msg: You need to supply the new name
-      ref_cmds: null
+      msg: "You must supply both an existing character name and a new one.
+            To see your chars use:\n\u200b"
+      ref_cmds: [chars]
     errors.NoMoreItems:
       <<: *nochars
-    errors.TimeoutError:
-      <<: *nosel
+    errors.CharacterAlreadyExists:
+      msg: "That character already exists. To see your chars use:\n\u200b"
+      ref_cmds: [chars]
+    errors.DataNotFound:
+      <<: *missingchar
     errors.DataWriteError:
       <<: *dberror
 

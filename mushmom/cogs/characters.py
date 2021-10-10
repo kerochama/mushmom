@@ -67,7 +67,7 @@ class Characters(commands.Cog):
 
         return msg
 
-    async def select_char(
+    async def get_char(
             self, ctx: commands.Context,
             user: dict,
             name: Optional[str] = None,
@@ -120,8 +120,8 @@ class Characters(commands.Cog):
 
         return None if sel == 'x' else int(sel)-1
 
-    @staticmethod
     async def wait_for_reaction(
+            self,
             ctx: commands.Context,
             prompt: discord.Message,
             reactions: dict[str, Union[discord.Emoji, discord.PartialEmoji, str]]
@@ -159,6 +159,11 @@ class Characters(commands.Cog):
                 )
             )
         except asyncio.TimeoutError:
+            # delete immediately so main error handler runs
+            if not config.core.debug:
+                await prompt.delete()
+
+            self.bot.reply_cache.remove(ctx)
             raise errors.TimeoutError  # handle in command errors
 
         return next(k for k, v in reactions.items() if reaction.emoji == v)
@@ -229,7 +234,7 @@ class Characters(commands.Cog):
         if not user or not user['chars']:  # no characters
             raise errors.NoMoreItems
 
-        new_i = await self.select_char(ctx, user, name=name)
+        new_i = await self.get_char(ctx, user, name=name)
 
         if new_i is None:  # cancelled
             self.bot.reply_cache.remove(ctx)
@@ -271,7 +276,7 @@ class Characters(commands.Cog):
             raise errors.NoMoreItems
 
         curr_i = user['default']
-        del_i = await self.select_char(ctx, user, name=name)
+        del_i = await self.get_char(ctx, user, name=name)
 
         if del_i is None:  # cancelled
             self.bot.reply_cache.remove(ctx)
@@ -298,65 +303,49 @@ class Characters(commands.Cog):
         # no error, release from cache
         self.bot.reply_cache.remove(ctx)
 
-    @commands.command(ignore_extra=False)
+    @commands.command()
     async def rename(
             self,
             ctx: commands.Context,
-            name: Optional[converters.CharNameConverter] = None,
-            new_name: str = None
+            name: str,
+            new_name: str
     ) -> None:
         """
-        Rename a character with the new name give. The existing
-        character name is optional, in which case a reactable prompt
-        of registered characters will appear for selection
+        Rename a character with the new name given
 
         Parameters
         ----------
         ctx: commands.Context
-        name: Optional[str]
+        name: str
             the character's name. If none, send prompt
         new_name: str
             new character name
 
-        Notes
-        -----
-        new_name would be populated by not_a_char_name without
-        ignore_extra=False
-
-        >>> mush rename not_a_char_name Mushmom
-
         """
-        if not new_name:
-            raise commands.MissingRequiredArgument(
-                inspect.Parameter('new_name', inspect.Parameter.POSITIONAL_ONLY)
-            )
-
         user = await self.bot.db.get_user(ctx.author.id)
 
         if not user or not user['chars']:
             raise errors.NoMoreItems
 
-        text = ('Character was not found. '
-                f'\u200b Who should be renamed **{new_name}**?')
-        i = await self.select_char(ctx, user, name=name, text=text)
+        # check if new_name exists
+        chars = user['chars']
+        _iter = (c['name'] for c in chars if c['name'] == new_name)
+        exists = next(_iter, None)
 
-        if i is None:  # cancelled
-            self.bot.reply_cache.remove(ctx)
-            await ctx.send('No character was renamed')
-            return
+        if exists:
+            raise errors.CharacterAlreadyExists
 
-        _name = user['chars'][i]['name']
-        user['chars'][i]['name'] = new_name
-        update = {'chars': user['chars']}
+        # get char to replace
+        i = await self.get_char(ctx, user, name=name)
+
+        chars[i]['name'] = new_name
+        update = {'chars': chars}
         ret = await self.bot.db.set_user(ctx.author.id, update)
 
         if ret.acknowledged:
-            await ctx.send(f'**{_name}** was renamed **{new_name}**')
+            await ctx.send(f'**{name}** was renamed **{new_name}**')
         else:
             raise errors.DataWriteError
-
-        # no error, release from cache
-        self.bot.reply_cache.remove(ctx)
 
     async def cog_after_invoke(self, ctx: commands.Context) -> None:
         # unregister reply cache if successful

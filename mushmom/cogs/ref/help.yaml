@@ -2,11 +2,6 @@
 # aliases here are always listed, even for hidden commands
 # aliases can also have spaces
 
-characters:
-  rename:
-    sigs:
-      - "[name] <new_name>"
-
 server:
   _set_prefixes:
     aliases: ['set prefixes']

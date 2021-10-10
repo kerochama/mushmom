@@ -3,11 +3,27 @@ Contains converters for command input validation
 
 """
 from discord.ext import commands
-from typing import Optional, TypeVar, Type
+from typing import Optional, TypeVar, Type, Any
 
 from .. import config
 from . import errors
 from ..mapleio import resources
+
+
+class SimpleNotConverter(commands.Converter):
+    """
+    Inverts simple converters that just return the arg if a condition
+    is passed. (i.e. everything used in this bot)
+
+    """
+    __ref_cvtr__: Type[type]
+
+    async def convert(self, ctx: commands.Context, arg: str) -> str:
+        try:  # works then raise error
+            await self.__class__.__ref_cvtr__.convert(self, ctx, arg)
+            raise commands.BadArgument('Passed reference converter')
+        except commands.BadArgument:
+            return arg
 
 
 class EmotionConverter(commands.Converter):
@@ -31,16 +47,6 @@ class PoseConverter(commands.Converter):
         raise commands.BadArgument(message="Not a valid pose")
 
 
-class ImportNameConverter(commands.Converter):
-    """Used to differentiate name from API call"""
-    async def convert(self, ctx: commands.Context, arg: str) -> str:
-        if not arg.startswith(config.mapleio.api_url):
-            return arg
-
-        message = "Not a valid character name"
-        raise commands.BadArgument(message=message)
-
-
 class MapleIOURLConverter(commands.Converter):
     """A valid maplestory.io api call"""
     async def convert(self, ctx: commands.Context, arg: str) -> str:
@@ -51,25 +57,9 @@ class MapleIOURLConverter(commands.Converter):
         raise commands.BadArgument(message=message)
 
 
-class CharNameConverter(commands.Converter):
-    """Existing character"""
-    async def convert(self, ctx: commands.Context, arg: str) -> str:
-        # dont track. will get user in command
-        user = await ctx.bot.db.get_user(ctx.author.id, track=False)
-
-        if user and arg.lower() in [x.name.lower() for x in user['chars']]:
-            return arg
-
-        raise commands.BadArgument('Character not found')
-
-
-class OptionConverter(commands.Converter):
-    """Used for -- options"""
-    async def convert(self, ctx: commands.Context, arg: str) -> str:
-        if arg.startswith('--'):
-            return arg[2:]  # strip --
-
-        raise commands.BadArgument('Not a valid option')
+class NotMapleIOURLConverter(SimpleNotConverter):
+    """Anything but maplestory.io api call"""
+    __ref_cvtr__ = MapleIOURLConverter
 
 
 class CommandConverter(commands.Converter):

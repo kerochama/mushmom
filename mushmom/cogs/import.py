@@ -20,7 +20,7 @@ class Import(commands.Cog):
     async def _import(
             self,
             ctx: commands.Context,
-            name: converters.ImportNameConverter,
+            name: converters.NotMapleIOURLConverter,
             url: Optional[converters.MapleIOURLConverter] = None
     ) -> None:
         """
@@ -93,7 +93,7 @@ class Import(commands.Cog):
                     f'{config.core.max_chars} character'
                     f'{"s" if config.core.max_chars > 1 else ""}. \u200b '
                     'Choose a character to replace.')
-            i = await chars_cog.select_char(ctx, user, text)
+            i = await chars_cog.get_char(ctx, user, text)
 
             if i is None:
                 self.bot.reply_cache.remove(ctx)  # clean up select prompt
