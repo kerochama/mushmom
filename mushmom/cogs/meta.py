@@ -75,7 +75,7 @@ class Meta(commands.Cog):
         """
         name = config.core.bot_name
         await ctx.message.reply(f'\u2620 {name} has been killed! \u2620')
-        await self.bot.logout()
+        await self.bot.close()
 
 
 def setup(bot):
