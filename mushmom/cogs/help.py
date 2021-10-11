@@ -378,7 +378,7 @@ class Help(commands.Cog):
 
         embed.set_author(name=f'{config.core.bot_name} Help',
                          icon_url=self.bot.user.avatar.url)
-        thumbnail = self.bot.get_emoji_url(config.emojis.mushheart)
+        thumbnail = self.bot.get_emoji_url(config.emojis.mushhuh)
         embed.set_thumbnail(url=thumbnail)
 
         # add commands as fields by cog
@@ -443,7 +443,7 @@ class Help(commands.Cog):
 
         embed.set_author(name=f'Command Help',
                          icon_url=self.bot.user.avatar.url)
-        thumbnail = self.bot.get_emoji_url(config.emojis.mushheart)
+        thumbnail = self.bot.get_emoji_url(config.emojis.mushhuh)
         embed.set_thumbnail(url=thumbnail)
 
         # show usage

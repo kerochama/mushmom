@@ -13,11 +13,11 @@ core:
 emojis:
   mushshock: 890392463867527228
   mushheart: 890978701158809671
-  mushdab: 890978611803324487
-  mushping: 890978760780832818
+  mushdab: 897105532027011073
+  mushping: 897105581406560286
   mushparty: 890987908633362503
   mushloading: 892077347925262367
-  mushcool: 896196206282305546
+  mushhuh: 897105556475629578
 
 database:                              # mongodb
   name: mushmom
