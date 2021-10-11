@@ -191,6 +191,7 @@ class Character:
             self,
             pose: str = 'stand1',
             emotion: str = 'default',
+            frame: Union[int, str] = 0,
             zoom: float = 1,
             flipx: bool = False,
             bgcolor: tuple[int, int, int, int] = (0, 0, 0, 0),
@@ -205,6 +206,8 @@ class Character:
             pose from poses.json
         emotion: str
             emotion from emotions.json
+        frame: Union[int, str]
+            the animation frame. animated for gif
         zoom: float
             how zoomed in the image should be (1 = 100%)
         flipx: bool
@@ -245,13 +248,15 @@ class Character:
         # format query
         query = self.ears.to_dict()
         query.update({
-            'resize': zoom, 'flipX': flipx, 'bgColor': '{},{},{},{}'.format(*bgcolor)
+            'resize': zoom,
+            'flipX': flipx,
+            'bgColor': '{},{},{},{}'.format(*bgcolor)
         })
         qs = parse.urlencode(
             {k: str(v).lower() for k, v in query.items()}, safe=','
         )  # keep commas
 
-        return f'{config.mapleio.api_url}/character/{items_s}/{pose}/0?{qs}'
+        return f'{config.mapleio.api_url}/character/{items_s}/{pose}/{frame}?{qs}'
 
     def to_dict(self) -> dict[str, Any]:
         """
