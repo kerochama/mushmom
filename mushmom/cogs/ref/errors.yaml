@@ -81,11 +81,8 @@ emotes:
 
 import:
   import:
-    commands.TooManyArguments:
-      msg: "Did not understand. Try:\n\u200b"
-      ref_cmds: [import]
     commands.BadArgument:
-      msg: "Supply a character name to start mushing! Try:\n\u200b"
+      msg: "Supply a character name to start mushing. Try:\n\u200b"
       ref_cmds: [import]
     # commands.MissingArgument handled in command.error
     errors.UnexpectedFileTypeError:

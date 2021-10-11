@@ -3,14 +3,12 @@ Character commands
 
 """
 import discord
-import asyncio
-import inspect
 
 from discord.ext import commands
-from typing import Optional, Union
+from typing import Optional
 
 from .. import config
-from ..utils import errors, converters
+from ..utils import errors
 
 
 class Characters(commands.Cog):
@@ -116,86 +114,9 @@ class Characters(commands.Cog):
         reactions = {f'{x + 1}': f'{x + 1}\ufe0f\u20e3'
                      for x in range(min(len(user['chars']), max_chars))}
         reactions['x'] = '\u274e'
-        sel = await self.wait_for_reaction(ctx, prompt, reactions)
+        sel = await self.bot.wait_for_reaction(ctx, prompt, reactions)
 
         return None if sel == 'x' else int(sel)-1
-
-    async def wait_for_reaction(
-            self,
-            ctx: commands.Context,
-            prompt: discord.Message,
-            reactions: dict[str, Union[discord.Emoji, discord.PartialEmoji, str]]
-    ) -> str:
-        """
-        Add reactions to message and wait for original author response
-
-        Parameters
-        ----------
-        ctx: commands.Context
-        prompt: discord.Message
-            the message to which to add reactions
-        reactions: dict[str, Union[discord.Emoji, discord.PartialEmoji, str]]
-            key is meaning of reaction, value is the reaction
-
-        Returns
-        -------
-        str
-            the key value associated with selected reaction
-
-        """
-        # add reactions
-        for reaction in reactions.values():
-            await prompt.add_reaction(reaction)
-
-        # wait for reaction
-        try:
-            reaction, user = (
-                await ctx.bot.wait_for(
-                    'reaction_add',
-                    check=lambda r, u: (u == ctx.author
-                                        and r.message.id == prompt.id
-                                        and r.emoji in reactions.values()),
-                    timeout=config.core.default_delay
-                )
-            )
-        except asyncio.TimeoutError:
-            # delete immediately so main error handler runs
-            if not config.core.debug:
-                await prompt.delete()
-
-            self.bot.reply_cache.remove(ctx)
-            raise errors.TimeoutError  # handle in command errors
-
-        return next(k for k, v in reactions.items() if reaction.emoji == v)
-
-    async def confirm_prompt(self, ctx: commands.Context, text) -> bool:
-        """
-        Prompt user for confirmation
-
-        Parameters
-        ----------
-        ctx: commands.Context
-        text: str
-            text to display
-
-        Returns
-        -------
-        bool
-            user's selection
-
-        """
-        embed = discord.Embed(description=text, color=config.core.embed_color)
-        embed.set_author(name='Confirmation', url=self.bot.user.avatar.url)
-        thumbnail = self.bot.get_emoji_url(config.emojis.mushping)
-        embed.set_thumbnail(url=thumbnail)
-        prompt = ctx.send(embed=embed)
-        self.bot.reply_cache.add(ctx, prompt)  # cache for clean up
-
-        # wait for reaction
-        reactions = {'true': '\u2705', 'false': '\u274e'}
-        sel = await self.wait_for_reaction(ctx, prompt, reactions)
-
-        return sel == 'true'  # other reactions will timeout
 
     @commands.command()
     async def chars(self, ctx: commands.Context) -> None:

@@ -283,6 +283,54 @@ class Mushmom(commands.Bot):
         await asyncio.sleep(delay)
         await ctx.message.add_reaction(reaction)
 
+    async def wait_for_reaction(
+            self,
+            ctx: commands.Context,
+            prompt: discord.Message,
+            reactions: dict[str, Union[discord.Emoji, discord.PartialEmoji, str]]
+    ) -> str:
+        """
+        Add reactions to message and wait for original author response
+
+        Parameters
+        ----------
+        ctx: commands.Context
+        prompt: discord.Message
+            the message to which to add reactions
+        reactions: dict[str, Union[discord.Emoji, discord.PartialEmoji, str]]
+            key is meaning of reaction, value is the reaction
+
+        Returns
+        -------
+        str
+            the key value associated with selected reaction
+
+        """
+        # add reactions
+        for reaction in reactions.values():
+            await prompt.add_reaction(reaction)
+
+        # wait for reaction
+        try:
+            reaction, user = (
+                await ctx.bot.wait_for(
+                    'reaction_add',
+                    check=lambda r, u: (u == ctx.author
+                                        and r.message.id == prompt.id
+                                        and r.emoji in reactions.values()),
+                    timeout=config.core.default_delay
+                )
+            )
+        except asyncio.TimeoutError:
+            # delete immediately so main error handler runs
+            if not config.core.debug:
+                await prompt.delete()
+
+            self.bot.reply_cache.remove(ctx)
+            raise errors.TimeoutError  # handle in command errors
+
+        return next(k for k, v in reactions.items() if reaction.emoji == v)
+
     @property
     def ref_aliases(self) -> dict[str, commands.Command]:
         """
