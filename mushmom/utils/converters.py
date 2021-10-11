@@ -21,9 +21,10 @@ class SimpleNotConverter(commands.Converter):
     async def convert(self, ctx: commands.Context, arg: str) -> str:
         try:  # works then raise error
             await self.__class__.__ref_cvtr__.convert(self, ctx, arg)
-            raise commands.BadArgument('Passed reference converter')
         except commands.BadArgument:
             return arg
+
+        raise commands.BadArgument('Passed reference converter')
 
 
 class EmotionConverter(commands.Converter):
