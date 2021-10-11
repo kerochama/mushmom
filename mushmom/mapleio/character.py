@@ -162,7 +162,8 @@ class Character:
     def filtered_equips(
             self,
             keep: Optional[Iterable[str]] = None,
-            remove: Optional[Iterable[str]] = None
+            remove: Optional[Iterable[str]] = None,
+            replace: Optional[Iterable[Equip]] = None
     ) -> list[Equip]:
         """
         Filtered equips. Keep is prioritized over remove
@@ -173,6 +174,8 @@ class Character:
             list of equip types to keep
         remove: Optional[Iterable[str]]
             list of equip types to remove
+        replace: Optional[Iterable[Equip]]
+            list of equip to overwrite char equips by type
 
         Returns
         -------
@@ -180,12 +183,20 @@ class Character:
             list of equips worn by character
 
         """
-        if keep:
-            return [equip for equip in self.equips if equip.type in keep]
-        elif remove:
-            return [equip for equip in self.equips if equip.type not in remove]
+        equips = self.equips
 
-        return self.equips
+        if keep:
+            equips = [equip for equip in self.equips if equip.type in keep]
+        elif remove:
+            equips = [equip for equip in self.equips if equip.type not in remove]
+
+        for equip in replace or []:
+            _iter = (i for i, eq in enumerate(equips) if eq.type == equip.type)
+            i = next(_iter, None)
+            if i is not None:
+                equips[i] = equip
+
+        return equips
 
     def url(
             self,
@@ -195,7 +206,9 @@ class Character:
             zoom: float = 1,
             flipx: bool = False,
             bgcolor: tuple[int, int, int, int] = (0, 0, 0, 0),
-            remove: Optional[Iterable[str]] = None
+            render_mode: Optional[str] = None,
+            remove: Optional[Iterable[str]] = None,
+            replace: Optional[Iterable[Equip]] = None
     ) -> str:
         """
         Build API call to get char sprite data
@@ -214,8 +227,12 @@ class Character:
             whether or not to flip sprite horizontally
         bgcolor: tuple[int, int, int, int]
             rgba color tuple
+        render_mode: Optional[str]
+            the render mode (e.g. centered, NavelCenter, etc.)
         remove: Optional[Iterable[str]]
             list of equip types to remove
+        replace: Optional[Iterable[Equip]]
+            list of equip to overwrite char equips by type
 
         Returns
         -------
@@ -232,7 +249,7 @@ class Character:
         if self.region != 'GMS':
             items = [dict(item, region=self.region) for item in items]
 
-        for equip in self.filtered_equips(remove=remove):
+        for equip in self.filtered_equips(remove=remove, replace=replace):
             equip = equip.to_dict()
             _type = equip.pop('type')
 
@@ -252,6 +269,8 @@ class Character:
             'flipX': flipx,
             'bgColor': '{},{},{},{}'.format(*bgcolor)
         })
+        if render_mode:
+            query['renderMode'] = render_mode
         qs = parse.urlencode(
             {k: str(v).lower() for k, v in query.items()}, safe=','
         )  # keep commas
