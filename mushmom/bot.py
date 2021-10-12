@@ -13,8 +13,8 @@ from discord import Emoji, Reaction, PartialEmoji
 from motor.motor_asyncio import AsyncIOMotorClient
 from typing import Optional, Union, Iterable
 
-from . import config
-from .utils import checks, errors, database as db, converters
+from . import config, database as db
+from .cogs.utils import errors, checks
 from .mapleio import resources
 from .cogs import ref
 

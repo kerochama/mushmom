@@ -8,7 +8,7 @@ from pymongo.results import InsertOneResult, UpdateResult
 from datetime import datetime
 from typing import Optional, Union
 
-from .. import config
+from mushmom import config
 
 
 class Database:

@@ -9,7 +9,7 @@ from typing import Optional
 from io import BytesIO
 
 from .. import config
-from ..utils import converters, errors
+from .utils import converters, errors
 from ..mapleio import api, resources
 from ..mapleio.character import Character
 

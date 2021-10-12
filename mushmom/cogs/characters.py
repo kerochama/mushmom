@@ -8,7 +8,7 @@ from discord.ext import commands
 from typing import Optional
 
 from .. import config
-from ..utils import errors
+from .utils import errors
 
 
 class Characters(commands.Cog):

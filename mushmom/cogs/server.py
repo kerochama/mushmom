@@ -7,7 +7,7 @@ import discord
 from discord.ext import commands
 
 from .. import config
-from ..utils import errors
+from .utils import errors
 
 
 class Server(commands.Cog):

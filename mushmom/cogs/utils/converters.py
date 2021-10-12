@@ -3,11 +3,11 @@ Contains converters for command input validation
 
 """
 from discord.ext import commands
-from typing import Optional, TypeVar, Type, Any
+from typing import Optional, TypeVar, Type
 
-from .. import config
+from mushmom import config
 from . import errors
-from ..mapleio import resources
+from mushmom.mapleio import resources
 
 
 class SimpleNotConverter(commands.Converter):
