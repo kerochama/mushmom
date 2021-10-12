@@ -7,7 +7,7 @@ import functools
 
 from PIL import Image
 from io import BytesIO
-from typing import Callable, Coroutine, Any, Optional, Union
+from typing import Callable, Coroutine, Any, Optional, Union, Iterable
 
 from .. import config
 
@@ -110,9 +110,13 @@ async def get_sprite(
         char: 'Character',
         pose: str = 'stand1',
         emotion: str = 'default',
+        frame: Union[int, str] = 0,
         zoom: float = 1,
         flipx: bool = False,
         bgcolor: tuple[int, int, int, int] = (0, 0, 0, 0),
+        render_mode: Optional[str] = None,
+        remove: Optional[Iterable[str]] = None,
+        replace: Optional[Iterable['Equip']] = None,
         session: aiohttp.ClientSession = None
 ) -> bytes:
     """
@@ -126,12 +130,20 @@ async def get_sprite(
         pose from poses.json
     emotion: str
         emotion from emotions.json
+    frame: Union[int, str]
+            the animation frame. animated for gif
     zoom: float
         how zoomed in the image should be (1 = 100%)
     flipx: bool
         whether or not to flip sprite horizontally
     bgcolor: tuple[int, int, int, int]
         rgba color tuple
+    render_mode: Optional[str]
+            the render mode (e.g. centered, NavelCenter, etc.)
+    remove: Optional[Iterable[str]]
+        list of equip types to remove
+    replace: Optional[Iterable[Equip]]
+        list of equip to overwrite char equips by type
     session: Optional[aiohttp.ClientSession]
         session to use when issuing http get
 
