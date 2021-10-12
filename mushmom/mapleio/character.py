@@ -90,13 +90,14 @@ class Character:
             char.version = item0.get('version', config.mapleio.default_version)
             char.region = item0.get('region', 'GMS')
 
-            char.equips = [
+            equips = [
                 Equip(item.get('id', 0),
                       item.get('version', char.version),
                       item.get('region', 'GMS'),
                       item.get('name'))
                 for type, item in items.items() if type not in ['Body', 'Head']
             ]
+            char.equips = cls._validate_equips(equips)
 
         return char
 
@@ -150,14 +151,24 @@ class Character:
                               for x in items if Skin.get(x['itemId'])),
                              Skin.GREEN)
 
-            char.equips = [
+            equips = [
                 Equip(item.get('itemId', 0),
                       item.get('version', char.version),
                       item.get('region', 'GMS'))
                 for item in items if Equip.valid_equip(item.get('itemId', 0))
             ]
+            char.equips = cls._validate_equips(equips)
 
         return char
+
+    @staticmethod
+    def _validate_equips(equips):
+        """
+        Only allow 1 equip of each type
+
+        """
+        _equips = {eq.type: eq for eq in equips}
+        return list(_equips.values())
 
     def filtered_equips(
             self,
@@ -183,7 +194,7 @@ class Character:
             list of equips worn by character
 
         """
-        equips = self.equips
+        equips = self.equips.copy()
 
         if keep:
             equips = [equip for equip in self.equips if equip.type in keep]
