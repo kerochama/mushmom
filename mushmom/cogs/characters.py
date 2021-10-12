@@ -129,6 +129,10 @@ class Characters(commands.Cog):
 
         """
         user = await self.bot.db.get_user(ctx.author.id)
+
+        if not user:
+            raise errors.DataNotFound
+
         await self.list_chars(ctx, user, 'Your mushable characters\n\u200b')
 
     @commands.command(aliases=['rr'])

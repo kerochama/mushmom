@@ -2,7 +2,7 @@
 
 characters:
   chars:
-    commands.DataNotFound:  # note this is actually user not being found
+    errors.DataNotFound:  # note this is actually user not being found
       msg: "Welcome! You have no chars. To import one use:\n\u200b"
       ref_cmds: [import]
 
