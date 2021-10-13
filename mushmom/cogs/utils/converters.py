@@ -5,9 +5,9 @@ Contains converters for command input validation
 from discord.ext import commands
 from typing import Optional, TypeVar, Type
 
-from mushmom import config
+from ... import config
 from . import errors
-from mushmom.mapleio import resources
+from ...mapleio import resources
 
 
 class SimpleNotConverter(commands.Converter):

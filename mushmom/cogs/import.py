@@ -9,7 +9,7 @@ from discord.ext import commands
 from typing import Optional
 
 from .. import config
-from mushmom.cogs.utils import converters, errors
+from .utils import converters, errors
 from ..mapleio.character import Character
 
 
