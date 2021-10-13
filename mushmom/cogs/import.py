@@ -9,42 +9,13 @@ from discord.ext import commands
 from typing import Optional
 
 from .. import config
-from .utils import converters, errors
+from .utils import converters, errors, prompts
 from ..mapleio.character import Character
 
 
 class Import(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
-    async def confirm_prompt(self, ctx: commands.Context, text) -> bool:
-        """
-        Prompt user for confirmation
-
-        Parameters
-        ----------
-        ctx: commands.Context
-        text: str
-            text to display
-
-        Returns
-        -------
-        bool
-            user's selection
-
-        """
-        embed = discord.Embed(description=text, color=config.core.embed_color)
-        embed.set_author(name='Confirmation', url=self.bot.user.avatar.url)
-        thumbnail = self.bot.get_emoji_url(config.emojis.mushping)
-        embed.set_thumbnail(url=thumbnail)
-        prompt = await ctx.send(embed=embed)
-        self.bot.reply_cache.add(ctx, prompt)  # cache for clean up
-
-        # wait for reaction
-        reactions = {'true': '\u2705', 'false': '\u274e'}
-        sel = await self.bot.wait_for_reaction(ctx, prompt, reactions)
-
-        return sel == 'true'  # other reactions will timeout
 
     @commands.command(name='import', aliases=['add'])
     async def _import(
@@ -117,7 +88,7 @@ class Import(commands.Cog):
 
             if i is not None:  # exists; prompt if want to replace
                 text = f'**{name}** already exists. Replace?'
-                replace = await self.confirm_prompt(ctx, text)
+                replace = await prompts.confirm_prompt(ctx, text)
                 chars[i] = char.to_dict()
 
                 if not replace:
@@ -126,16 +97,11 @@ class Import(commands.Cog):
             elif len(user['chars']) < config.core.max_chars:
                 chars.append(char.to_dict())
             else:  # too many chars; replace?
-                chars_cog = self.bot.get_cog('Characters')
-
-                if not chars_cog:
-                    raise errors.MissingCogError
-
                 text = (f'{config.core.bot_name} can only save '
                         f'{config.core.max_chars} character'
                         f'{"s" if config.core.max_chars > 1 else ""}. \u200b '
                         'Choose a character to replace.')
-                i = await chars_cog.get_char(ctx, user, text)
+                i = await prompts.get_char(ctx, user, text)
 
                 if i is None:
                     self.bot.reply_cache.remove(ctx)  # clean up select prompt

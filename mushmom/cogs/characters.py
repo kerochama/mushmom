@@ -7,116 +7,12 @@ import discord
 from discord.ext import commands
 from typing import Optional
 
-from .. import config
-from .utils import errors
+from .utils import errors, prompts
 
 
 class Characters(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
-    async def list_chars(
-            self,
-            ctx: commands.Context,
-            user: dict,
-            text: str,
-            thumbnail: str = None
-    ) -> discord.Message:
-        """
-        List users chars
-
-        Parameters
-        ----------
-        ctx: commands.Context
-        user: dict
-            user data from database
-        text: str
-            description displayed in embed
-        thumbnail: str
-            url to the embed thumbnail
-
-        Returns
-        -------
-        discord.Message
-            the message, if sent
-
-        """
-        embed = discord.Embed(description=text, color=config.core.embed_color)
-        embed.set_author(name='Characters', icon_url=self.bot.user.avatar.url)
-
-        if not thumbnail:
-            thumbnail = self.bot.get_emoji_url(config.emojis.mushparty)
-
-        embed.set_thumbnail(url=thumbnail)
-
-        # format char names
-        char_names = ['-'] * config.core.max_chars
-
-        for i, char in enumerate(user['chars']):
-            template = '**{} (default)**' if i == user['default'] else '{}'
-            char_names[i] = template.format(char['name'])
-
-        # full width numbers
-        char_list = [f'{chr(65297 + i)} \u200b {name}'
-                     for i, name in enumerate(char_names)]
-
-        embed.add_field(name='Characters', value='\n'.join(char_list))
-        msg = await ctx.send(embed=embed)
-
-        return msg
-
-    async def get_char(
-            self, ctx: commands.Context,
-            user: dict,
-            name: Optional[str] = None,
-            text: Optional[str] = None
-    ) -> Optional[int]:
-        """
-        Gets char index if name passed. Otherwise, sends embed with
-        list of chars. User should react to select
-
-        Parameters
-        ----------
-        ctx: commands.Context
-        user: dict
-            user data from database
-        name: str
-            the character to be found
-        text:
-            description displayed in embed prior to instructions
-
-        Returns
-        -------
-        Optional[int]
-            character index or None if cancelled
-
-        """
-        if name:
-            chars = user['chars']
-            char_iter = (i for i, x in enumerate(chars)
-                         if x['name'].lower() == name.lower())
-            ind = next(char_iter, None)
-
-            if ind is None:
-                raise errors.DataNotFound
-            else:
-                return ind
-
-        # prompt if no name given
-        thumbnail = self.bot.get_emoji_url(config.emojis.mushping)
-        msg = (f'{text or ""}React to select a character or select '
-               f'\u200b \u274e \u200b to cancel\n\u200b')
-        prompt = await self.list_chars(ctx, user, msg, thumbnail)
-        self.bot.reply_cache.add(ctx, prompt)  # cache for clean up
-
-        # numbered unicode emojis 1 - # max chars
-        max_chars = config.core.max_chars
-        reactions = {f'{x + 1}': f'{x + 1}\ufe0f\u20e3'
-                     for x in range(min(len(user['chars']), max_chars))}
-        reactions['x'] = '\u274e'
-        sel = await self.bot.wait_for_reaction(ctx, prompt, reactions)
-
-        return None if sel == 'x' else int(sel)-1
 
     @commands.command()
     async def chars(self, ctx: commands.Context) -> None:
@@ -133,7 +29,8 @@ class Characters(commands.Cog):
         if not user:
             raise errors.NoMoreItems
 
-        await self.list_chars(ctx, user, 'Your mushable characters\n\u200b')
+        msg = 'Your mushable characters\n\u200b'
+        await prompts.list_chars(ctx, user, msg)
 
     @commands.command(aliases=['rr'])
     async def reroll(
@@ -159,7 +56,7 @@ class Characters(commands.Cog):
         if not user or not user['chars']:  # no characters
             raise errors.NoMoreItems
 
-        new_i = await self.get_char(ctx, user, name=name)
+        new_i = await prompts.get_char(ctx, user, name=name)
 
         if new_i is None:  # cancelled
             self.bot.reply_cache.remove(ctx)
@@ -201,7 +98,7 @@ class Characters(commands.Cog):
             raise errors.NoMoreItems
 
         curr_i = user['default']
-        del_i = await self.get_char(ctx, user, name=name)
+        del_i = await prompts.get_char(ctx, user, name=name)
 
         if del_i is None:  # cancelled
             self.bot.reply_cache.remove(ctx)
@@ -261,7 +158,7 @@ class Characters(commands.Cog):
             raise errors.CharacterAlreadyExists
 
         # get char to replace
-        i = await self.get_char(ctx, user, name=name)
+        i = await prompts.get_char(ctx, user, name=name)
 
         chars[i]['name'] = new_name
         update = {'chars': chars}

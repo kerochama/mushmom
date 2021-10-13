@@ -9,7 +9,7 @@ from typing import Optional
 from io import BytesIO
 
 from .. import config
-from .utils import converters, errors
+from .utils import converters, errors, prompts
 from ..mapleio import api, resources
 from ..mapleio.character import Character
 
@@ -46,12 +46,7 @@ class Emotes(commands.Cog):
             raise errors.NoMoreItems
 
         if options.char:
-            chars_cog = self.bot.get_cog('Characters')
-
-            if not chars_cog:
-                raise errors.MissingCogError
-
-            i = await chars_cog.get_char(ctx, user, name=options.char)
+            i = await prompts.get_char(ctx, user, name=options.char)
         else:
             i = user['default']
 
