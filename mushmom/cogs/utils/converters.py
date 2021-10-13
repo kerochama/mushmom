@@ -6,8 +6,9 @@ from discord.ext import commands
 from typing import Optional, TypeVar, Type
 
 from ... import config
-from . import errors
+from . import errors, prompts
 from ...mapleio import resources
+from ...mapleio.character import Character
 
 
 class SimpleNotConverter(commands.Converter):
@@ -72,6 +73,19 @@ class CommandConverter(commands.Converter):
         raise commands.BadArgument('Command not found')
 
 
+class CharacterConverter(commands.Converter):
+    """Get user character"""
+    async def convert(self, ctx: commands.Context, arg: str) -> str:
+        user = await ctx.bot.db.get_user(ctx.author.id)
+
+        if not user or not user['chars']:
+            raise errors.NoMoreItems
+
+        # passing a name does not prompt anything
+        i = await prompts.get_char(ctx, user, name=arg)
+        return Character.from_json(user['chars'][i])
+
+
 # Flag Converters
 SF = TypeVar('SF', bound='FlagConverter')
 
@@ -80,8 +94,7 @@ class StrictFlagConverter(commands.FlagConverter):
     @classmethod
     async def convert(cls, ctx: commands.Context, argument: str) -> SF:
         """
-        Flag values cannot contain delimiter. Flags must start at
-        beginning of argument
+        Flags must start at beginning of argument
 
         Parameters
         ----------
@@ -97,13 +110,6 @@ class StrictFlagConverter(commands.FlagConverter):
         """
         self = await super().convert(ctx, argument)
 
-        # delimiter cannot be in flag value
-        for flag in cls.__commands_flags__.values():
-            vals = getattr(self, flag.attribute)
-            vals = [vals] if isinstance(vals, str) else vals
-            if any(cls.__commands_flag_delimiter__ in v for v in vals or []):
-                raise errors.FlagParseError
-
         # if first flag not at beginning then something was sent before flags
         flag_iter = (x for x in cls.__commands_flag_regex__.finditer(argument))
         match = next(flag_iter, None)
@@ -113,9 +119,29 @@ class StrictFlagConverter(commands.FlagConverter):
         return self
 
 
+async def default_char(ctx: commands.Context):
+    """
+    Get the char saved as default (main)
+
+    Parameters
+    ----------
+    ctx: commands.Context
+
+    """
+    user = await ctx.bot.db.get_user(ctx.author.id)
+
+    if not user or not user['chars']:
+        raise errors.NoMoreItems
+
+    i = user['default']
+
+    return Character.from_json(user['chars'][i])
+
+
 class ImgFlags(StrictFlagConverter, delimiter=' '):
-    char: Optional[str] = commands.flag(
+    char: Optional[CharacterConverter] = commands.flag(
         name='--char',
         aliases=['-c'],
-        default=None
+        default=default_char
     )
+

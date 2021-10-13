@@ -43,19 +43,7 @@ class Sprites(commands.Cog):
             --char, -c: character to use
 
         """
-        # grab character
-        user = await self.bot.db.get_user(ctx.author.id)
-
-        if not user or not user['chars']:
-            raise errors.NoMoreItems
-
-        if options.char:
-            i = await prompts.get_char(ctx, user, name=options.char)
-        else:
-            i = user['default']
-
-        char = Character.from_json(user['chars'][i])
-        name = char.name or "char"
+        name = options.char.name or "char"
 
         # add loading reaction to confirm command is still waiting for api
         # default: hour glass
@@ -65,7 +53,7 @@ class Sprites(commands.Cog):
         )
 
         # create sprite
-        data = await api.get_sprite(char, pose=pose, emotion=emotion,
+        data = await api.get_sprite(options.char, pose=pose, emotion=emotion,
                                     session=self.bot.session)
         react_task.cancel()
 

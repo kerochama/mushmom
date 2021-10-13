@@ -9,9 +9,8 @@ from typing import Optional
 from io import BytesIO
 
 from .. import config
-from .utils import converters, errors, prompts
+from .utils import converters, errors
 from ..mapleio import api, resources
-from ..mapleio.character import Character
 
 
 class Emotes(commands.Cog):
@@ -39,19 +38,7 @@ class Emotes(commands.Cog):
             --char, -c: character to use
 
         """
-        # grab character
-        user = await self.bot.db.get_user(ctx.author.id)
-
-        if not user or not user['chars']:
-            raise errors.NoMoreItems
-
-        if options.char:
-            i = await prompts.get_char(ctx, user, name=options.char)
-        else:
-            i = user['default']
-
-        char = Character.from_json(user['chars'][i])
-        name = char.name or "char"
+        name = options.char.name or "char"
 
         # add loading reaction to confirm command is still waiting for api
         # default: hour glass
@@ -61,7 +48,7 @@ class Emotes(commands.Cog):
         )
 
         # create emote
-        data = await api.get_emote(char, emotion=emote,
+        data = await api.get_emote(options.char, emotion=emote,
                                    session=self.bot.session)
         react_task.cancel()  # no need to send if it gets here first
 
