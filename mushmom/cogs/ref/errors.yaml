@@ -70,9 +70,6 @@ emotes:
       ref_cmds: [help]
     errors.NoMoreItems:
       <<: *nochars
-    errors.MissingCogError: &missingcog
-      msg: Bot is being serviced right now. Try again later
-      ref_cmds: null
     errors.DataNotFound:
       <<: *missingchar
     errors.MapleIOError: &apierror
@@ -94,8 +91,6 @@ import:
     errors.DiscordIOError:
       msg: Error trying to read attached JSON file. Try again later
       ref_cmds: null
-    errors.MissingCogError:
-      <<: *missingcog
     errors.DataWriteError:
       <<: *dberror
 
@@ -114,8 +109,6 @@ sprites:
       <<: *flagerr
     errors.NoMoreItems:
       <<: *nochars
-    errors.MissingCogError:
-      <<: *missingcog
     errors.DataNotFound:
       <<: *missingchar
     errors.MapleIOError:

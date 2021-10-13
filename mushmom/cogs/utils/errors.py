@@ -26,13 +26,6 @@ class MapleIOError(MushmomError):
     pass
 
 
-class MissingCogError(MushmomError):
-    """commands.ExtensionNotLoaded triggers commands.CommandInvokeError
-
-    Using this instead"""
-    pass
-
-
 class UnexpectedFileTypeError(MushmomError):
     """Wrong file type"""
     pass
