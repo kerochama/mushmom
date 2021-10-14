@@ -3,10 +3,12 @@ Functions related to making API calls to maplestory.io
 
 """
 import aiohttp
+import asyncio
 import functools
 
 from PIL import Image
 from io import BytesIO
+from collections import namedtuple
 from typing import Callable, Coroutine, Any, Optional, Union, Iterable
 
 from .. import config
@@ -115,6 +117,7 @@ async def get_sprite(
         flipx: bool = False,
         bgcolor: tuple[int, int, int, int] = (0, 0, 0, 0),
         render_mode: Optional[str] = None,
+        hide: Optional[Iterable[str]] = None,
         remove: Optional[Iterable[str]] = None,
         replace: Optional[Iterable['Equip']] = None,
         session: aiohttp.ClientSession = None
@@ -140,6 +143,8 @@ async def get_sprite(
         rgba color tuple
     render_mode: Optional[str]
             the render mode (e.g. centered, NavelCenter, etc.)
+    hide: Optional[Iterable[str]]
+            list of equip types to hide (alpha = 0, but still affects size)
     remove: Optional[Iterable[str]]
         list of equip types to remove
     replace: Optional[Iterable[Equip]]
@@ -211,3 +216,42 @@ async def get_emote(
             emote.save(byte_arr, format='PNG')
 
             return byte_arr.getvalue()
+
+
+@with_session
+async def split_layers(
+        char: 'Character',
+        session: aiohttp.ClientSession = None,
+        **kwargs
+) -> tuple[bytes]:
+    """
+    Get background (cape) and foreground (everything else) layers.
+    Also takes all parameters that can be passed to get_sprite
+
+    Parameters
+    ----------
+    char: Character
+        The character from which to generate the sprite
+    session: Optional[aiohttp.ClientSession]
+        session to use when issuing http get
+    kwargs:
+        anything that can be passed to get_sprite
+
+
+    Returns
+    -------
+    tuple[bytes]
+        namedtuple of foreground and background
+
+    """
+    hide = kwargs.pop('hide', [])
+    hide_bg = set([eq.type for eq in char.filtered_equips(remove=['Cape'])]
+                  + ['Body', 'Head'] + hide)
+    hide_fg = set(['Cape'] + hide)
+
+    # make http requests
+    tasks = [get_sprite(char, hide=hide_fg, session=session, **kwargs),
+             get_sprite(char, hide=hide_bg, session=session, **kwargs)]
+    data = await asyncio.gather(*tasks)
+
+    return namedtuple('Layers', 'fg bg')(*data)

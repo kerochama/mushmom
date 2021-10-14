@@ -218,6 +218,7 @@ class Character:
             flipx: bool = False,
             bgcolor: tuple[int, int, int, int] = (0, 0, 0, 0),
             render_mode: Optional[str] = None,
+            hide: Optional[Iterable[str]] = None,
             remove: Optional[Iterable[str]] = None,
             replace: Optional[Iterable[Equip]] = None
     ) -> str:
@@ -240,6 +241,8 @@ class Character:
             rgba color tuple
         render_mode: Optional[str]
             the render mode (e.g. centered, NavelCenter, etc.)
+        hide: Optional[Iterable[str]]
+            list of equip types to hide (alpha = 0, but still affects size)
         remove: Optional[Iterable[str]]
             list of equip types to remove
         replace: Optional[Iterable[Equip]]
@@ -260,12 +263,19 @@ class Character:
         if self.region != 'GMS':
             items = [dict(item, region=self.region) for item in items]
 
+        for item in items:
+            if item['type'] in (hide or []):
+                item['alpha'] = 0
+
         for equip in self.filtered_equips(remove=remove, replace=replace):
             equip = equip.to_dict()
             _type = equip.pop('type')
 
             if _type in ['Face', 'Face Accessory']:
                 equip['animationName'] = emotion
+
+            if _type in (hide or []):
+                equip['alpha'] = 0
 
             items.append(equip)
 
