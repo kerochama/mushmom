@@ -254,4 +254,4 @@ async def split_layers(
              get_sprite(char, hide=hide_bg, session=session, **kwargs)]
     data = await asyncio.gather(*tasks)
 
-    return namedtuple('Layers', 'fg bg')(*data)
+    return data  # [fg, bg]
