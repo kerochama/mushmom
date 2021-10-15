@@ -75,7 +75,7 @@ class CommandConverter(commands.Converter):
 
 class CharacterConverter(commands.Converter):
     """Get user character"""
-    async def convert(self, ctx: commands.Context, arg: str) -> str:
+    async def convert(self, ctx: commands.Context, arg: str) -> Character:
         user = await ctx.bot.db.get_user(ctx.author.id)
 
         if not user or not user['chars']:
