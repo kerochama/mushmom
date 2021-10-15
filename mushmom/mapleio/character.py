@@ -46,8 +46,8 @@ class Character:
         self.region = region
 
         # can only be populated by from_* funcs
-        self.skin = None
-        self.ears = None
+        self.skin = Skin.GREEN
+        self.ears = Ears.REGULAR
         self.equips = []
 
     @classmethod
