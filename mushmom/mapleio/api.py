@@ -67,7 +67,7 @@ async def latest_version(
             region_data = [x for x in data if x['isReady'] and x['region'] == region]
             latest = region_data[-1]['mapleVersionId']
         else:
-            latest = '225'  # arbitrary
+            latest = config.mapleio.default_version
 
     return latest
 
@@ -78,7 +78,7 @@ async def get_item(
         region: str = 'GMS',
         version: str = config.mapleio.default_version,
         session: aiohttp.ClientSession = None
-) -> dict:
+) -> Optional[dict]:
     """
     Get info about itemid
 
@@ -95,7 +95,7 @@ async def get_item(
 
     Returns
     -------
-    dict
+    Optional[dict]
         the json returned by maplestory.io
 
     """
@@ -121,7 +121,7 @@ async def get_sprite(
         remove: Optional[Iterable[str]] = None,
         replace: Optional[Iterable['Equip']] = None,
         session: aiohttp.ClientSession = None
-) -> bytes:
+) -> Optional[bytes]:
     """
     Make API call to get char sprite data
 
@@ -154,7 +154,7 @@ async def get_sprite(
 
     Returns
     -------
-    bytes
+    Optional[bytes]
         the byte data from the generated sprite
 
     """
@@ -176,7 +176,7 @@ async def get_emote(
         zoom: float = 1,
         pad: int = 8,
         session: aiohttp.ClientSession = None
-) -> bytes:
+) -> Optional[bytes]:
     """
     Make API call to get char sprite data, crop out body, and return
     bytes.  Remove cape and weapon
@@ -196,7 +196,7 @@ async def get_emote(
 
     Returns
     -------
-    bytes
+    Optional[bytes]
         the byte data from the generated emote
 
     """
@@ -223,7 +223,7 @@ async def split_layers(
         char: 'Character',
         session: aiohttp.ClientSession = None,
         **kwargs
-) -> tuple[bytes]:
+) -> Optional[tuple[bytes]]:
     """
     Get background (cape) and foreground (everything else) layers.
     Also takes all parameters that can be passed to get_sprite
@@ -254,4 +254,5 @@ async def split_layers(
              get_sprite(char, hide=hide_bg, session=session, **kwargs)]
     data = await asyncio.gather(*tasks)
 
-    return data  # [fg, bg]
+    if all([x is not None for x in data]):
+        return data  # [fg, bg]
