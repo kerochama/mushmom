@@ -59,13 +59,13 @@ class Actions(commands.Cog):
         )
 
         # get images to combine
-        _char = await api.split_layers(
+        _char = await api.get_layers(
             char, render_mode='FeetCenter', session=session, **char_args)
 
         try:
             _ctx = SimpleNamespace(bot=self.bot, author=obj)  # fake ctx
             obj_char = await converters.default_char(_ctx)
-            _obj = await api.split_layers(
+            _obj = await api.get_layers(
                 obj_char, render_mode='FeetCenter', remove=['Weapon'],
                 session=session, **obj_args)
         except errors.NoMoreItems:  # use pfp
