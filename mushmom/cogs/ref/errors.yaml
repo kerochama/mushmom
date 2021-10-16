@@ -1,5 +1,17 @@
 # contains error messages used in cogs
 
+actions:
+  stab:
+    commands.MissingRequiredArgument:
+      msg: You didn't choose someone to stab!
+      ref_cmds: null
+    errors.NoMoreItems: &nochars
+      msg: "No registered characters. To import one use:\n\u200b"
+      ref_cmds: [import]
+    errors.MapleIOError: &apierror
+      msg: Could not get maple data. Try again later
+      ref_cmds: null
+
 characters:
   chars:
     errors.NoMoreItems:  # note this is actually user not being found
@@ -7,9 +19,8 @@ characters:
       ref_cmds: [import]
 
   reroll:
-    errors.NoMoreItems: &nochars
-      msg: "No registered characters. To import one use:\n\u200b"
-      ref_cmds: [import]
+    errors.NoMoreItems:
+      <<: *nochars
     errors.DataNotFound: &missingchar
       msg: "Could not find character. To see your characters use:\n\u200b"
       ref_cmds: [chars]
@@ -72,9 +83,8 @@ emotes:
       <<: *nochars
     errors.DataNotFound:
       <<: *missingchar
-    errors.MapleIOError: &apierror
-      msg: Could not get maple data. Try again later
-      ref_cmds: null
+    errors.MapleIOError:
+      <<: *apierror
 
 import:
   import:
