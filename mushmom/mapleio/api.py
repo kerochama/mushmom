@@ -274,6 +274,7 @@ async def get_layers(
     args.pop('hide')
 
     # separate hide lists
+    hide = hide or []
     hide_bg = set([eq.type for eq in char.filtered_equips(remove=['Cape'])]
                   + ['Body', 'Head'] + hide)
     hide_fg = set(['Cape'] + hide)
