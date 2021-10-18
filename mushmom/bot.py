@@ -6,6 +6,7 @@ import aiohttp
 import asyncio
 import warnings
 import traceback
+import functools
 import time
 
 from discord.ext import commands, tasks
@@ -80,6 +81,7 @@ class Mushmom(commands.Bot):
         self.session = None  # set in on_ready
         self.reply_cache = ReplyCache(seconds=300)
         self.db = db.Database(db_client)
+        self.timer = Timer()
 
         # add global checks
         self.add_check(checks.not_bot)
@@ -109,6 +111,7 @@ class Mushmom(commands.Bot):
 
         """
         ctx = await self.get_context(message)
+        self.timer.start(ctx)
 
         # not handled by other commands
         if (ctx.prefix and not ctx.command
@@ -126,6 +129,8 @@ class Mushmom(commands.Bot):
             await self.invoke(new_ctx)
         else:
             await self.process_commands(message)
+
+        self.timer.stop(ctx)
 
     async def on_command_error(
             self,
@@ -499,3 +504,57 @@ class ReplyCache:
                 await reply.delete()
             except discord.HTTPException:
                 pass
+
+
+class Timer:
+    """
+    Add to on_message and prints time to process message if active
+    and a command was called.  Not fully implemented
+
+    Attributes
+    ----------
+    active: bool
+        whether or not a the timer should time
+    timing: bool
+        whether or not timing is happening
+    conditions: dict[str, str]
+        conditions to check by getting values from a commands.Context
+
+    """
+    def __init__(self):
+        self.active = False
+        self.timing = False
+        self.conditions = {}
+
+        # private
+        self._start = None
+        self._ctx = None
+
+    def activate(self, conditions: Optional[dict] = None):
+        """Allows start and stop to print based on conditions"""
+        self.active = True
+        self.conditions = conditions
+
+    def deactivate(self):
+        self.active = False
+        self.conditions = {}
+
+    def start(self, ctx: commands.Context):
+        if ctx.command:
+            self.timing = True
+            self._start = time.monotonic()
+            self._ctx = ctx
+
+    def stop(self, ctx: commands.Context):
+        if (self.active and self.timing
+                and ctx.message.id == self._ctx.message.id):
+            delta = time.monotonic() - self._start
+            print('{}: {:.2f}s'.format(ctx.command.qualified_name, delta))
+            self.timing = False
+            self._start = None
+
+    @staticmethod
+    def rgetattr(obj, attr, *args):
+        def _getattr(obj, attr):
+            return getattr(obj, attr, *args)
+        return functools.reduce(_getattr, [obj] + attr.split('.'))

@@ -77,6 +77,22 @@ class Meta(commands.Cog):
         await ctx.message.reply(f'\u2620 {name} has been killed! \u2620')
         await self.bot.close()
 
+    @commands.group(hidden=True)
+    async def timer(self, ctx: commands.Context) -> None:
+        pass
+
+    @timer.command(hidden=True)
+    async def activate(self, ctx: commands.Context) -> None:
+        """Activate timer"""
+        ctx.bot.timer.activate()
+        await ctx.send('Timer activated')
+
+    @timer.command(hidden=True)
+    async def deactivate(self, ctx: commands.Context) -> None:
+        """Deactivate timer"""
+        ctx.bot.timer.deactivate()
+        await ctx.send('Timer deactivated')
+
 
 def setup(bot):
     bot.add_cog(Meta(bot))
