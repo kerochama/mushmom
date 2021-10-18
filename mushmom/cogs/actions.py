@@ -3,10 +3,12 @@ Character actions
 
 """
 import discord
+import numpy as np
+import datetime
 
 from discord.ext import commands
 from types import SimpleNamespace
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageColor
 from io import BytesIO
 from itertools import cycle
 from typing import Optional, Union, Any, Iterable
@@ -16,6 +18,8 @@ from .utils import converters, errors, prompts
 from ..mapleio import api
 from ..mapleio.character import Character
 from ..mapleio.equip import Equip
+
+import time
 
 
 class Actions(commands.Cog):
@@ -30,6 +34,9 @@ class Actions(commands.Cog):
             obj: discord.Member,  # object as in object of verb
             obj_args: dict[str, Any],
             pad: int = 40,
+            duration: Union[int, Iterable[int]] = 100,
+            title: str = '',
+            desc: str = ''
     ) -> None:
         """
         Logic for putting two images side by side
@@ -47,6 +54,12 @@ class Actions(commands.Cog):
             args to pass to api call if has char
         pad: int
             pixels between char navels
+        duration: Union[int, Iterable[int]]
+            milliseconds
+        title: str
+            title for embed
+        desc: str
+            description for embed
 
         """
         session = self.bot.session
@@ -58,45 +71,88 @@ class Actions(commands.Cog):
             self.bot.add_delayed_reaction(ctx, emoji)
         )
 
-        # get images to combine
-        _char = await api.get_layers(
+        # get frames and make them all the same size
+        _frames = await api.get_frames(
             char, render_mode='FeetCenter', session=session, **char_args)
+
+        if not _frames:
+            raise errors.MapleIOError
+
+        frames = [Image.open(BytesIO(frame)) for frame in _frames]
+        sizes = [f.size for f in frames]
+        w, h = [max(dim) for dim in zip(*sizes)]
 
         try:
             _ctx = SimpleNamespace(bot=self.bot, author=obj)  # fake ctx
             obj_char = await converters.default_char(_ctx)
-            _obj = await api.get_layers(
-                obj_char, render_mode='FeetCenter', remove=['Weapon'],
+            data = await api.get_sprite(
+                obj_char, render_mode='FeetCenter', remove=['Weapon', 'Cape'],
                 session=session, **obj_args)
+            _obj = Image.open(BytesIO(data))
+            w_obj, h_obj = _obj.size  # width of orig (centered)
+
+            if not data:
+                raise errors.MapleIOError
+
         except errors.NoMoreItems:  # use pfp
-            pfp = await self.process_pfp(obj, config.core.default_pfp_size)
-            _obj = (pfp, pfp)
+            data = await self.process_pfp(obj, config.core.default_pfp_size)
+            _obj = Image.open(BytesIO(data))
+            w_obj, h_obj = _obj.getbbox()[2:]
+
+            if not data:
+                raise errors.DiscordIOError
 
         react_task.cancel()  # no need to send if it gets here first
         await ctx.message.clear_reactions()
 
-        if not _char or not _obj:
-            raise errors.MapleIOError
+        _hex = format(config.core.embed_bg_color, "x")
+        bgcolor = ImageColor.getcolor(f'#{_hex}', 'RGBA')
 
-        im1 = [ImageOps.mirror(Image.open(BytesIO(x))) for x in _char]
-        im2 = [Image.open(BytesIO(x)) for x in _obj]
-        res = await self.merge(im1, im2, pad)
+        merged = []
+        for f in frames:
+            new = Image.new('RGBA', (w, h), bgcolor)
+            flip = ImageOps.mirror(f)
+            new.paste(flip, ((w-f.width)//2, (h-f.height)//2), mask=flip)
+            _f = self.merge(new, _obj, pad, z_order=-1, bgcolor=bgcolor)
+            merged.append(_f)
 
-        # trim blank space
-        res = res.crop(res.getbbox())
+        # trim
+        bbox = self.getbbox(merged, ignore=bgcolor)
+        merged = [f.crop(bbox) for f in merged]
+
+        # ensure somewhat symmetrical
+        w_diff = (w - w_obj)//2
+        final = []
+        for f in merged:
+            new = Image.new('RGBA', (f.width + abs(w_diff), f.height), bgcolor)
+            new.paste(f, (0 if w_diff > 0 else abs(w_diff), 0), mask=f)
+            final.append(new)
+
+        # save
         byte_arr = BytesIO()
-        res.save(byte_arr, format='PNG')
+        final[0].save(byte_arr, format='GIF', save_all=True,
+                      append_images=final[1:], duration=duration, loop=0)
 
-        # send
-        filename = f'stab.png'
+        # send embed
+        filename = f'{ctx.command.name}.gif'
         img = discord.File(fp=BytesIO(byte_arr.getvalue()), filename=filename)
-        await ctx.send(file=img)
 
-    async def merge(
-            self,
+        embed = discord.Embed(description=desc,
+                              color=config.core.embed_color)
+        embed.set_author(name=title)
+        embed.set_image(url=f'attachment://{filename}')
+        embed.timestamp = datetime.datetime.utcnow()
+        icon = ctx.author.display_avatar.url
+        embed.set_footer(text=ctx.author.display_name, icon_url=icon)
+        await ctx.send(file=img, embed=embed)
+
+    @staticmethod
+    def merge(
             im1: Union[Image.Image, Iterable[Image.Image]],
             im2: Union[Image.Image, Iterable[Image.Image]],
-            pad: int = 40
+            pad: int = 40,
+            z_order: int = 1,  # -1 = im2 on top of im1
+            bgcolor: tuple[int] = (0, 0, 0, 0)
     ) -> Image.Image:
         """Merge into one image with mid widths separated by pad. If
         Iterable passed then alternate pasting layers"""
@@ -116,24 +172,54 @@ class Actions(commands.Cog):
         h = max(a.height, b.height)
 
         # generate output image
-        res = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+        res = Image.new('RGBA', (w, h), bgcolor)
         for i in range(n):
-            _a, _b = next(cyc1), next(cyc2)
-            res.paste(_b, (w-_b.width, (h-_b.height)//2), mask=_b)
-            res.paste(_a, (0, (h-_a.height)//2), mask=_a)
+            l, r = next(cyc1), next(cyc2)
+            layers = [  # first is underneath
+                (r, (w-r.width, (h-r.height)//2)),
+                (l, (0, (h-l.height)//2))
+            ]
+
+            for im, pos in (layers if z_order == 1 else reversed(layers)):
+                res.paste(im, pos, mask=im)
 
         return res
 
+    @staticmethod
+    def getbbox(
+            im: Union[Iterable[Image.Image], Image.Image],
+            ignore: Optional[tuple[int, int, int, int]]= None,
+    ) -> Iterable[int, int, int, int]:
+        """Make color transparent and get bounding box for all frames"""
+        if isinstance(im, Image.Image):
+            im = [im]
+
+        bboxes = []
+        for frame in im:
+            if ignore:
+                data = np.array(frame)
+                r, g, b, a = data.T  # transpose
+                _r, _g, _b, _a = ignore
+                mask = (r == _r) & (g == _g) & (b == _b) & (a == _a)
+                data[:, :, :4][mask.T] = (0, 0, 0, 0)  # untranspose mask
+                bboxes.append(Image.fromarray(data).getbbox())
+            else:
+                bboxes.append(frame.getbbox())
+
+        T = list(zip(*bboxes))  # transpose
+        bbox = [min(x) for x in T[:2]] + [max(x) for x in T[2:]]
+        return bbox
+
     async def process_pfp(self, member: discord.Member, width: int) -> bytes:
-        """Resize to specified width and double height to mimic sprite
-        render_mode=FeetCentered"""
+        """Resize to specified width and double height and adds
+        horizontal spacing to mimic sprite render_mode=FeetCentered"""
         async with self.bot.session.get(member.display_avatar.url) as r:
             if r.status == 200:
                 pfp = Image.open(BytesIO(await r.read()))
                 pfp = pfp.convert(mode='RGBA')
                 pfp.thumbnail((width, width), Image.ANTIALIAS)
-                out = Image.new('RGBA', (width, width * 2), (0, 0, 0, 0))
-                out.paste(pfp, (0, 0), mask=pfp)
+                out = Image.new('RGBA', (int(width * 1.5), width * 2), (0,)*4)
+                out.paste(pfp, (width//2, 0), mask=pfp)
             else:
                 raise errors.DiscordIOError
 
@@ -162,7 +248,7 @@ class Actions(commands.Cog):
             self,
             ctx: commands.Context,
             member: discord.Member,
-            weapon_id: Optional[int] = 1542069,  # pearl maple katana
+            weapon_id: Optional[int] = 1332007,  # fruit knife
             pad: Optional[int] = 16,
             *,
             options: converters.ImgFlags
@@ -188,12 +274,16 @@ class Actions(commands.Cog):
         wep = Equip(weapon_id, char.version, char.region)
         wep_width = await self.weapon_width(weapon_id, pose='stabO1', frame=1)
         _pad = wep_width + pad
+        # see gif. frame one in gif split between 0 and 2 (gif only 2 frames)
+        dur = [175, 450, 175]
 
         char = options.char
-        char_args = {'pose': 'stabO1', 'frame': 1, 'replace': [wep]}
+        char_args = {'pose': 'stabO1', 'replace': [wep]}
         obj_args = {'emotion': 'despair'}
 
-        await self.action(ctx, char, char_args, member, obj_args, pad=_pad)
+        msg = f'{member.display_name} has been stabbed'
+        await self.action(ctx, char, char_args, member, obj_args, pad=_pad,
+                          duration=dur, title=msg, desc='_Stab! Stab! Stab!_')
 
     @commands.command()
     async def slap(
@@ -222,11 +312,15 @@ class Actions(commands.Cog):
         char = options.char
         wep = Equip(1702554, char.version, char.region)  # scary huge hand
         _pad = 64 + pad  # hard coded wep width
+        # see gif. frame one in gif split between 0 and 4 (gif only 4 frames)
+        dur = [100, 100, 100, 300, 100]
 
-        char_args = {'pose': 'swingO1', 'frame': 2, 'replace': [wep]}
+        char_args = {'pose': 'swingOF', 'replace': [wep]}
         obj_args = {'emotion': 'pain'}
 
-        await self.action(ctx, char, char_args, member, obj_args, pad=_pad)
+        msg = f'{member.display_name} has been slapped'
+        await self.action(ctx, char, char_args, member, obj_args, pad=_pad,
+                          duration=dur, title=msg, desc='_Pow! Pow! Pow!_')
 
 
 def setup(bot):

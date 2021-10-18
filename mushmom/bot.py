@@ -21,6 +21,7 @@ from .cogs import ref
 initial_extensions = (
     'cogs.meta',
     'cogs.help',
+    'cogs.actions'
     'cogs.characters',
     'cogs.import',
     'cogs.emotes',

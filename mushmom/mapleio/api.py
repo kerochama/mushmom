@@ -5,6 +5,7 @@ Functions related to making API calls to maplestory.io
 import aiohttp
 import asyncio
 import functools
+import zipfile
 
 from PIL import Image
 from io import BytesIO
@@ -339,7 +340,28 @@ async def get_frames(
     Optional[list[bytes]]
 
     """
-    pass
+    args = locals().copy()
+    args.pop('char')
+    args.pop('session')
+    u = char.url(**args)
+
+    # modify url. could use urlparse, but fairly simple
+    u = u.replace(f'{pose}/{frame}', 'download')
+    u += '&format=2'  # min spritesheet
+
+    async with session.get(u) as r:
+        if r.status != 200:
+            return
+
+        frames = []
+        with zipfile.ZipFile(BytesIO(await r.read())) as _zip:
+            for item in _zip.filelist:
+                fpose, fframe = item.filename.split('.')[0].split('_')[:2]
+                if fpose == pose:
+                    frames.append((_zip.read(item.filename), fframe))
+
+        frames.sort(key=lambda x: x[1])  # sort by frame
+        return [data for data, _ in frames]
 
 
 @with_session

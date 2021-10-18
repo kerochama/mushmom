@@ -11,6 +11,9 @@ actions:
     errors.MapleIOError: &apierror
       msg: Could not get maple data. Try again later
       ref_cmds: null
+    errors.DiscordIOError:
+      msg: Error trying to read profile picture. Try again later
+      ref_cmds: null
 
 characters:
   chars:
