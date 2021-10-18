@@ -19,8 +19,6 @@ from ..mapleio import api
 from ..mapleio.character import Character
 from ..mapleio.equip import Equip
 
-import time
-
 
 class Actions(commands.Cog):
     def __init__(self, bot):
@@ -189,7 +187,7 @@ class Actions(commands.Cog):
     def getbbox(
             im: Union[Iterable[Image.Image], Image.Image],
             ignore: Optional[tuple[int, int, int, int]]= None,
-    ) -> Iterable[int, int, int, int]:
+    ) -> tuple[int, int, int, int]:
         """Make color transparent and get bounding box for all frames"""
         if isinstance(im, Image.Image):
             im = [im]
@@ -208,7 +206,7 @@ class Actions(commands.Cog):
 
         T = list(zip(*bboxes))  # transpose
         bbox = [min(x) for x in T[:2]] + [max(x) for x in T[2:]]
-        return bbox
+        return tuple(bbox)
 
     async def process_pfp(self, member: discord.Member, width: int) -> bytes:
         """Resize to specified width and double height and adds
