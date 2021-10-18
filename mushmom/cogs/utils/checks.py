@@ -9,8 +9,11 @@ global_commands = (  # commands that will bypass channel check
     'emote',
     'sprite',
     'set',
-    'reset',
-    'channel'  # can be run anywhere to find channel
+    'reset'
+)
+
+global_cogs = (
+    'Actions'
 )
 
 
@@ -36,7 +39,7 @@ async def in_guild_channel(ctx: commands.Context) -> bool:
     Checks if message was sent in designated channel.  If no channel
     is set for the guild, all channels will pass
 
-    Commands in global_commands will bypass this check
+    Commands or cogs in global_commands/cogs will bypass this check
 
     Parameters
     ----------
@@ -50,10 +53,11 @@ async def in_guild_channel(ctx: commands.Context) -> bool:
     """
     guild = await ctx.bot.db.get_guild(ctx.guild.id)
     command = ctx.command.qualified_name if ctx.command else None
-
-    # has guild setting and command sent thats not in global_commands
-    if (guild and guild['channel'] and command
-            and command not in global_commands):
-        return ctx.channel.id == guild['channel']
-    else:
+    cog = ctx.command.cog_name if ctx.command else None
+    
+    # no guild channel set or in allowed globals
+    if (not guild or not guild['channel']
+            or command in global_commands or cog in global_cogs):
         return True
+    else:
+        return ctx.channel.id == guild['channel']
