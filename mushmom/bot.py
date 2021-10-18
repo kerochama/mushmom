@@ -92,7 +92,9 @@ class Mushmom(commands.Bot):
 
     async def on_ready(self):
         print(f'{self.user} is ready to mush!')
-        self.session = aiohttp.ClientSession(loop=self.loop)
+
+        if not self.session:
+            self.session = aiohttp.ClientSession(loop=self.loop)
 
         if not self._verify_cache_integrity.is_running:
             self._verify_cache_integrity.start()
