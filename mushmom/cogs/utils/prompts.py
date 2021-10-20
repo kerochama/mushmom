@@ -9,6 +9,7 @@ from typing import Optional
 
 from ... import config
 from . import errors
+from ..resources import EMOJIS
 
 
 async def list_chars(
@@ -40,7 +41,7 @@ async def list_chars(
     embed.set_author(name='Characters', icon_url=ctx.bot.user.avatar.url)
 
     if not thumbnail:
-        thumbnail = ctx.bot.get_emoji_url(config.emojis.mushparty)
+        thumbnail = ctx.bot.get_emoji_url(EMOJIS['mushparty'])
 
     embed.set_thumbnail(url=thumbnail)
 
@@ -99,7 +100,7 @@ async def get_char(
             return ind
 
     # prompt if no name given
-    thumbnail = ctx.bot.get_emoji_url(config.emojis.mushping)
+    thumbnail = ctx.bot.get_emoji_url(EMOJIS['mushping'])
     msg = (f'{text or ""}React to select a character or select '
            f'\u200b \u274e \u200b to cancel\n\u200b')
     prompt = await list_chars(ctx, user, msg, thumbnail)
@@ -133,7 +134,7 @@ async def confirm_prompt(ctx: commands.Context, text) -> bool:
     """
     embed = discord.Embed(description=text, color=config.core.embed_color)
     embed.set_author(name='Confirmation', url=ctx.bot.user.avatar.url)
-    thumbnail = ctx.bot.get_emoji_url(config.emojis.mushping)
+    thumbnail = ctx.bot.get_emoji_url(EMOJIS['mushping'])
     embed.set_thumbnail(url=thumbnail)
     prompt = await ctx.send(embed=embed)
     ctx.bot.reply_cache.add(ctx, prompt)  # cache for clean up

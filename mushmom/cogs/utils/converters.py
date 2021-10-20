@@ -5,10 +5,9 @@ Contains converters for command input validation
 from discord.ext import commands
 from typing import Optional, TypeVar, Type
 
-from ... import config
-from . import errors, prompts
-from ...mapleio import resources
+from ... import config, mapleio
 from ...mapleio.character import Character
+from . import errors, prompts
 
 
 class SimpleNotConverter(commands.Converter):
@@ -31,7 +30,7 @@ class SimpleNotConverter(commands.Converter):
 class EmotionConverter(commands.Converter):
     """String in list of emotions from maplestory.io"""
     async def convert(self, ctx: commands.Context, arg: str) -> str:
-        if arg in resources.EMOTIONS:
+        if arg in mapleio.resources.EMOTIONS:
             return arg
 
         raise commands.BadArgument(message="Not a valid emotion")
@@ -43,7 +42,7 @@ class PoseConverter(commands.Converter):
         # poses use O instead of 0
         arg = arg.replace('0', 'O')
 
-        if arg in resources.POSES.values():
+        if arg in mapleio.resources.POSES.values():
             return arg
 
         raise commands.BadArgument(message="Not a valid pose")

@@ -8,9 +8,9 @@ from discord.ext import commands
 from typing import Optional
 from io import BytesIO
 
-from .. import config
+from .. import config, mapleio
 from .utils import converters, errors
-from ..mapleio import api, resources
+from .resources import EMOJIS
 
 
 class Emotes(commands.Cog):
@@ -42,14 +42,14 @@ class Emotes(commands.Cog):
 
         # add loading reaction to confirm command is still waiting for api
         # default: hour glass
-        emoji = self.bot.get_emoji(config.emojis.mushloading) or '\u23f3'
+        emoji = self.bot.get_emoji(EMOJIS['mushloading']) or '\u23f3'
         react_task = self.bot.loop.create_task(
             self.bot.add_delayed_reaction(ctx, emoji)
         )
 
         # create emote
-        data = await api.get_emote(options.char, emotion=emote,
-                                   session=self.bot.session)
+        data = await mapleio.api.get_emote(
+            options.char, emotion=emote, session=self.bot.session)
         react_task.cancel()  # no need to send if it gets here first
 
         if data:
@@ -78,11 +78,11 @@ class Emotes(commands.Cog):
         )
 
         embed.set_author(name='Emotes', icon_url=self.bot.user.avatar.url)
-        thumbnail = self.bot.get_emoji_url(config.emojis.mushheart)
+        thumbnail = self.bot.get_emoji_url(EMOJIS['mushheart'])
         embed.set_thumbnail(url=thumbnail)
 
-        # split emotions into 3 lists
-        emotes = [resources.EMOTIONS[i::3] for i in range(3)]  # order not preserved
+        # split emotions into 3 lists (order not preserved)
+        emotes = [mapleio.resources.EMOTIONS[i::3] for i in range(3)]
         embed.add_field(name='Emotes', value='\n'.join(emotes[0]))
         embed.add_field(name='\u200b', value='\n'.join(emotes[1]))
         embed.add_field(name='\u200b', value='\n'.join(emotes[2]))

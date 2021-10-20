@@ -8,10 +8,9 @@ from discord.ext import commands
 from typing import Optional
 from io import BytesIO
 
-from .. import config
-from .utils import converters, errors, prompts
-from ..mapleio import api, resources
-from ..mapleio.character import Character
+from .. import config, mapleio
+from .utils import converters, errors
+from .resources import EMOJIS
 
 
 class Sprites(commands.Cog):
@@ -47,14 +46,14 @@ class Sprites(commands.Cog):
 
         # add loading reaction to confirm command is still waiting for api
         # default: hour glass
-        emoji = self.bot.get_emoji(config.emojis.mushloading) or '\u23f3'
+        emoji = self.bot.get_emoji(EMOJIS['mushloading']) or '\u23f3'
         react_task = self.bot.loop.create_task(
             self.bot.add_delayed_reaction(ctx, emoji)
         )
 
         # create sprite
-        data = await api.get_sprite(options.char, pose=pose, emotion=emotion,
-                                    session=self.bot.session)
+        data = await mapleio.api.get_sprite(
+            options.char, pose=pose, emotion=emotion, session=self.bot.session)
         react_task.cancel()
 
         if data:
@@ -84,12 +83,12 @@ class Sprites(commands.Cog):
         )
 
         embed.set_author(name='Emotions', icon_url=self.bot.user.avatar.url)
-        thumbnail = self.bot.get_emoji_url(config.emojis.mushheart)
+        thumbnail = self.bot.get_emoji_url(EMOJIS['mushheart'])
         embed.set_thumbnail(url=thumbnail)
         embed.set_footer(text='[GMS v225]')
 
         # split emotions into 3 lists
-        emotions = [resources.EMOTIONS[i::3] for i in range(3)]  # order not preserved
+        emotions = [mapleio.resources.EMOTIONS[i::3] for i in range(3)]  # order not preserved
         embed.add_field(name='Emotions', value='\n'.join(emotions[0]))
         embed.add_field(name='\u200b', value='\n'.join(emotions[1]))
         embed.add_field(name='\u200b', value='\n'.join(emotions[2]))
@@ -113,10 +112,12 @@ class Sprites(commands.Cog):
         )
 
         embed.set_author(name='Poses', icon_url=self.bot.user.avatar.url)
-        embed.set_thumbnail(url=self.bot.get_emoji_url(config.emojis.mushdab))
+        embed.set_thumbnail(url=self.bot.get_emoji_url(EMOJIS['mushdab']))
         embed.set_footer(text='[GMS v225]')
-        embed.add_field(name='Pose', value='\n'.join(resources.POSES.keys()))
-        embed.add_field(name='Value', value='\n'.join(resources.POSES.values()))
+        embed.add_field(name='Pose',
+                        value='\n'.join(mapleio.resources.POSES.keys()))
+        embed.add_field(name='Value',
+                        value='\n'.join(mapleio.resources.POSES.values()))
 
         await ctx.send(embed=embed)
 

@@ -1,0 +1,24 @@
+# resources stored on discord
+
+emojis:
+  mushshock: 890392463867527228
+  mushheart: 890978701158809671
+  mushdab: 897105532027011073
+  mushping: 897105581406560286
+  mushparty: 890987908633362503
+  mushloading: 892077347925262367
+  mushhuh: 897105556475629578
+
+attachments:                           # attachments to reference
+  mushcharnotfound:
+    - 900388181139144786               # channel (Kero's server #attachments)
+    - 900424355660595250               # attachment id
+    - mushcharnotfound.png
+  grassy_field_bg:                     # https://kirimymaps.blogspot.com/
+    - 900388181139144786
+    - 900423957579190333
+    - grassy_field_bg.png
+  grass_field_fg:
+    - 900388181139144786
+    - 900423973035196466
+    - grassy_field_fg.png

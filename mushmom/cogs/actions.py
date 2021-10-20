@@ -13,9 +13,9 @@ from io import BytesIO
 from itertools import cycle
 from typing import Optional, Union, Any, Iterable
 
-from .. import config
-from .utils import converters, errors, prompts
-from ..mapleio import api
+from .. import config, mapleio
+from .utils import converters, errors
+from .resources import EMOJIS
 from ..mapleio.character import Character
 from ..mapleio.equip import Equip
 
@@ -64,13 +64,13 @@ class Actions(commands.Cog):
 
         # add loading reaction to confirm command is still waiting for api
         # default: hour glass
-        emoji = self.bot.get_emoji(config.emojis.mushloading) or '\u23f3'
+        emoji = self.bot.get_emoji(EMOJIS['mushloading']) or '\u23f3'
         react_task = self.bot.loop.create_task(
             self.bot.add_delayed_reaction(ctx, emoji)
         )
 
         # get frames and make them all the same size
-        _frames = await api.get_frames(
+        _frames = await mapleio.api.get_frames(
             char, render_mode='FeetCenter', session=session, **char_args)
 
         if not _frames:
@@ -83,7 +83,7 @@ class Actions(commands.Cog):
         try:
             _ctx = SimpleNamespace(bot=self.bot, author=obj)  # fake ctx
             obj_char = await converters.default_char(_ctx)
-            data = await api.get_sprite(
+            data = await mapleio.get_sprite(
                 obj_char, render_mode='FeetCenter', remove=['Weapon', 'Cape'],
                 session=session, **obj_args)
             _obj = Image.open(BytesIO(data))
@@ -235,7 +235,7 @@ class Actions(commands.Cog):
         """Get the distance between sprite center and tip of weapon"""
         char = Character()  # nekid
         char.equips.append(Equip(weapon_id, char.version))
-        data = await api.get_sprite(
+        data = await mapleio.api.get_sprite(
             char, pose=pose, frame=frame, render_mode='centered',
             remove=['Cape'], session=self.bot.session)
         w, _ = Image.open(BytesIO(data)).size

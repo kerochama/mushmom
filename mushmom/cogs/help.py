@@ -11,6 +11,7 @@ from inspect import isclass
 from .. import config
 from . import reference
 from .utils import converters
+from .resources import EMOJIS
 
 
 def _show_help(
@@ -378,7 +379,7 @@ class Help(commands.Cog):
 
         embed.set_author(name=f'{config.core.bot_name} Help',
                          icon_url=self.bot.user.avatar.url)
-        thumbnail = self.bot.get_emoji_url(config.emojis.mushhuh)
+        thumbnail = self.bot.get_emoji_url(EMOJIS['mushhuh'])
         embed.set_thumbnail(url=thumbnail)
 
         # add commands as fields by cog
@@ -443,7 +444,7 @@ class Help(commands.Cog):
 
         embed.set_author(name=f'Command Help',
                          icon_url=self.bot.user.avatar.url)
-        thumbnail = self.bot.get_emoji_url(config.emojis.mushhuh)
+        thumbnail = self.bot.get_emoji_url(EMOJIS['mushhuh'])
         embed.set_thumbnail(url=thumbnail)
 
         # show usage
