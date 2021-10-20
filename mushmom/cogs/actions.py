@@ -211,19 +211,16 @@ class Actions(commands.Cog):
     async def process_pfp(self, member: discord.Member, width: int) -> bytes:
         """Resize to specified width and double height and adds
         horizontal spacing to mimic sprite render_mode=FeetCentered"""
-        async with self.bot.session.get(member.display_avatar.url) as r:
-            if r.status == 200:
-                pfp = Image.open(BytesIO(await r.read()))
-                pfp = pfp.convert(mode='RGBA')
-                pfp.thumbnail((width, width), Image.ANTIALIAS)
-                out = Image.new('RGBA', (int(width * 1.5), width * 2), (0,)*4)
-                out.paste(pfp, (width//2, 0), mask=pfp)
-            else:
-                raise errors.DiscordIOError
+        url = member.display_avatar.url
+        data = await self.bot.download(url, errors.DiscordIOError)
+        pfp = Image.open(BytesIO(data)).convert(mode='RGBA')
+        pfp.thumbnail((width, width), Image.ANTIALIAS)
 
+        # create output
+        out = Image.new('RGBA', (int(width * 1.5), width * 2), (0,)*4)
+        out.paste(pfp, (width//2, 0), mask=pfp)
         byte_arr = BytesIO()
         out.save(byte_arr, format='PNG')
-
         return byte_arr.getvalue()
 
     async def weapon_width(

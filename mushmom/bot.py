@@ -12,6 +12,7 @@ import time
 from discord.ext import commands, tasks
 from discord import Emoji, Reaction, PartialEmoji
 from motor.motor_asyncio import AsyncIOMotorClient
+from aiohttp import web
 from typing import Optional, Union, Iterable
 
 from . import config, database as db, mapleio
@@ -464,8 +465,8 @@ class Mushmom(commands.Bot):
     async def download(
             self,
             url: str,
-            format: type = bytes
-    ) -> Union[str, bytes]:
+            error: type[Exception] = web.HTTPError
+    ) -> bytes:
         """
         Download a url
 
@@ -473,20 +474,20 @@ class Mushmom(commands.Bot):
         ----------
         url: str
             the url to download
-        format: type
-            either str or bytes
+        error: type[Exception]
+            error to raise if fails
 
         Returns
         -------
-        Union[str, bytes]
+        bytes
             the response content
 
         """
         async with self.session.get(url) as r:
             if r.status != 200:
-                raise errors.DiscordIOError
+                raise error
 
-            return await r.text() if format is str else await r.read()
+            return await r.read()
 
     @tasks.loop(minutes=10)
     async def _verify_cache_integrity(self):

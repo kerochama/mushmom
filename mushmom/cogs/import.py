@@ -60,14 +60,8 @@ class Import(commands.Cog):
                 raise errors.UnexpectedFileTypeError
 
             # get json
-            async with self.bot.session.get(json_file.url) as r:
-                if r.status == 200:
-                    data = await r.text()  # handle json parsing in char parser
-                else:
-                    raise errors.DiscordIOError
-
+            data = await self.bot.download(json_file.url, errors.DiscordIOError)
             parser, src = Character.from_json, data
-
         try:
             char = parser(src)
         except Exception:
