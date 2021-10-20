@@ -17,7 +17,7 @@ from typing import Optional, Union, Iterable
 from . import config, database as db
 from .cogs.utils import errors, checks
 from .mapleio import resources
-from .cogs import ref
+from .cogs import reference
 
 initial_extensions = (
     'cogs.meta',
@@ -139,7 +139,7 @@ class Mushmom(commands.Bot):
     ) -> None:
         """
         Override default error handler to always run. Errors messages
-        are pulled from cogs.ref.ERRORS.
+        are pulled from cogs.reference.ERRORS.
 
         Local error handlers can still be used. If a reply already
         exists in self.reply_cache, on_command_error will assume it has
@@ -162,7 +162,7 @@ class Mushmom(commands.Bot):
         err = f'{err_ns}.{error.__class__.__name__}'
 
         try:  # search for error
-            specs = ref.ERRORS[cog][cmd][err]
+            specs = reference.ERRORS[cog][cmd][err]
             msg, ref_cmds = specs.values()
         except KeyError:  # not defined
             e = error
@@ -342,7 +342,7 @@ class Mushmom(commands.Bot):
     @property
     def ref_aliases(self) -> dict[str, commands.Command]:
         """
-        Checks ref.HELP for commands with aliases listed
+        Checks reference.HELP for commands with aliases listed
 
         Returns
         -------
@@ -351,7 +351,7 @@ class Mushmom(commands.Bot):
 
         """
         return {alias: self.get_command(cmd, default=True)
-                for cog, cmds in ref.HELP.items()
+                for cog, cmds in reference.HELP.items()
                 for cmd, info in cmds.items() if 'aliases' in info
                 for alias in info['aliases']}
 
@@ -362,7 +362,7 @@ class Mushmom(commands.Bot):
     ) -> Optional[commands.Command]:
         """
         Overwrite default behavior of allowing extraneous tokens
-        after command. Also checks ref.HELP for looser alias naming
+        after command. Also checks reference.HELP for looser alias naming
         (e.g. can have spaces)
 
         Parameters
@@ -392,7 +392,7 @@ class Mushmom(commands.Bot):
         if ' ' not in name:
             return self.all_commands.get(name)
 
-        if name in self.ref_aliases:  # check ref.HELP
+        if name in self.ref_aliases:  # check reference.HELP
             return self.ref_aliases[name]
 
         # handle groups

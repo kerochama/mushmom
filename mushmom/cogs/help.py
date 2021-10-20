@@ -9,7 +9,7 @@ from discord.ext import commands
 from inspect import isclass
 
 from .. import config
-from . import ref
+from . import reference
 from .utils import converters
 
 
@@ -107,7 +107,7 @@ class Help(commands.Cog):
         Get all signatures for command.  If alias passed, return the
         alias signature
 
-        Searches for signatures in cogs.ref.HELP first
+        Searches for signatures in cogs.reference.HELP first
 
         Parameters
         ----------
@@ -129,7 +129,7 @@ class Help(commands.Cog):
 
         try:
             cog = cmd.cog_name.lower()
-            sigs = ref.HELP[cog][cmd.qualified_name]['sigs']
+            sigs = reference.HELP[cog][cmd.qualified_name]['sigs']
         except KeyError:
             sigs = [cmd.signature]
 
@@ -352,7 +352,7 @@ class Help(commands.Cog):
     async def send_bot_help(self, ctx: commands.Context) -> discord.Message:
         """
         Creates embed with list of all commands that are callable in bot
-        categorized by cog_name and send.  ref.HELP is checked and commands
+        categorized by cog_name and send.  reference.HELP is checked and commands
         are listed even if the underlying command is hidden so long as it
         passes all checks
 
@@ -388,7 +388,7 @@ class Help(commands.Cog):
             cmds = filter(lambda c: _show_help(ctx, c), mapping[cog])
             cmd_names = self.get_all_cmd_names(ctx, cmds, aliases=True)
 
-            try:  # check ref.HELP
+            try:  # check reference.HELP
                 _ref = {k: v for k, v in self.bot.ref_aliases.items()
                         if _show_help(ctx, v, show_hidden=True)}
                 _cmds = [self.get_cmd_name(ctx, alias, cmd)
