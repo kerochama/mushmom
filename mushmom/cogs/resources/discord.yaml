@@ -14,11 +14,7 @@ attachments:                           # attachments to reference
     - 900388181139144786               # channel (Kero's server #attachments)
     - 900424355660595250               # attachment id
     - mushcharnotfound.png
-  grassy_field_bg:                     # https://kirimymaps.blogspot.com/
+  grassy_field:                        # https://kirimymaps.blogspot.com/
     - 900388181139144786
-    - 900423957579190333
-    - grassy_field_bg.png
-  grass_field_fg:
-    - 900388181139144786
-    - 900423973035196466
-    - grassy_field_fg.png
+    - 900539713813893140
+    - grassy_field.png
