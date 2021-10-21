@@ -65,6 +65,17 @@ server:
     commands.MissingPermissions:
       msg: You are not an admin
       ref_cmds: null
+    errors.InvalidPoseError:
+      msg: "Not a valid pose. See\n\u200b"
+      ref_cmds: [sprite poses]
+    errors.InvalidEmotionError:
+      msg: "Not a valid emotion. See\n\u200b"
+      ref_cmds: [sprite emotions, asdf]
+    errors.InvalidJobError:
+      msg: "Not a valid Maplestory job"
+      ref_cmds: null
+    errors.NoMoreItems:
+      <<: *nochars
     errors.DataWriteError:
       <<: *dberror
   reset:

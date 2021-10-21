@@ -26,6 +26,21 @@ class MapleIOError(MushmomError):
     pass
 
 
+class InvalidPoseError(MushmomError):
+    """Invalid pose"""
+    pass
+
+
+class InvalidEmotionError(MushmomError):
+    """Invalid emotion"""
+    pass
+
+
+class InvalidJobError(MushmomError):
+    """Invalid job"""
+    pass
+
+
 class UnexpectedFileTypeError(MushmomError):
     """Wrong file type"""
     pass

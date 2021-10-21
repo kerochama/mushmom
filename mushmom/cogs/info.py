@@ -151,6 +151,16 @@ class Info(commands.Cog):
             *,
             options: converters.InfoFlags
     ) -> None:
+        """
+        Set character information displayed in profile
+
+        Parameters
+        ----------
+        ctx: commands.Context
+        options: converters.InfoFlags
+            each of the fields that can be set
+
+        """
         user = await self.bot.db.get_user(ctx.author.id)
 
         if not user or not user['chars']:

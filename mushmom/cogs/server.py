@@ -7,7 +7,7 @@ import discord
 from discord.ext import commands
 
 from .. import config
-from .utils import errors
+from .utils import errors, converters
 from .resources import EMOJIS
 
 
@@ -94,6 +94,12 @@ class Server(commands.Cog):
             await self._set_prefixes(ctx, *args)
         elif setting == 'channel':
             await self._set_channel(ctx)
+        elif setting == 'info':
+            options = await converters.InfoFlags.convert(ctx, ' '.join(args))
+            command = self.bot.get_command('_set_info')
+
+            if command:
+                await ctx.invoke(command, options=options)
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
