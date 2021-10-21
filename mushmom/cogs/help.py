@@ -431,7 +431,8 @@ class Help(commands.Cog):
             return
 
         # clean help
-        cmd_help = (cmd.help
+        _cmd_help = cmd.help or ''
+        cmd_help = (_cmd_help
                     .split('\n\n')[0]  # before first empty line
                     .replace('\n', ' ')  # handle line breaks
                     .format(prefix=ctx.prefix))
