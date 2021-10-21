@@ -83,7 +83,7 @@ class Actions(commands.Cog):
         try:
             _ctx = SimpleNamespace(bot=self.bot, author=obj)  # fake ctx
             obj_char = await converters.default_char(_ctx)
-            data = await mapleio.get_sprite(
+            data = await mapleio.api.get_sprite(
                 obj_char, render_mode='FeetCenter', remove=['Weapon', 'Cape'],
                 session=session, **obj_args)
             _obj = Image.open(BytesIO(data))
