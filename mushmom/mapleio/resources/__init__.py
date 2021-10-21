@@ -19,3 +19,6 @@ with resources.open_binary(__package__, 'poses.json') as fp:
 
 with resources.open_binary(__package__, 'skins.json') as fp:
     SKINS = json.load(fp)
+
+with resources.open_binary(__package__, 'jobs.json') as fp:
+    JOBS = json.load(fp)

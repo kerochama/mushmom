@@ -1,0 +1,266 @@
+[
+    {
+        "job": "Hero",
+        "class": "Explorer",
+        "branch": "Warrior"
+    },
+    {
+        "job": "Paladin",
+        "class": "Explorer",
+        "branch": "Warrior"
+    },
+    {
+        "job": "Dark Knight",
+        "class": "Explorer",
+        "branch": "Warrior"
+    },
+    {
+        "job": "Ice/Lightning Mage",
+        "class": "Explorer",
+        "branch": "Magician",
+        "aliases": [
+            "Ice/Lightning Arch Mage",
+            "IL Mage"
+        ]
+    },
+    {
+        "job": "Fire/Poison Mage",
+        "class": "Explorer",
+        "branch": "Magician",
+        "aliases": [
+            "Fire/Poison Arch Mage",
+            "FP Mage"
+        ]
+    },
+    {
+        "job": "Bishop",
+        "class": "Explorer",
+        "branch": "Magician"
+    },
+    {
+        "job": "Bow Master",
+        "class": "Explorer",
+        "branch": "Bowman"
+    },
+    {
+        "job": "Marksman",
+        "class": "Explorer",
+        "branch": "Bowman"
+    },
+    {
+        "job": "Pathfinder",
+        "class": "Explorer",
+        "branch": "Bowman"
+    },
+    {
+        "job": "Night Lord",
+        "class": "Explorer",
+        "branch": "Thief"
+    },
+    {
+        "job": "Shadower",
+        "class": "Explorer",
+        "branch": "Thief"
+    },
+    {
+        "job": "Dual Blade",
+        "class": "Explorer",
+        "branch": "Thief"
+    },
+    {
+        "job": "Buccaneer",
+        "class": "Explorer",
+        "branch": "Pirate"
+    },
+    {
+        "job": "Corsair",
+        "class": "Explorer",
+        "branch": "Pirate"
+    },
+    {
+        "job": "Cannoneer",
+        "class": "Explorer",
+        "branch": "Pirate"
+    },
+    {
+        "job": "Jett",
+        "class": "Explorer",
+        "branch": "Pirate"
+    },
+    {
+        "job": "Dawn Warrior",
+        "class": "Cygnus Knights",
+        "branch": "Warrior"
+    },
+    {
+        "job": "Blaze Wizard",
+        "class": "Cygnus Knights",
+        "branch": "Magician"
+    },
+    {
+        "job": "Wind Archer",
+        "class": "Cygnus Knights",
+        "branch": "Bowman"
+    },
+    {
+        "job": "Night Walker",
+        "class": "Cygnus Knights",
+        "branch": "Thief"
+    },
+    {
+        "job": "Thunder Breaker",
+        "class": "Cygnus Knights",
+        "branch": "Pirate"
+    },
+    {
+        "job": "Mihile",
+        "class": "Cygnus Knights",
+        "branch": "Warrior"
+    },
+    {
+        "job": "Aran",
+        "class": "Heroes",
+        "branch": "Warrior"
+    },
+    {
+        "job": "Evan",
+        "class": "Heroes",
+        "branch": "Magician"
+    },
+    {
+        "job": "Mercedes",
+        "class": "Heroes",
+        "branch": "Bowman"
+    },
+    {
+        "job": "Phantom",
+        "class": "Heroes",
+        "branch": "Thief"
+    },
+    {
+        "job": "Luminous",
+        "class": "Heroes",
+        "branch": "Magician"
+    },
+    {
+        "job": "Shade",
+        "class": "Heroes",
+        "branch": "Thief"
+    },
+    {
+        "job": "Blaster",
+        "class": "Resistance",
+        "branch": "Warrior"
+    },
+    {
+        "job": "Battle Mage",
+        "class": "Resistance",
+        "branch": "Magician"
+    },
+    {
+        "job": "Wild Hunter",
+        "class": "Resistance",
+        "branch": "Bowman"
+    },
+    {
+        "job": "Mechanic",
+        "class": "Resistance",
+        "branch": "Pirate"
+    },
+    {
+        "job": "Xenon",
+        "class": "Resistance",
+        "branch": [
+            "Pirate",
+            "Thief"
+        ]
+    },
+    {
+        "job": "Demon Slayer",
+        "class": "Resistance (Demon)",
+        "branch": "Warrior"
+    },
+    {
+        "job": "Demon Avenger",
+        "class": "Resistance (Demon)",
+        "branch": "Warrior"
+    },
+    {
+        "job": "Kaiser",
+        "class": "Nova",
+        "branch": "Warrior"
+    },
+    {
+        "job": "Angelic Buster",
+        "class": "Nova",
+        "branch": "Pirate"
+    },
+    {
+        "job": "Cadena",
+        "class": "Nova",
+        "branch": "Thief"
+    },
+    {
+        "job": "Kain",
+        "class": "Nova",
+        "branch": "Bowman"
+    },
+    {
+        "job": "Illium",
+        "class": "Flora",
+        "branch": "Magician"
+    },
+    {
+        "job": "Ark",
+        "class": "Flora",
+        "branch": "Pirate"
+    },
+    {
+        "job": "Adele",
+        "class": "Flora",
+        "branch": "Warrior"
+    },
+    {
+        "job": "Hayato",
+        "class": "Sengoku",
+        "branch": "Warrior"
+    },
+    {
+        "job": "Kanna",
+        "class": "Sengoku",
+        "branch": "Magician"
+    },
+    {
+        "job": "Hoyoung",
+        "class": "Anima",
+        "branch": "Thief"
+    },
+    {
+        "job": "Lara",
+        "class": "Anima",
+        "branch": "Magician"
+    },
+    {
+        "job": "Beast Tamer",
+        "class": "Beast Tamer",
+        "branch": "Magician",
+        "aliases": [
+            "Chase"
+        ]
+    },
+    {
+        "job": "Zero",
+        "class": "Transcendent",
+        "branch": "Warrior"
+    },
+    {
+        "job": "Kinesis",
+        "class": "Kinesis",
+        "branch": "Magician"
+    },
+    {
+        "job": "Mo Xuan",
+        "class": "Wu Shen",
+        "branch": "Pirate"
+    }
+]

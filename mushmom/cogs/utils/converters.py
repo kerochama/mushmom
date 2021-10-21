@@ -33,7 +33,7 @@ class EmotionConverter(commands.Converter):
         if arg in mapleio.resources.EMOTIONS:
             return arg
 
-        raise commands.BadArgument(message="Not a valid emotion")
+        raise errors.InvalidEmotionError(message="Not a valid emotion")
 
 
 class PoseConverter(commands.Converter):
@@ -45,7 +45,21 @@ class PoseConverter(commands.Converter):
         if arg in mapleio.resources.POSES.values():
             return arg
 
-        raise commands.BadArgument(message="Not a valid pose")
+        raise errors.InvalidPoseError(message="Not a valid pose")
+
+
+class JobConverter(commands.Converter):
+    """String is in list of jobs from maplestory.io"""
+    async def convert(self, ctx: commands.Context, arg: str) -> str:
+        lower = arg.lower()
+
+        for job in mapleio.resources.JOBS:
+            if (lower == job['job'].lower() or
+                    ('aliases' in job and
+                     lower in [a.lower() for a in job['aliases']])):
+                return arg
+
+        raise errors.InvalidJobError(message="Not a valid job")
 
 
 class MapleIOURLConverter(commands.Converter):
@@ -154,7 +168,7 @@ class InfoFlags(StrictFlagConverter, delimiter=' '):
         name='--pose', aliases=['-p'], default=None)
     emotion: Optional[EmotionConverter] = commands.flag(
         name='--emotion', aliases=['-e'], default=None)
-    job: Optional[str] = commands.flag(
+    job: Optional[JobConverter] = commands.flag(
         name='--job', aliases=['-j'], default=None)
     game: Optional[str] = commands.flag(
         name='--game', aliases=['-G'], default=None)
