@@ -10,7 +10,7 @@ from PIL import Image
 from typing import Optional
 
 from .. import config, mapleio
-from .utils import errors
+from .utils import errors, converters
 from .resources import EMOJIS, ATTACHMENTS
 from ..mapleio.character import Character
 
@@ -69,7 +69,7 @@ class Info(commands.Cog):
                 'job': 'Bishop',
                 'guild': 'Vital'
             }
-            _fmt_info = [self._padded_str(f'> **{k.title()}**: {v}')
+            _fmt_info = [self._padded_str(f'**{k.title()}**: {v}')
                          for k, v in char_info.items()]
             embed.add_field(name='Active Character',
                             value='\n'.join(_fmt_info) + '\n\u200b')
@@ -91,7 +91,7 @@ class Info(commands.Cog):
             await ctx.send(file=img, embed=embed)
 
     @staticmethod
-    def _padded_str(self, text, n=30):
+    def _padded_str(text, n=30):
         s = list('\xa0' * n)
         s[:len(text)] = list(text)
         return ''.join(s)
@@ -143,6 +143,34 @@ class Info(commands.Cog):
         byte_arr = BytesIO()
         out.save(byte_arr, format='PNG')
         return byte_arr.getvalue()
+
+    @commands.command(hidden=True)
+    async def _set_info(
+            self,
+            ctx: commands.Context,
+            *,
+            options: converters.InfoFlags
+    ) -> None:
+        user = await self.bot.db.get_user(ctx.author.id)
+
+        if not user or not user['chars']:
+            raise errors.NoMoreItems
+
+        char = user['chars'][user['default']]
+
+        # go through all options
+        for opt in vars(options):
+            v = getattr(options, opt)
+            if v is not None:
+                char[opt] = v
+
+        update = {'chars': user['chars']}  # passed by reference
+        ret = await self.bot.db.set_user(ctx.author.id, update)
+
+        if ret.acknowledged:
+            await ctx.send(f'**{char["name"]}**\'s info was updated')
+        else:
+            raise errors.DataWriteError
 
 
 def setup(bot):

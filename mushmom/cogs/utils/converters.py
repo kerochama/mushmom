@@ -138,9 +138,27 @@ async def default_char(ctx: commands.Context):
 
 
 class ImgFlags(StrictFlagConverter, delimiter=' '):
+    """Get a character"""
     char: Optional[CharacterConverter] = commands.flag(
         name='--char',
         aliases=['-c'],
         default=default_char
     )
 
+
+class InfoFlags(StrictFlagConverter, delimiter=' '):
+    """Settings for profile info"""
+    name: Optional[str] = commands.flag(
+        name='--name', aliases=['-n'], default=None)
+    action: Optional[PoseConverter] = commands.flag(
+        name='--pose', aliases=['-p'], default=None)
+    emotion: Optional[EmotionConverter] = commands.flag(
+        name='--emotion', aliases=['-e'], default=None)
+    job: Optional[str] = commands.flag(
+        name='--job', aliases=['-j'], default=None)
+    game: Optional[str] = commands.flag(
+        name='--game', aliases=['-G'], default=None)
+    server: Optional[str] = commands.flag(
+        name='--server', aliases=['-s'], default=None)
+    guild: Optional[str] = commands.flag(
+        name='--guild', aliases=['-g'], default=None)
