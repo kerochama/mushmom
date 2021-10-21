@@ -60,6 +60,9 @@ class Character:
         self.pose = 'stand1'
         self.emotion = 'default'
         self.job = None
+        self.game = None
+        self.server = None
+        self.guild = None
 
     @classmethod
     def from_json(cls, data: Union[str, dict]) -> Character:
@@ -350,7 +353,10 @@ class Character:
             },
             'pose': self.pose,
             'emotion': self.emotion,
-            'job': self.job
+            'job': self.job,
+            'game': self.game,
+            'server': self.server,
+            'guild': self.guild
         }
 
         return char
