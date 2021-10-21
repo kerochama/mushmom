@@ -33,6 +33,12 @@ class Character:
         Enum value of ears from maplestory.io representation
     equips: list[Equip]
         equips worn by character
+    pose: str
+        default pose
+    emotion: str
+        default emotion
+    job: str
+        character's job
 
     """
     def __init__(
@@ -49,6 +55,11 @@ class Character:
         self.skin = Skin.GREEN
         self.ears = Ears.REGULAR
         self.equips = []
+
+        # info
+        self.pose = 'stand1'
+        self.emotion = 'default'
+        self.job = None
 
     @classmethod
     def from_json(cls, data: Union[str, dict]) -> Character:
@@ -76,6 +87,8 @@ class Character:
 
         char = Character()
         char.name = data.get('name')
+        char.pose = data.get('action', 'stand1')
+        char.emotion = data.get('emotion', 'default')
         char.skin = Skin.get(data.get('skin', 2005))  # default green
         char.ears = Ears.get(data.get('mercEars', False),
                              data.get('illiumEars', False),
@@ -131,8 +144,9 @@ class Character:
                              query.get('showHighLefEars', 'false') == 'true')
 
         # handle items
-        generator = (x for x in parsed.path.split('/') if 'itemId' in x)
-        item_str = next(generator, None)
+        path = parsed.path.split('/')
+        generator = ((i, x) for i, x in enumerate(path) if 'itemId' in x)
+        item_i, item_str = next(generator, (None, None))
         items = {}
 
         if item_str:
@@ -146,10 +160,13 @@ class Character:
             char.version = item0.get('version', config.mapleio.default_version)
             char.region = item0.get('region', 'GMS')
 
-            # identify Body item (id is skinid)
+            # identify Body item (id is skinid) and Face item
             char.skin = next((Skin.get(x['itemId'])
                               for x in items if Skin.get(x['itemId'])),
                              Skin.GREEN)
+            char.emotion = next((x['animationName']
+                                 for x in items if 'animationName' in x),
+                                'default')
 
             equips = [
                 Equip(item.get('itemId', 0),
@@ -158,6 +175,9 @@ class Character:
                 for item in items if Equip.valid_equip(item.get('itemId', 0))
             ]
             char.equips = cls._validate_equips(equips)
+
+        # pose should be after item_str
+        char.pose = path[item_i+1]
 
         return char
 
@@ -211,8 +231,8 @@ class Character:
 
     def url(
             self,
-            pose: str = 'stand1',
-            emotion: str = 'default',
+            pose: Optional[str] = None,
+            emotion: Optional[str] = None,
             frame: Union[int, str] = 0,
             zoom: float = 1,
             flipx: bool = False,
@@ -227,10 +247,10 @@ class Character:
 
         Parameters
         ----------
-        pose: str
-            pose from poses.json
-        emotion: str
-            emotion from emotions.json
+        pose: Optional[str]
+            pose from poses.json. If None, use default
+        emotion: Optional[str]
+            emotion from emotions.json. If None, use default
         frame: Union[int, str]
             the animation frame. animated for gif
         zoom: float
@@ -254,6 +274,9 @@ class Character:
             API call to get sprite data (url)
 
         """
+        pose = pose or self.pose
+        emotion = emotion or self.emotion
+
         # format equips. emotion placed in face/face accessory dicts
         items = [
             {'type': 'Body', 'itemId': self.skin.value, 'version': self.version},
@@ -324,7 +347,10 @@ class Character:
             'selectedItems': {
                 eq.type: eq.to_dict(map={'itemId': 'id'}, exclude=['type'])
                 for eq in self.equips
-            }
+            },
+            'pose': self.pose,
+            'emotion': self.emotion,
+            'job': self.job
         }
 
         return char

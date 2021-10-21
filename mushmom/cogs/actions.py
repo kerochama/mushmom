@@ -273,8 +273,8 @@ class Actions(commands.Cog):
         dur = [175, 450, 175]
 
         char = options.char
-        char_args = {'pose': 'stabO1', 'replace': [wep]}
-        obj_args = {'emotion': 'despair'}
+        char_args = {'pose': 'stabO1', 'emotion': 'default', 'replace': [wep]}
+        obj_args = {'pose': 'stand1', 'emotion': 'despair'}
 
         msg = f'{member.display_name} has been stabbed'
         await self.action(ctx, char, char_args, member, obj_args, pad=_pad,
@@ -310,8 +310,8 @@ class Actions(commands.Cog):
         # see gif. frame one in gif split between 0 and 4 (gif only 4 frames)
         dur = [100, 100, 100, 300, 100]
 
-        char_args = {'pose': 'swingOF', 'replace': [wep]}
-        obj_args = {'emotion': 'pain'}
+        char_args = {'pose': 'swingOF', 'emotion': 'default', 'replace': [wep]}
+        obj_args = {'pose': 'stand1', 'emotion': 'pain'}
 
         msg = f'{member.display_name} has been slapped'
         await self.action(ctx, char, char_args, member, obj_args, pad=_pad,

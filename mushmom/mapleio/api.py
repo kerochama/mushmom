@@ -111,7 +111,7 @@ async def get_item(
 @with_session
 async def get_emote(
         char: 'Character',
-        emotion: str = 'default',
+        emotion: Optional[str] = None,
         zoom: float = 1,
         pad: int = 8,
         session: aiohttp.ClientSession = None
@@ -125,7 +125,7 @@ async def get_emote(
     char: Character
         The character from which to generate the sprite
     emotion: str
-        emotion from emotions.json
+        emotion from emotions.json. If None, use default
     zoom: float
         how zoomed in the image should be (1 = 100%)
     pad: int
@@ -139,6 +139,7 @@ async def get_emote(
         the byte data from the generated emote
 
     """
+    emotion = emotion or char.emotion
     u = char.url(emotion=emotion, zoom=zoom, remove=['Cape', 'Weapon'])
 
     async with session.get(u) as r:
@@ -160,8 +161,8 @@ async def get_emote(
 @with_session
 async def get_sprite(
         char: 'Character',
-        pose: str = 'stand1',
-        emotion: str = 'default',
+        pose: Optional[str] = None,
+        emotion: Optional[str] = None,
         frame: Union[int, str] = 0,
         zoom: float = 1,
         flipx: bool = False,
@@ -180,9 +181,9 @@ async def get_sprite(
     char: Character
         The character from which to generate the sprite
     pose: str
-        pose from poses.json
+        pose from poses.json. If None, use default
     emotion: str
-        emotion from emotions.json
+        emotion from emotions.json. If None, use default
     frame: Union[int, str]
             the animation frame. animated for gif
     zoom: float
@@ -208,6 +209,9 @@ async def get_sprite(
         the byte data from the generated sprite
 
     """
+    pose = pose or char.pose
+    emotion = emotion or char.emotion
+
     args = locals().copy()
     args.pop('char')
     args.pop('session')
@@ -222,8 +226,8 @@ async def get_sprite(
 @with_session
 async def get_layers(
         char: 'Character',
-        pose: str = 'stand1',
-        emotion: str = 'default',
+        pose: Optional[str] = None,
+        emotion: Optional[str] = None,
         frame: Union[int, str] = 0,
         zoom: float = 1,
         flipx: bool = False,
@@ -243,9 +247,9 @@ async def get_layers(
     char: Character
         The character from which to generate the sprite
     pose: str
-        pose from poses.json
+        pose from poses.json. If None, use default
     emotion: str
-        emotion from emotions.json
+        emotion from emotions.json. If None, use default
     frame: Union[int, str]
             the animation frame. animated for gif
     zoom: float
@@ -271,6 +275,9 @@ async def get_layers(
         tuple of foreground and background
 
     """
+    pose = pose or char.pose
+    emotion = emotion or char.emotion
+
     args = locals().copy()
     args.pop('hide')
 
@@ -292,8 +299,8 @@ async def get_layers(
 @with_session
 async def get_frames(
         char: 'Character',
-        pose: str = 'stand1',
-        emotion: str = 'default',
+        pose: Optional[str] = None,
+        emotion: Optional[str] = None,
         frame: Union[int, str] = 0,
         zoom: float = 1,
         flipx: bool = False,
@@ -313,9 +320,9 @@ async def get_frames(
     char: Character
         The character from which to generate the sprite
     pose: str
-        pose from poses.json
+        pose from poses.json. If None, use default
     emotion: str
-        emotion from emotions.json
+        emotion from emotions.json. If None, use default
     frame: Union[int, str]
             the animation frame. animated for gif
     zoom: float
@@ -340,6 +347,9 @@ async def get_frames(
     Optional[list[bytes]]
 
     """
+    pose = pose or char.pose
+    emotion = emotion or char.emotion
+
     args = locals().copy()
     args.pop('char')
     args.pop('session')

@@ -21,7 +21,7 @@ class Emotes(commands.Cog):
     async def emote(
             self,
             ctx: commands.Context,
-            emote: Optional[converters.EmotionConverter] = 'default',
+            emote: Optional[converters.EmotionConverter] = None,
             *,
             options: converters.ImgFlags
     ) -> None:
@@ -39,6 +39,7 @@ class Emotes(commands.Cog):
 
         """
         name = options.char.name or "char"
+        emote = emote or options.char.emotion
 
         # add loading reaction to confirm command is still waiting for api
         # default: hour glass

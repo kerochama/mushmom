@@ -21,8 +21,8 @@ class Sprites(commands.Cog):
     async def sprite(
             self,
             ctx: commands.Context,
-            emotion: Optional[converters.EmotionConverter] = 'default',
-            pose: Optional[converters.PoseConverter] = 'stand1',
+            emotion: Optional[converters.EmotionConverter] = None,
+            pose: Optional[converters.PoseConverter] = None,
             *,
             options: converters.ImgFlags
     ) -> None:
@@ -35,14 +35,16 @@ class Sprites(commands.Cog):
         ----------
         ctx: commands.Context
         emotion: Optional[str]
-            a word listed in in emotions.json
+            a word listed in in emotions.json. If None, use default
         pose: Optional[str]
-            a word listed in in poses.json
+            a word listed in in poses.json. If None, use default
         options: converters.ImgFlags
             --char, -c: character to use
 
         """
         name = options.char.name or "char"
+        emotion = emotion or options.char.emotion
+        pose = pose or options.char.pose
 
         # add loading reaction to confirm command is still waiting for api
         # default: hour glass
