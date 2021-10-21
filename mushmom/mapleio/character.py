@@ -115,6 +115,12 @@ class Character:
             ]
             char.equips = cls._validate_equips(equips)
 
+        # read extra info for profile
+        char.job = data.get('job')
+        char.game = data.get('game')
+        char.server = data.get('server')
+        char.guild = data.get('guild')
+
         return char
 
     @classmethod
@@ -351,7 +357,7 @@ class Character:
                 eq.type: eq.to_dict(map={'itemId': 'id'}, exclude=['type'])
                 for eq in self.equips
             },
-            'pose': self.pose,
+            'action': self.pose,
             'emotion': self.emotion,
             'job': self.job,
             'game': self.game,
