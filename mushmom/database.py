@@ -94,6 +94,8 @@ class Database:
             '_id': userid,
             'default': 0,
             'chars': [char_data],
+            'fame': 0,
+            'fame_log': [],
             'create_time': datetime.utcnow(),
             'update_time': datetime.utcnow(),
             'n_access': 1
