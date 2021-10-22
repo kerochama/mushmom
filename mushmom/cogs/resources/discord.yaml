@@ -14,6 +14,14 @@ attachments:                           # attachments to reference
     - 900388181139144786               # channel (Kero's server #attachments)
     - 900424355660595250               # attachment id
     - mushcharnotfound.png
+  pfp_loading:
+    - 900388181139144786
+    - 901105558113906708
+    - pfp_loading.gif
+  pfp_poo:
+    - 900388181139144786
+    - 901120006136410202
+    - pfp_poo.png
   grassy_field:                        # https://kirimymaps.blogspot.com/
     - 900388181139144786
     - 900539713813893140

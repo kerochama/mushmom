@@ -12,6 +12,9 @@ core:
   delayed_react_time: 2                # default secs to add a delayed reaction
   default_pfp_size: 80                 # pixels
 
+discord:
+  uploads: 901105805628162099          # channel that can be sent to
+
 database:                              # mongodb
   name: mushmom
 

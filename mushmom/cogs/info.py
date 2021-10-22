@@ -3,6 +3,7 @@ Character profiles
 
 """
 import discord
+import asyncio
 
 from discord.ext import commands
 from io import BytesIO
@@ -47,48 +48,102 @@ class Info(commands.Cog):
                          icon_url=mushhuh)
         embed.set_thumbnail(url=member.display_avatar.url)
 
+        # get user info
         user = await self.bot.db.get_user(member.id)
+
         if not user:
+            user, char = {}
+        else:
+            if not user['chars']:
+                char = {}
+            else:
+                char = user['chars'][user['default']]
+
+        char_info = {
+            'name': char.get('name') or '-',
+            'job': char.get('job') or '-',
+            'game': char.get('game') or '-',
+            'server': char.get('server') or '-',
+            'guild': char.get('guild') or '-'
+        }
+        fame = user.get('fame', 0)
+
+        # format info
+        _fmt_info = [self._padded_str(f'> **{k.title()}**: {v}')
+                     for k, v in char_info.items()]
+        embed.add_field(name='Active Character',
+                        value='\n'.join(_fmt_info) + '\n\u200b')
+        _fmt_fame = self._padded_str(f'\u2b50 {fame}', n=12)
+        embed.add_field(name='Fame', value=_fmt_fame + '\n\u200b')
+
+        # send placeholder pfp in 3 seconds
+        temp = ATTACHMENTS['pfp_loading']
+        pfp_temp = self.bot.get_attachment_url(*temp)
+        embed.set_image(url=pfp_temp)
+        embed.set_footer(text='Still loading profile picture')
+        temp_send_task = self.bot.loop.create_task(
+            self._delayed_send(ctx, embed=embed)
+        )
+
+        # get real pfp
+        if not char:
             attm = ATTACHMENTS['mushcharnotfound']
             not_found = self.bot.get_attachment_url(*attm)
-            data = await self.bot.download(not_found, errors.DiscordIOError)
-
-            # attach pfp
-            pfp = await self.gen_profile_pic(data)
             filename = attm[-1]  # orig filename
-            img = discord.File(fp=BytesIO(pfp), filename=filename)
-            embed.set_image(url=f'attachment://{filename}')
-            embed.set_footer(text='This member has no registered characters')
-            await ctx.send(file=img, embed=embed)
-        else:
-            char = user['chars'][user['default']]
-            char_info = {
-                'name': char['name'],
-                'game': 'MaplestoryM',
-                'server': 'NA Inosys',
-                'job': 'Bishop',
-                'guild': 'Vital'
-            }
-            _fmt_info = [self._padded_str(f'**{k.title()}**: {v}')
-                         for k, v in char_info.items()]
-            embed.add_field(name='Active Character',
-                            value='\n'.join(_fmt_info) + '\n\u200b')
-            _fmt_fame = self._padded_str('\u2b50 9284', n=12)
-            embed.add_field(name='Fame', value=_fmt_fame + '\n\u200b')
 
-            # attach pfp
+            try:
+                data = await self.bot.download(not_found, errors.DiscordIOError)
+            except errors.DiscordIOError:
+                data = None
+
+            embed.set_footer(text='This member has no registered characters')
+        else:
+            filename = f'{char.get("name") or "char"}.png'
             data = await mapleio.api.get_sprite(
                 Character.from_json(char), render_mode='FeetCenter')
 
-            if not data:
-                raise errors.MapleIOError
-
-            pfp = await self.gen_profile_pic(data)
-            filename = f'{char["name"]}.png'
-            img = discord.File(fp=BytesIO(pfp), filename=filename)
-            embed.set_image(url=f'attachment://{filename}')
             embed.set_footer(text='React with \U0001f44D \u200b to fame')
-            await ctx.send(file=img, embed=embed)
+
+        if data:  # successful get
+            pfp_data = await self.gen_profile_pic(data)
+            pfp = discord.File(fp=BytesIO(pfp_data), filename=filename)
+        else:
+            pfp = None
+
+        # cancel if not yet sent, else edit
+        if not temp_send_task.done():
+            temp_send_task.cancel()
+
+            if pfp:
+                embed.set_image(url=f'attachment://{filename}')
+                await ctx.send(file=pfp, embed=embed)
+            else:
+                pfp_poo = self.bot.get_attachment_url(*ATTACHMENTS['pfp_poo'])
+                embed.set_image(url=pfp_poo)
+                await ctx.send(embed=embed)
+        else:
+            msg = temp_send_task.result()
+
+            # default fail
+            pfp_poo = self.bot.get_attachment_url(*ATTACHMENTS['pfp_poo'])
+            embed.set_image(url=pfp_poo)
+
+            if pfp:  # upload to another channel and get the attachment url
+                uploads = config.discord.uploads
+                channel = (self.bot.get_channel(uploads)
+                           or await self.bot.fetch_channel(uploads))
+                try:
+                    _up = await channel.send(file=pfp)
+                    embed.set_image(url=_up.attachments[0].url)
+                except Exception:  # just send poo
+                    pass
+
+            await msg.edit(embed=embed)
+
+    @staticmethod
+    async def _delayed_send(ctx, delay=3, **kwargs):
+        await asyncio.sleep(delay)
+        return await ctx.send(**kwargs)
 
     @staticmethod
     def _padded_str(text, n=30):
