@@ -57,7 +57,7 @@ class JobConverter(commands.Converter):
             if (lower == job['job'].lower() or
                     ('aliases' in job and
                      lower in [a.lower() for a in job['aliases']])):
-                return arg
+                return job['job']
 
         raise errors.InvalidJobError(message="Not a valid job")
 
