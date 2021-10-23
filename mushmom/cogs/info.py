@@ -45,7 +45,8 @@ class Info(commands.Cog):
             member: Optional[discord.Member] = None
     ) -> None:
         """
-        Discord member profile
+        Discord member profile. Reacting with an emoji named
+        `:thumbsup:` or `:thumbsdown:` will fame/defame this member
 
         Parameters
         ----------
