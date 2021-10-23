@@ -4,6 +4,7 @@ Character profiles
 """
 import discord
 import asyncio
+import re
 
 from discord.ext import commands, tasks
 from io import BytesIO
@@ -399,11 +400,21 @@ class Info(commands.Cog):
 
         try:
             if str(reaction) == '\U0001f44D':  # thumbs up
-                cmd = 'fame'
+                cmd, amt = 'fame', 1
                 await self._fame(user, member, 1)
             elif str(reaction) == '\U0001f44E':  # thumbs down
-                cmd = 'defame'
+                cmd, amt = 'defame', -1
                 await self._fame(user, member, -1)
+
+            if cmd:
+                # edit embed. fame is the 2nd field
+                embed = reaction.message.embeds[0]
+                curr = re.search(r'\d+', embed.fields[1].value).group()
+                _fmt_fame = self._padded_str(f'\u2b50 {int(curr) + amt}', n=12)
+                embed.set_field_at(1, value=_fmt_fame + '\n\u200b')
+
+                # attached pfp pops out of embed, so remove
+                await reaction.message.edit(embed=embed, attachments=[])
         except errors.MushmomError as error:
             err = f'errors.{error.__class__.__name__}'
             specs = ERRORS[self.__class__.__name__.lower()][cmd][err]
