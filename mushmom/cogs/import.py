@@ -98,7 +98,7 @@ class Import(commands.Cog):
                 i = await prompts.get_char(ctx, user, text)
 
                 if i is None:
-                    self.bot.reply_cache.remove(ctx)  # clean up select prompt
+                    self.bot.reply_cache.remove(ctx.message)  # clean up select prompt
                     await ctx.send(f'**{name}** was not saved')
                     return
                 else:
@@ -115,7 +115,7 @@ class Import(commands.Cog):
                 raise errors.DataWriteError
 
         # no error, release from cache
-        self.bot.reply_cache.remove(ctx)
+        self.bot.reply_cache.remove(ctx.message)
 
     @_import.error
     async def _import_error(
@@ -134,7 +134,7 @@ class Import(commands.Cog):
 
         """
         # clean up orphaned prompts
-        await self.bot.reply_cache.clean_up(ctx)
+        await self.bot.reply_cache.clean_up(ctx.message)
 
         if not isinstance(error, commands.MissingRequiredArgument):
             return  # other handles handled normally
@@ -145,12 +145,12 @@ class Import(commands.Cog):
             msg = 'Missing source data. Please use:\n\u200b'
 
         err = await self.bot.send_error(ctx, msg, ref_cmds=['import'])
-        self.bot.reply_cache.add(ctx, err)  # stop default error handler
+        self.bot.reply_cache.add(ctx.message, err)  # stop default error handler
 
     async def cog_after_invoke(self, ctx: commands.Context) -> None:
         # unregister reply cache if successful
         if not ctx.command_failed:
-            self.bot.reply_cache.remove(ctx)
+            self.bot.reply_cache.remove(ctx.message)
 
     async def cog_command_error(
             self,
@@ -159,7 +159,7 @@ class Import(commands.Cog):
     ) -> None:
         # clean up stray replies
         if not ctx.command.has_error_handler():
-            await self.bot.reply_cache.clean_up(ctx)
+            await self.bot.reply_cache.clean_up(ctx.message)
 
 
 def setup(bot):

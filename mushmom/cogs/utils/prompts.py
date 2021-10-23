@@ -38,37 +38,37 @@ class MessageCache:
         for k in to_remove:
             del self.__cache[k]
 
-    def get(self, ctx: commands.Context) -> Optional[discord.Message]:
-        if ctx.message.id in self.__cache:
-            value, t = self.__cache.get(ctx.message.id)
+    def get(self, message: discord.Message) -> Any:
+        if message.id in self.__cache:
+            value, t = self.__cache.get(message.id)
             current_time = time.monotonic()
             if (t + self.__ttl) <= current_time:
                 return value
 
-    def add(self, ctx: commands.Context, value: Any) -> None:
-        self.__cache[ctx.message.id] = (value, time.monotonic())
+    def add(self, message: discord.Message, value: Any) -> None:
+        self.__cache[message.id] = (value, time.monotonic())
 
-    def remove(self, ctx: commands.Context) -> None:
-        self.__cache.pop(ctx.message.id, None)
+    def remove(self, message: discord.Message) -> None:
+        self.__cache.pop(message.id, None)
 
-    def contains(self, ctx: commands.Context) -> bool:
-        if ctx.message.id in self.__cache:
-            value, t = self.__cache.get(ctx.message.id)
+    def contains(self, message: discord.Message) -> bool:
+        if message.id in self.__cache:
+            value, t = self.__cache.get(message.id)
             current_time = time.monotonic()
             return current_time <= (t + self.__ttl)
         else:
             return False
 
-    def __contains__(self, ctx: commands.Context) -> bool:
-        return self.contains(ctx)
+    def __contains__(self, message: discord.Message) -> bool:
+        return self.contains(message)
 
     async def clean_up(
             self,
-            ctx: commands.Context,
+            message: discord.Message,
             delete: bool = not config.core.debug
     ) -> None:
         """Delete key if exists. Also delete from discord if message"""
-        value, t = self.__cache.pop(ctx.message.id, (None, None))
+        value, t = self.__cache.pop(message.id, (None, None))
 
         if isinstance(value, discord.Message) and delete:
             try:
@@ -169,7 +169,7 @@ async def get_char(
     msg = (f'{text or ""}React to select a character or select '
            f'\u200b \u274e \u200b to cancel\n\u200b')
     prompt = await list_chars(ctx, user, msg, thumbnail)
-    ctx.bot.reply_cache.add(ctx, prompt)  # cache for clean up
+    ctx.bot.reply_cache.add(ctx.message, prompt)  # cache for clean up
 
     # numbered unicode emojis 1 - # max chars
     max_chars = config.core.max_chars
@@ -202,7 +202,7 @@ async def confirm_prompt(ctx: commands.Context, text) -> bool:
     thumbnail = ctx.bot.get_emoji_url(EMOJIS['mushping'])
     embed.set_thumbnail(url=thumbnail)
     prompt = await ctx.send(embed=embed)
-    ctx.bot.reply_cache.add(ctx, prompt)  # cache for clean up
+    ctx.bot.reply_cache.add(ctx.message, prompt)  # cache for clean up
 
     # wait for reaction
     reactions = {'true': '\u2705', 'false': '\u274e'}

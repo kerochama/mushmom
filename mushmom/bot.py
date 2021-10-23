@@ -152,8 +152,8 @@ class Mushmom(commands.Bot):
         error: Exception
 
         """
-        if ctx in self.reply_cache:  # already sent message
-            self.reply_cache.remove(ctx)
+        if ctx.message in self.reply_cache:  # already sent message
+            self.reply_cache.remove(ctx.message)
             return
 
         cmd = ctx.command.qualified_name
@@ -335,7 +335,7 @@ class Mushmom(commands.Bot):
             if not config.core.debug:
                 await prompt.delete()
 
-            self.reply_cache.remove(ctx)
+            self.reply_cache.remove(ctx.message)
             raise errors.TimeoutError  # handle in command errors
 
         return next(k for k, v in reactions.items() if reaction.emoji == v)

@@ -59,7 +59,7 @@ class Characters(commands.Cog):
         new_i = await prompts.get_char(ctx, user, name=name)
 
         if new_i is None:  # cancelled
-            self.bot.reply_cache.remove(ctx)
+            self.bot.reply_cache.remove(ctx.message)
             await ctx.send('Your main was not changed')
             return
 
@@ -72,7 +72,7 @@ class Characters(commands.Cog):
             raise errors.DataWriteError
 
         # no error, release from cache
-        self.bot.reply_cache.remove(ctx)
+        self.bot.reply_cache.remove(ctx.message)
 
     @commands.command()
     async def delete(
@@ -101,7 +101,7 @@ class Characters(commands.Cog):
         del_i = await prompts.get_char(ctx, user, name=name)
 
         if del_i is None:  # cancelled
-            self.bot.reply_cache.remove(ctx)
+            self.bot.reply_cache.remove(ctx.message)
             await ctx.send('Deletion cancelled')
             return
 
@@ -123,7 +123,7 @@ class Characters(commands.Cog):
             raise errors.DataWriteError
 
         # no error, release from cache
-        self.bot.reply_cache.remove(ctx)
+        self.bot.reply_cache.remove(ctx.message)
 
     @commands.command()
     async def rename(
@@ -172,7 +172,7 @@ class Characters(commands.Cog):
     async def cog_after_invoke(self, ctx: commands.Context) -> None:
         # unregister reply cache if successful
         if not ctx.command_failed:
-            self.bot.reply_cache.remove(ctx)
+            self.bot.reply_cache.remove(ctx.message)
 
     async def cog_command_error(
             self,
@@ -181,7 +181,7 @@ class Characters(commands.Cog):
     ) -> None:
         # clean up stray replies
         if not ctx.command.has_error_handler():
-            await self.bot.reply_cache.clean_up(ctx)
+            await self.bot.reply_cache.clean_up(ctx.message)
 
 
 def setup(bot):
