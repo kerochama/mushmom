@@ -65,17 +65,29 @@ info:
     errors.SelfFameError:
       msg: +1 for self love, but you cannot fame youself
       ref_cmds: null
-    errors.DataNotFound:
+    errors.DataNotFound: &missinguser
       msg: Member has not registered
       ref_cmds: null
     errors.DataWriteError:
       <<: *dberror
+    errors.AlreadyFamedError: &alreadyfamed
+      msg: You've already famed (or defamed) this member today
+      ref_cmds: null
+    errors.MaxFamesReached: &maxfames
+      msg: You've reached the fame limit for today
+      ref_cmds: null
+  defame:
+    errors.SelfFameError:
+      msg: Please love yourself. You cannot self defame
+      ref_cmds: null
+    errors.DataNotFound:
+      <<: *missinguser
+    errors.DataWriteError:
+      <<: *dberror
     errors.AlreadyFamedError:
-      msg: You've already famed (or defamed) this member
-      ref_cmds: null
+      <<: *alreadyfamed
     errors.MaxFamesReached:
-      msg: You've already reached the fame limit for today
-      ref_cmds: null
+      <<: *maxfames
 
 server:
   set:
