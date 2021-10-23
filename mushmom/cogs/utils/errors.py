@@ -78,3 +78,15 @@ class UnparsedArgsError(MushmomError):
 
 class FlagParseError(MushmomError):
     """Extraneous flags or args found"""
+
+
+class SelfFameError(MushmomError):
+    """Cannot fame self"""
+
+
+class AlreadyFamedError(MushmomError):
+    """Already famed user today"""
+
+
+class MaxFamesReached(MushmomError):
+    """Already famed max number of people"""

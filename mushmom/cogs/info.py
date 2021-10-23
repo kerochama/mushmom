@@ -8,13 +8,21 @@ import asyncio
 from discord.ext import commands
 from io import BytesIO
 from PIL import Image
-from typing import Optional
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+from typing import Optional, Iterable
 
 from .. import config, mapleio
 from .utils import errors, converters
 from .resources import EMOJIS, ATTACHMENTS
 from ..mapleio.character import Character
 
+
+UTC = timezone.utc
+NYC = ZoneInfo('America/New_York')  # new york timezone
+
+def utc(ts):
+    return ts.replace(tzinfo=UTC)
 
 class Info(commands.Cog):
     def __init__(self, bot):
@@ -236,6 +244,160 @@ class Info(commands.Cog):
             await ctx.send(f'**{char["name"]}**\'s info was updated')
         else:
             raise errors.DataWriteError
+
+    async def _fame(
+            self,
+            ctx: commands.Context,
+            member: discord.Member,
+            amt: int = 1,
+            send_confirm: bool = True
+    ) -> None:
+        """
+        Internal function for adding fame (or defame). Bot owner
+        will circumvent all checks.
+
+        Parameters
+        ----------
+        ctx: commands.Context
+        member: discord.Member
+            the member to fame
+        amt: int
+            the amount to fame. can be negative
+        send_confirm: bool
+            whether or not to send message confirming update
+
+        """
+        if member.id == ctx.author.id:
+            raise errors.SelfFameError
+
+        target = await self.bot.db.get_user(member.id, track=False)
+        if not target:
+            raise errors.DataNotFound
+
+        update = {'fame': target['fame'] + amt}
+
+        # owner can fame whenever
+        if ctx.author.id == self.bot.owner_id:
+            await self.bot.db.set_user(member.id, update)
+        else:
+            # regular user
+            user = await self.bot.db.get_user(ctx.author.id)
+            if not user:
+                ret = await self.bot.db.add_user(ctx.author.id)
+                if not ret.acknowledged:
+                    raise errors.DataWriteError
+                else:
+                    user = await self.bot.db.get_user(ctx.author.id)
+
+            # check if already famed or max fame reached
+            fame_log = FameLog(user['fame_log'])
+
+            if member.id in fame_log:
+                raise errors.AlreadyFamedError
+
+            # negative amount is a defame. cnt is separate for each
+            cnt = len(fame_log.fames() if amt > 1 else fame_log.defames())
+
+            if cnt >= config.core.max_fame_limit:
+                raise errors.MaxFamesReached
+
+            # add fame
+            ret = await self.bot.db.set_user(member.id, update)
+
+            if ret.acknowledged:
+                if amt > 0:
+                    fame_log.add_fame(member.id)
+                else:
+                    fame_log.add_defame(member.id)
+
+                await self.bot.db.set_user(ctx.author.id, {'fame_log': fame_log})
+            else:
+                raise errors.DataWriteError
+
+        if send_confirm:
+            verb = f'{"de" if amt < 0 else ""}famed'
+            await ctx.send(f'You {verb} **{member.display_name}**')
+
+    @commands.command()
+    async def fame(
+            self,
+            ctx: commands.Context,
+            member: discord.Member
+    ) -> None:
+        """
+        Fame someone (by account). You can only fame up to 10 people a
+        day, which will reset at midnight eastern time.
+
+        Parameters
+        ----------
+        ctx: commands.Context
+        member: discord.Member
+            the member to fame
+
+        """
+        await self._fame(ctx, member, 1)
+
+    @commands.command()
+    async def defame(
+            self,
+            ctx: commands.Context,
+            member: discord.Member
+    ) -> None:
+        """
+        Defame someone (by account). You can only defame up to 10
+        people a day, which will reset at midnight eastern time.
+
+        Parameters
+        ----------
+        ctx: commands.Context
+        member: discord.Member
+            the member to defame
+
+        """
+        await self._fame(ctx, member, -1)
+
+    @commands.command()
+    async def test(self, ctx):
+        print(self.bot.owner_id)
+
+class FameLog(list):
+    """
+    List of tuple[int, int, datetime], which is userid, amount,
+    and timestamp. timestamp is output of datetime.utcnow()
+    (i.e. tz unaware, but utc)
+
+    Records that are not from today are removed on init
+
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        utcnow = utc(datetime.utcnow())
+        today = utcnow.astimezone(NYC).date()
+
+        # clean old records. iterate over copy
+        for fame in self[:]:
+            uid, amt, ts = fame
+            if utc(ts).astimezone(NYC).date() != today:
+                self.remove(fame)
+
+    def fames(self):
+        return FameLog(filter(lambda x: x[1]>0, self))  # x[1] is amt
+
+    def defames(self):
+        return FameLog(filter(lambda x: x[1]<0, self))  # x[1] is amt
+
+    def __contains__(self, uid):
+        for fame in self:
+            if fame[0] == uid:
+                return True
+
+        return False
+
+    def add_fame(self, uid):
+        self.append((uid, 1, datetime.utcnow()))
+
+    def add_defame(self, uid):
+        self.append((uid, -1, datetime.utcnow()))
 
 
 def setup(bot):

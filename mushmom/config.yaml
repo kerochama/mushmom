@@ -11,6 +11,7 @@ core:
   default_delay: 10                    # for auto deletion
   delayed_react_time: 2                # default secs to add a delayed reaction
   default_pfp_size: 80                 # pixels
+  max_fame_limit: 10
 
 discord:
   uploads: 901105805628162099          # channel that can be sent to
