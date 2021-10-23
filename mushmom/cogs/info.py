@@ -5,28 +5,37 @@ Character profiles
 import discord
 import asyncio
 
-from discord.ext import commands
+from discord.ext import commands, tasks
 from io import BytesIO
 from PIL import Image
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
-from typing import Optional, Iterable
+from typing import Optional, Union
 
 from .. import config, mapleio
-from .utils import errors, converters
+from .utils import errors, converters, prompts
 from .resources import EMOJIS, ATTACHMENTS
+from .reference import ERRORS
 from ..mapleio.character import Character
 
 
 UTC = timezone.utc
 NYC = ZoneInfo('America/New_York')  # new york timezone
 
+
 def utc(ts):
     return ts.replace(tzinfo=UTC)
+
 
 class Info(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+        # watch info for reactions for 10 minutes
+        self.info_cache = prompts.MessageCache(seconds=600)
+
+        if not self._verify_cache_integrity.is_running:
+            self._verify_cache_integrity.start()
 
     @commands.command()
     async def info(
@@ -124,11 +133,11 @@ class Info(commands.Cog):
 
             if pfp:
                 embed.set_image(url=f'attachment://{filename}')
-                await ctx.send(file=pfp, embed=embed)
+                msg = await ctx.send(file=pfp, embed=embed)
             else:
                 pfp_poo = self.bot.get_attachment_url(*ATTACHMENTS['pfp_poo'])
                 embed.set_image(url=pfp_poo)
-                await ctx.send(embed=embed)
+                msg = await ctx.send(embed=embed)
         else:
             msg = temp_send_task.result()
 
@@ -148,9 +157,14 @@ class Info(commands.Cog):
 
             await msg.edit(embed=embed)
 
+        # start waiting for fame reactions
+        if user:
+            self.info_cache.add(msg, member.id)
+
     @staticmethod
     async def _delayed_send(ctx, delay=3, **kwargs):
         await asyncio.sleep(delay)
+
         return await ctx.send(**kwargs)
 
     @staticmethod
@@ -247,10 +261,10 @@ class Info(commands.Cog):
 
     async def _fame(
             self,
-            ctx: commands.Context,
+            user: discord.Member,
             member: discord.Member,
             amt: int = 1,
-            send_confirm: bool = True
+            channel: Optional[discord.abc.Messageable] = None
     ) -> None:
         """
         Internal function for adding fame (or defame). Bot owner
@@ -258,16 +272,17 @@ class Info(commands.Cog):
 
         Parameters
         ----------
-        ctx: commands.Context
+        user: discord.Member
+            the member faming
         member: discord.Member
             the member to fame
         amt: int
             the amount to fame. can be negative
-        send_confirm: bool
-            whether or not to send message confirming update
+        channel: Optional[discord.abc.Messageable]
+            channel to send confirmation message to. can be None
 
         """
-        if member.id == ctx.author.id:
+        if user.id == member.id and user.id != self.bot.owner_id:
             raise errors.SelfFameError
 
         target = await self.bot.db.get_user(member.id, track=False)
@@ -277,20 +292,20 @@ class Info(commands.Cog):
         update = {'fame': target['fame'] + amt}
 
         # owner can fame whenever
-        if ctx.author.id == self.bot.owner_id:
+        if user.id == self.bot.owner_id:
             await self.bot.db.set_user(member.id, update)
         else:
             # regular user
-            user = await self.bot.db.get_user(ctx.author.id)
-            if not user:
-                ret = await self.bot.db.add_user(ctx.author.id)
+            famer = await self.bot.db.get_user(user.id)
+            if not famer:
+                ret = await self.bot.db.add_user(user.id)
                 if not ret.acknowledged:
                     raise errors.DataWriteError
                 else:
-                    user = await self.bot.db.get_user(ctx.author.id)
+                    famer = await self.bot.db.get_user(user.id)
 
             # check if already famed or max fame reached
-            fame_log = FameLog(user['fame_log'])
+            fame_log = FameLog(famer['fame_log'])
 
             if member.id in fame_log:
                 raise errors.AlreadyFamedError
@@ -310,13 +325,13 @@ class Info(commands.Cog):
                 else:
                     fame_log.add_defame(member.id)
 
-                await self.bot.db.set_user(ctx.author.id, {'fame_log': fame_log})
+                await self.bot.db.set_user(user.id, {'fame_log': fame_log})
             else:
                 raise errors.DataWriteError
 
-        if send_confirm:
+        if channel:
             verb = f'{"de" if amt < 0 else ""}famed'
-            await ctx.send(f'You {verb} **{member.display_name}**')
+            await channel.send(f'You {verb} **{member.display_name}**')
 
     @commands.command()
     async def fame(
@@ -335,7 +350,7 @@ class Info(commands.Cog):
             the member to fame
 
         """
-        await self._fame(ctx, member, 1)
+        await self._fame(ctx.author, member, 1, ctx.channel)
 
     @commands.command()
     async def defame(
@@ -354,11 +369,55 @@ class Info(commands.Cog):
             the member to defame
 
         """
-        await self._fame(ctx, member, -1)
+        await self._fame(ctx.author, member, -1, ctx.channel)
 
-    @commands.command()
-    async def test(self, ctx):
-        print(self.bot.owner_id)
+    @commands.Cog.listener()
+    async def on_reaction_add(
+            self,
+            reaction: discord.Reaction,
+            user: Union[discord.Member, discord.User]
+    ) -> None:
+        """
+        Monitor for fame/defame reactions to info.  Will only monitor
+        for 10 minutes and all fame restrictions apply.  Errors will
+        @mention the user
+        
+        Parameters
+        ----------
+        reaction: discord.Reaction
+            the reaction added
+        user: Union[discord.Member, discord.User]
+            the user that added the reaction
+
+        """
+        if reaction.message not in self.info_cache:
+            return
+
+        member_id = self.info_cache.get(reaction.message)
+        member = (self.bot.get_user(member_id)
+                  or await self.bot.fetch_user(member_id))
+
+        try:
+            if str(reaction) == '\U0001f44D':  # thumbs up
+                cmd = 'fame'
+                await self._fame(user, member, 1)
+            elif str(reaction) == '\U0001f44E':  # thumbs down
+                cmd = 'defame'
+                await self._fame(user, member, -1)
+        except errors.MushmomError as error:
+            err = f'errors.{error.__class__.__name__}'
+            specs = ERRORS[self.__class__.__name__.lower()][cmd][err]
+            msg, ref_cmds = specs.values()
+            ctx = await self.bot.get_context(reaction.message)
+            await self.bot.send_error(ctx, msg, ref_cmds,
+                                      delete_message=False,
+                                      raw_content=f'{user.mention}')
+
+    @tasks.loop(minutes=10)
+    async def _verify_cache_integrity(self):
+        """Clean up stray cached replies"""
+        self.info_cache.verify_cache_integrity()
+
 
 class FameLog(list):
     """
