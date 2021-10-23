@@ -335,7 +335,7 @@ class Mushmom(commands.Bot):
             if not config.core.debug:
                 await prompt.delete()
 
-            self.bot.reply_cache.remove(ctx)
+            self.reply_cache.remove(ctx)
             raise errors.TimeoutError  # handle in command errors
 
         return next(k for k, v in reactions.items() if reaction.emoji == v)
