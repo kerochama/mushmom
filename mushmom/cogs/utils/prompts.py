@@ -3,13 +3,78 @@ Various functions for making prompts
 
 """
 import discord
+import time
 
 from discord.ext import commands
-from typing import Optional
+from typing import Optional, Any
 
 from ... import config
 from . import errors
 from ..resources import EMOJIS
+
+
+class MessageCache:
+    """
+    Maintains a cache of messages sent by bot in response to a
+    command so that they can be referenced/cleaned subsequently.
+    Entries will expire after some time
+
+    Parameters
+    ----------
+    seconds: int
+        the number of seconds to wait before expiring
+
+    """
+    def __init__(self, seconds: int):
+        self.__ttl = seconds
+        self.__cache = {}
+        super().__init__()
+
+    def verify_cache_integrity(self) -> None:
+        """Loop through cache and remove all expired keys"""
+        current_time = time.monotonic()
+        to_remove = [k for (k, (v, t)) in self.__cache.items()
+                     if current_time > (t + self.__ttl)]
+        for k in to_remove:
+            del self.__cache[k]
+
+    def get(self, ctx: commands.Context) -> Optional[discord.Message]:
+        if ctx.message.id in self.__cache:
+            value, t = self.__cache.get(ctx.message.id)
+            current_time = time.monotonic()
+            if (t + self.__ttl) <= current_time:
+                return value
+
+    def add(self, ctx: commands.Context, value: Any) -> None:
+        self.__cache[ctx.message.id] = (value, time.monotonic())
+
+    def remove(self, ctx: commands.Context) -> None:
+        self.__cache.pop(ctx.message.id, None)
+
+    def contains(self, ctx: commands.Context) -> bool:
+        if ctx.message.id in self.__cache:
+            value, t = self.__cache.get(ctx.message.id)
+            current_time = time.monotonic()
+            return current_time <= (t + self.__ttl)
+        else:
+            return False
+
+    def __contains__(self, ctx: commands.Context) -> bool:
+        return self.contains(ctx)
+
+    async def clean_up(
+            self,
+            ctx: commands.Context,
+            delete: bool = not config.core.debug
+    ) -> None:
+        """Delete key if exists. Also delete from discord if message"""
+        value, t = self.__cache.pop(ctx.message.id, (None, None))
+
+        if isinstance(value, discord.Message) and delete:
+            try:
+                await value.delete()
+            except discord.HTTPException:
+                pass
 
 
 async def list_chars(

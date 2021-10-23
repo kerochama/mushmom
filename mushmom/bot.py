@@ -17,7 +17,7 @@ from typing import Optional, Union, Iterable
 
 from . import config, database as db, mapleio
 from .cogs import reference
-from .cogs.utils import errors, checks
+from .cogs.utils import errors, checks, prompts
 from .cogs.resources import EMOJIS
 
 initial_extensions = (
@@ -80,7 +80,7 @@ class Mushmom(commands.Bot):
     def __init__(self, db_client: AsyncIOMotorClient):
         super().__init__(command_prefix=_prefix_callable)
         self.session = None  # set in on_ready
-        self.reply_cache = ReplyCache(seconds=300)
+        self.reply_cache = prompts.MessageCache(seconds=300)
         self.db = db.Database(db_client)
         self.timer = Timer()
 
@@ -499,66 +499,6 @@ class Mushmom(commands.Bot):
         await super().close()
         await self.session.close()
         self.db.close()
-
-
-class ReplyCache:
-    """
-    Maintains a cache of messages sent by bot in response to a
-    command so that they can be referenced/cleaned subsequently.
-    Entries will expire after some time
-
-    Parameters
-    ----------
-    seconds: int
-        the number of seconds to wait before expiring
-
-    """
-    def __init__(self, seconds: int):
-        self.__ttl = seconds
-        self.__cache = {}
-        super().__init__()
-
-    def verify_cache_integrity(self) -> None:
-        """Loop through cache and remove all expired keys"""
-        current_time = time.monotonic()
-        to_remove = [k for (k, (v, t)) in self.__cache.items()
-                     if current_time > (t + self.__ttl)]
-        for k in to_remove:
-            del self.__cache[k]
-
-    def get(self, ctx: commands.Context) -> Optional[discord.Message]:
-        reply, t = self.__cache.get(ctx.message.id, (None, None))
-        current_time = time.monotonic()
-        if reply and (t + self.__ttl) <= current_time:
-            return reply
-
-    def add(self, ctx: commands.Context, reply: discord.Message) -> None:
-        self.__cache[ctx.message.id] = (reply, time.monotonic())
-
-    def remove(self, ctx: commands.Context) -> None:
-        self.__cache.pop(ctx.message.id, None)
-
-    def contains(self, ctx: commands.Context) -> bool:
-        reply, t = self.__cache.get(ctx.message.id, (None, None))
-        current_time = time.monotonic()
-        return reply and current_time <= (t + self.__ttl)
-
-    def __contains__(self, ctx: commands.Context) -> bool:
-        return self.contains(ctx)
-
-    async def clean_up(
-            self,
-            ctx: commands.Context,
-            delete: bool = not config.core.debug
-    ) -> None:
-        """Delete key if exists. Also delete reply from discord"""
-        reply = self.__cache.pop(ctx, None)
-
-        if reply and delete:
-            try:
-                await reply.delete()
-            except discord.HTTPException:
-                pass
 
 
 class Timer:
