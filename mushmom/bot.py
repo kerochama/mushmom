@@ -180,7 +180,9 @@ class Mushmom(commands.Bot):
             text: Optional[str] = None,
             ref_cmds: Optional[Iterable[str]] = None,
             delete_message: bool = not config.core.debug,
-            delay: int = config.core.default_delay
+            delete_error: bool = not config.core.debug,
+            delay: int = config.core.default_delay,
+            raw_content: Optional[str] = None
     ) -> discord.Message:
         """
         Send a message to ctx.channel with an error message. The
@@ -191,13 +193,17 @@ class Mushmom(commands.Bot):
         ----------
         ctx: commands.Context
         text: Optional[str]
-            the message to send
+            the message to send in embed
         ref_cmds: Optional[Iterable[str]]
             list of fully qualified command names to reference
         delete_message: bool
             whether or not to auto delete message
+        delete_error: bool
+            whether or not to auto delete error
         delay: int
             seconds to wait before deleting
+        raw_content: Optional[str]
+            content to pass directly to send, outside embed
 
         Returns
         -------
@@ -227,7 +233,8 @@ class Mushmom(commands.Bot):
             if usages:
                 embed.add_field(name='Commands', value='\n'.join(usages))
 
-        error = await ctx.send(embed=embed, delete_after=delay if delete_message else None)
+        error = await ctx.send(content=raw_content, embed=embed,
+                               delete_after=delay if delete_error else None)
 
         # delete original message after successful send
         if delete_message:
