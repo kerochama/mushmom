@@ -26,9 +26,9 @@ class MessageCache:
 
     """
     def __init__(self, seconds: int):
+        super().__init__()
         self.__ttl = seconds
         self.__cache = {}
-        super().__init__()
 
     def verify_cache_integrity(self) -> None:
         """Loop through cache and remove all expired keys"""
@@ -42,7 +42,7 @@ class MessageCache:
         if message.id in self.__cache:
             value, t = self.__cache.get(message.id)
             current_time = time.monotonic()
-            if (t + self.__ttl) <= current_time:
+            if current_time <= (t + self.__ttl):
                 return value
 
     def add(self, message: discord.Message, value: Any) -> None:
