@@ -59,8 +59,7 @@ class Meta(commands.Cog):
             extension name (filename without .py)
 
         """
-        self.bot.unload_extension(f'{__package__}.{extension}')
-        self.bot.load_extension(f'{__package__}.{extension}')
+        self.bot.reload_extension(f'{__package__}.{extension}')
         await ctx.send(f'Reloaded `cogs.{extension}`')
 
     @commands.command(hidden=True)
