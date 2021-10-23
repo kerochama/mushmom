@@ -103,6 +103,11 @@ class Mushmom(commands.Bot):
         if not self._verify_cache_integrity.is_running:
             self._verify_cache_integrity.start()
 
+        # set owner. assume not team
+        if not self.owner_id:
+            app = await self.application_info()
+            self.owner_id = app.owner.id
+
     async def on_message(self, message: discord.Message) -> None:
         """
         Call emotes if no command found and emote name is passed
