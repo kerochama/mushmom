@@ -397,12 +397,15 @@ class Info(commands.Cog):
         member_id = self.info_cache.get(reaction.message)
         member = (self.bot.get_user(member_id)
                   or await self.bot.fetch_user(member_id))
+        name = (reaction.emoji if isinstance(reaction.emoji, str)
+                else reaction.emoji.name)
 
         try:
-            if str(reaction) == '\U0001f44D':  # thumbs up
+            cmd = None
+            if str(reaction) == '\U0001f44D' or 'thumbsup' in name.lower():
                 cmd, amt = 'fame', 1
                 await self._fame(user, member, 1)
-            elif str(reaction) == '\U0001f44E':  # thumbs down
+            elif str(reaction) == '\U0001f44E' or 'thumbsdown' in name.lower():
                 cmd, amt = 'defame', -1
                 await self._fame(user, member, -1)
 
@@ -411,7 +414,7 @@ class Info(commands.Cog):
                 embed = reaction.message.embeds[0]
                 curr = re.search(r'\d+', embed.fields[1].value).group()
                 _fmt_fame = self._padded_str(f'\u2b50 {int(curr) + amt}', n=12)
-                embed.set_field_at(1, value=_fmt_fame + '\n\u200b')
+                embed.set_field_at(1, name='Fame', value=_fmt_fame + '\n\u200b')
 
                 # attached pfp pops out of embed, so remove
                 await reaction.message.edit(embed=embed, attachments=[])
