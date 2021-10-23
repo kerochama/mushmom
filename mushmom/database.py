@@ -73,7 +73,10 @@ class Database:
 
         return await self.users.find_one({'_id': userid}, projection)
 
-    async def add_user(self, userid: int, char_data: dict) -> InsertOneResult:
+    async def add_user(
+            self, userid: int,
+            char_data: Optional[dict] = None
+    ) -> InsertOneResult:
         """
         Add a new user to database. Only allow setting first character
 
@@ -81,7 +84,7 @@ class Database:
         ----------
         userid: int
             the discord user id
-        char_data: dict
+        char_data: Optional[dict]
             output of Character.to_dict()
 
         Returns
@@ -90,10 +93,11 @@ class Database:
             the result of adding the user
 
         """
+        chars = [char_data] if char_data else []
         data = {
             '_id': userid,
             'default': 0,
-            'chars': [char_data],
+            'chars': chars,
             'fame': 0,
             'fame_log': [],
             'create_time': datetime.utcnow(),
