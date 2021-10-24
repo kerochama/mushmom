@@ -160,12 +160,13 @@ header {
     color: white;
     .header-content {
         position: relative;
-        text-align: center;
-        padding: 100px 15px 100px;
+        text-align: start;
+        padding: 120px 25px 240px;
         width: 100%;
         .header-content-inner {
             h1 {
                 font-weight: 700;
+                font-size: 110px;
                 text-transform: uppercase;
                 margin-top: 0;
                 margin-bottom: 0;
@@ -189,7 +190,7 @@ header {
             -webkit-transform: translateY(-50%);
             -ms-transform: translateY(-50%);
             transform: translateY(-50%);
-            padding: 0 50px;
+            padding: 0px 150px 150px 150px;
             .header-content-inner {
                 max-width: 1000px;
                 margin-left: auto;
@@ -197,8 +198,6 @@ header {
                 p {
                     font-size: 18px;
                     max-width: 80%;
-                    margin-left: auto;
-                    margin-right: auto;
                 }
             }
         }
