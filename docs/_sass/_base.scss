@@ -92,6 +92,9 @@ aside {
             color: darken($theme-1, 10%);
         }
     }
+    .navbar-toggle {
+        border: 0;
+    }
     .nav {
         > li {
             > a,
