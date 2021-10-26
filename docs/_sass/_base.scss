@@ -231,6 +231,27 @@ header {
     margin-top: 0;
 }
 
+div.anchor {
+    display: block;
+    position: relative;
+    top: -192px;
+    visibility: hidden;
+    @media (min-width: 768px) {
+        top: -247px;
+    }
+}
+
+.about-box {
+    max-width: 400px;
+    margin: 50px auto 0;
+    @media (min-width: 992px) {
+        margin: 20px auto 0;
+    }
+    p {
+        margin-bottom: 0;
+    }
+}
+
 .service-box {
     max-width: 400px;
     margin: 50px auto 0;
