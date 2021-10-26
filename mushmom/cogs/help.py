@@ -295,7 +295,7 @@ class Help(commands.Cog):
         ))
         return list(dict.fromkeys(usages))  # ordered dict keys = ordered set
 
-    @commands.command(ignore_extra=False)
+    @commands.command(ignore_extra=False, hidden=True)
     async def help(
             self,
             ctx: commands.Context,
