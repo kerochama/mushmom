@@ -18,6 +18,10 @@ hr.light {
     border-color: white;
 }
 
+hr.hr-color-5 {
+    border-color: $theme-5;
+}
+
 a {
     @include transition-all;
     color: $theme-1;
@@ -65,6 +69,13 @@ p {
 
 section {
     padding: 100px 0;
+}
+
+.top-section {
+    padding: 0px 0px 75px;
+    @media (min-width: 768px) {
+        padding: 50px 0px 100px;
+    }
 }
 
 aside {
@@ -301,6 +312,17 @@ header {
 .no-gutter > [class*='col-'] {
     padding-right:0;
     padding-left:0;
+}
+
+// Text styles
+
+.text-5 {
+    color: darken($theme-5, 10%);
+}
+
+.text-desc {
+    @include sans-serif-font;
+    font-size: 14px;
 }
 
 // Button Styles
