@@ -72,7 +72,7 @@ section {
 }
 
 .top-section {
-    padding: 0px 0px 75px;
+    padding: 0px 0px 800px;
     @media (min-width: 768px) {
         padding: 50px 0px 100px;
     }
@@ -234,22 +234,67 @@ header {
 div.anchor {
     display: block;
     position: relative;
-    top: -192px;
+    top: -170px;
     visibility: hidden;
     @media (min-width: 768px) {
-        top: -247px;
+        top: -233px;
     }
 }
 
 .about-box {
     max-width: 400px;
     margin: 50px auto 0;
-    @media (min-width: 992px) {
-        margin: 20px auto 0;
-    }
     p {
-        margin-bottom: 0;
+        margin: 20px 0 30px;
+        clear: both;
     }
+    @media (min-width: 768px) {
+        margin: 10px auto 0;
+        p {
+            margin: 0;
+        }
+    }
+}
+
+.about-heading {
+    display: flex;
+    align-items: center;
+    @media (min-width: 768px) {
+        flex-direction: column;
+    }
+}
+
+.about-icon {
+    text-align: left;
+    float: left;
+    @media (min-width: 768px) {
+        text-align: center;
+        float: none;
+    }
+}
+
+.about-label {
+    padding-left: 20px;
+    span {
+        display: block;
+    }
+    h3 {
+        margin: 0;
+    }
+    @media (min-width: 768px) {
+        margin: 20px auto 0 0;
+        padding-left: 0;
+        span {
+            display: inline;
+        }
+        h3 {
+            margin: 20px 0px 10px;
+        }
+    }
+}
+
+.about-info {
+    margin-top: 40px;
 }
 
 .service-box {
@@ -338,6 +383,14 @@ div.anchor {
 // Text styles
 
 .text-5 {
+    color: $theme-5;
+}
+
+.text-5-med {
+    color: darken($theme-5, 5%);
+}
+
+.text-5-dark {
     color: darken($theme-5, 10%);
 }
 
