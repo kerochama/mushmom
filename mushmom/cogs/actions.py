@@ -308,14 +308,14 @@ class Actions(commands.Cog):
         wep = Equip(1702554, char.version, char.region)  # scary huge hand
         _pad = 64 + pad  # hard coded wep width
         # see gif. frame one in gif split between 0 and 4 (gif only 4 frames)
-        dur = [100, 100, 100, 300, 100]
+        dur = [75, 75, 175, 75]
 
-        char_args = {'pose': 'swingOF', 'emotion': 'default', 'replace': [wep]}
+        char_args = {'pose': 'swingO3', 'emotion': 'default', 'replace': [wep]}
         obj_args = {'pose': 'stand1', 'emotion': 'pain'}
 
         msg = f'{member.display_name} has been slapped'
         await self.action(ctx, char, char_args, member, obj_args, pad=_pad,
-                          duration=dur, title=msg, desc='_Pow! Pow! Pow!_')
+                          duration=dur, title=msg, desc=f'_Bam! Bam! Bam!_')
 
 
 def setup(bot):
