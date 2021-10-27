@@ -235,6 +235,8 @@ class Character:
             i = next(_iter, None)
             if i is not None:
                 equips[i] = equip
+            else:
+                equips.append(equip)
 
         return equips
 
