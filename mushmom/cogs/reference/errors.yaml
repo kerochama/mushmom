@@ -11,9 +11,19 @@ actions:
     errors.MapleIOError: &apierror
       msg: Could not get maple data. Try again later
       ref_cmds: null
-    errors.DiscordIOError:
+    errors.DiscordIOError: &pfperror
       msg: Error trying to read profile picture. Try again later
       ref_cmds: null
+  slap:
+    commands.MissingRequiredArgument:
+      msg: You didn't choose someone to slap!
+      ref_cmds: null
+    errors.NoMoreItems:
+      <<: *nochars
+    errors.MapleIOError:
+      <<: *apierror
+    errors.DiscordIOError:
+      <<: *pfperror
 
 characters:
   chars:
