@@ -71,7 +71,6 @@ class Server(commands.Cog):
         await ctx.send(msg)
 
     @commands.command(name='set', hidden=True)
-    @commands.has_permissions(administrator=True)
     async def _set(self, ctx: commands.Context, setting: str, *args) -> None:
         """
         Sets specified guild setting
@@ -91,8 +90,10 @@ class Server(commands.Cog):
 
         """
         if setting == 'prefixes':
+            await commands.has_permissions(administrator=True).predicate(ctx)
             await self._set_prefixes(ctx, *args)
         elif setting == 'channel':
+            await commands.has_permissions(administrator=True).predicate(ctx)
             await self._set_channel(ctx)
         elif setting == 'info':
             options = await converters.InfoFlags.convert(ctx, ' '.join(args))
