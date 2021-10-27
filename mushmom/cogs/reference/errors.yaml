@@ -8,6 +8,12 @@ actions:
     errors.NoMoreItems: &nochars
       msg: "No registered characters. To import one use:\n\u200b"
       ref_cmds: [import]
+    errors.DataNotFound: &missingchar
+      msg: "Could not find character. To see your characters use:\n\u200b"
+      ref_cmds: [ chars ]
+    errors.TimeoutError: &nosel
+      msg: No character was selected
+      ref_cmds: null
     errors.MapleIOError: &apierror
       msg: Could not get maple data. Try again later
       ref_cmds: null
@@ -20,6 +26,10 @@ actions:
       ref_cmds: null
     errors.NoMoreItems:
       <<: *nochars
+    errors.DataNotFound:
+      <<: *missingchar
+    errors.TimeoutError:
+      <<: *nosel
     errors.MapleIOError:
       <<: *apierror
     errors.DiscordIOError:
@@ -34,12 +44,10 @@ characters:
   reroll:
     errors.NoMoreItems:
       <<: *nochars
-    errors.DataNotFound: &missingchar
-      msg: "Could not find character. To see your characters use:\n\u200b"
-      ref_cmds: [chars]
-    errors.TimeoutError: &nosel
-      msg: No character was selected
-      ref_cmds: null
+    errors.DataNotFound:
+      <<: *missingchar
+    errors.TimeoutError:
+      <<: *nosel
     errors.DataWriteError: &dberror
       msg: Problem saving settings. Try again later
       ref_cmds: null
