@@ -4,12 +4,13 @@ Character actions
 """
 import discord
 import numpy as np
-import datetime
 
 from discord.ext import commands
 from types import SimpleNamespace
 from PIL import Image, ImageOps, ImageColor
 from io import BytesIO
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from itertools import cycle
 from typing import Optional, Union, Any, Iterable
 
@@ -18,6 +19,10 @@ from .utils import converters, errors
 from .resources import EMOJIS
 from ..mapleio.character import Character
 from ..mapleio.equip import Equip
+
+
+UTC = timezone.utc
+NYC = ZoneInfo('America/New_York')  # new york timezone
 
 
 class Actions(commands.Cog):
@@ -139,7 +144,7 @@ class Actions(commands.Cog):
                               color=config.core.embed_color)
         embed.set_author(name=title)
         embed.set_image(url=f'attachment://{filename}')
-        embed.timestamp = datetime.datetime.utcnow()
+        embed.timestamp = datetime.utcnow().replace(tzinfo=UTC).astimezone(NYC)
         icon = ctx.author.display_avatar.url
         embed.set_footer(text=ctx.author.display_name, icon_url=icon)
         await ctx.send(file=img, embed=embed)
