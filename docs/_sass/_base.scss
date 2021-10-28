@@ -68,7 +68,7 @@ p {
 }
 
 section {
-    padding: 100px 0;
+    padding: 50px 0px 100px;
 }
 
 .top-section {
@@ -297,14 +297,12 @@ div.anchor {
     margin-top: 40px;
 }
 
-.service-box {
-    max-width: 400px;
-    margin: 50px auto 0;
-    @media (min-width: 992px) {
-        margin: 20px auto 0;
-    }
-    p {
-        margin-bottom: 0;
+.demo-box {
+    box-shadow: 0 0 20px #ccc;
+    margin: 0 10%;
+    img, video {
+        display: block;
+        width: 100%;
     }
 }
 
