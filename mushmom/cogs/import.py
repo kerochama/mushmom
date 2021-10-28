@@ -9,7 +9,7 @@ from discord.ext import commands
 from typing import Optional
 
 from .. import config
-from .utils import converters, errors, prompts
+from .utils import converters, errors, io
 from ..mapleio.character import Character
 
 
@@ -82,7 +82,7 @@ class Import(commands.Cog):
 
             if i is not None:  # exists; prompt if want to replace
                 text = f'**{name}** already exists. Replace?'
-                replace = await prompts.confirm_prompt(ctx, text)
+                replace = await io.confirm_prompt(ctx, text)
                 chars[i] = char.to_dict()
 
                 if not replace:
@@ -95,7 +95,7 @@ class Import(commands.Cog):
                         f'{config.core.max_chars} character'
                         f'{"s" if config.core.max_chars > 1 else ""}. \u200b '
                         'Choose a character to replace.')
-                i = await prompts.get_char(ctx, user, text)
+                i = await io.get_char(ctx, user, text)
 
                 if i is None:
                     self.bot.reply_cache.remove(ctx.message)  # clean up select prompt

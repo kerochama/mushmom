@@ -7,7 +7,7 @@ import discord
 from discord.ext import commands
 from typing import Optional
 
-from .utils import errors, prompts
+from .utils import errors, io
 
 
 class Characters(commands.Cog):
@@ -30,7 +30,7 @@ class Characters(commands.Cog):
             raise errors.NoMoreItems
 
         msg = 'Your mushable characters\n\u200b'
-        await prompts.list_chars(ctx, user, msg)
+        await io.list_chars(ctx, user, msg)
 
     @commands.command(aliases=['rr'])
     async def reroll(
@@ -56,7 +56,7 @@ class Characters(commands.Cog):
         if not user or not user['chars']:  # no characters
             raise errors.NoMoreItems
 
-        new_i = await prompts.get_char(ctx, user, name=name)
+        new_i = await io.get_char(ctx, user, name=name)
 
         if new_i is None:  # cancelled
             self.bot.reply_cache.remove(ctx.message)
@@ -98,7 +98,7 @@ class Characters(commands.Cog):
             raise errors.NoMoreItems
 
         curr_i = user['default']
-        del_i = await prompts.get_char(ctx, user, name=name)
+        del_i = await io.get_char(ctx, user, name=name)
 
         if del_i is None:  # cancelled
             self.bot.reply_cache.remove(ctx.message)
@@ -158,7 +158,7 @@ class Characters(commands.Cog):
             raise errors.CharacterAlreadyExists
 
         # get char to replace
-        i = await prompts.get_char(ctx, user, name=name)
+        i = await io.get_char(ctx, user, name=name)
 
         chars[i]['name'] = new_name
         update = {'chars': chars}

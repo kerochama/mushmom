@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo
 from typing import Optional, Union
 
 from .. import config, mapleio
-from .utils import errors, converters, prompts
+from .utils import errors, converters, io
 from .resources import EMOJIS, ATTACHMENTS
 from .reference import ERRORS
 from ..mapleio.character import Character
@@ -33,7 +33,7 @@ class Info(commands.Cog):
         self.bot = bot
 
         # watch info for reactions for 10 minutes
-        self.info_cache = prompts.MessageCache(seconds=600)
+        self.info_cache = io.MessageCache(seconds=600)
 
         if not self._verify_cache_integrity.is_running:
             self._verify_cache_integrity.start()

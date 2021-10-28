@@ -17,7 +17,7 @@ from typing import Optional, Union, Iterable
 
 from . import config, database as db, mapleio
 from .cogs import reference
-from .cogs.utils import errors, checks, prompts
+from .cogs.utils import errors, checks, io
 from .cogs.resources import EMOJIS
 
 initial_extensions = (
@@ -81,7 +81,7 @@ class Mushmom(commands.Bot):
     def __init__(self, db_client: AsyncIOMotorClient):
         super().__init__(command_prefix=_prefix_callable)
         self.session = None  # set in on_ready
-        self.reply_cache = prompts.MessageCache(seconds=300)
+        self.reply_cache = io.MessageCache(seconds=300)
         self.db = db.Database(db_client)
         self.timer = Timer()
 

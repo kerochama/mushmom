@@ -7,7 +7,7 @@ from typing import Optional, TypeVar, Type
 
 from ... import config, mapleio
 from ...mapleio.character import Character
-from . import errors, prompts
+from . import errors, io
 
 
 class SimpleNotConverter(commands.Converter):
@@ -95,7 +95,7 @@ class CharacterConverter(commands.Converter):
             raise errors.NoMoreItems
 
         # passing a name does not prompt anything
-        i = await prompts.get_char(ctx, user, name=arg)
+        i = await io.get_char(ctx, user, name=arg)
         return Character.from_json(user['chars'][i])
 
 
