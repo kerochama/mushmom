@@ -300,6 +300,8 @@ div.anchor {
 .demo-box {
     box-shadow: 0 0 20px #ccc;
     margin: 0 10%;
+    border-radius: 8px;
+    overflow: hidden;
     img, video {
         display: block;
         width: 100%;
