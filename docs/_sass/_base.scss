@@ -68,7 +68,7 @@ p {
 }
 
 section {
-    padding: 50px 0px 100px;
+    padding: 75px 25px 100px;
 }
 
 .top-section {
@@ -76,10 +76,6 @@ section {
     @media (min-width: 768px) {
         padding: 50px 0px 100px;
     }
-}
-
-aside {
-    padding: 50px 0;
 }
 
 .no-padding {
@@ -298,13 +294,37 @@ div.anchor {
 }
 
 .demo-box {
-    box-shadow: 0 0 20px #ccc;
-    margin: 0 10%;
+    margin: 0;
+    @media (min-width: 768px) {
+        margin: 0 5%;
+    }
+}
+
+.demo-video {
+    margin: 0 5%;
     border-radius: 8px;
     overflow: hidden;
     img, video {
         display: block;
         width: 100%;
+    }
+}
+
+.demo-shadow {
+    height: 16px;
+    margin: 15px 0 0;
+    border-radius: 100%;
+    background: #000;
+    opacity: 0.25;
+    filter: blur(8px);
+    -webkit-filter: blur(8px);
+    @media (min-width: 768px) {
+        height: 24px;
+        margin: 20px 0 0;
+    }
+    @media (min-width: 992px) {
+        height: 32px;
+        margin: 25px 0 0;
     }
 }
 
