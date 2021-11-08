@@ -311,20 +311,20 @@ div.anchor {
 }
 
 .demo-shadow {
-    height: 16px;
-    margin: 15px 0 0;
+    height: 12px;
+    margin: 20px 0 0;
     border-radius: 100%;
     background: #000;
     opacity: 0.25;
-    filter: blur(8px);
-    -webkit-filter: blur(8px);
+    filter: blur(4px);
+    -webkit-filter: blur(4px);
     @media (min-width: 768px) {
-        height: 24px;
-        margin: 20px 0 0;
+        height: 18px;
+        margin: 25px 0 0;
     }
     @media (min-width: 992px) {
-        height: 32px;
-        margin: 25px 0 0;
+        height: 24px;
+        margin: 30px 0 0;
     }
 }
 
