@@ -224,7 +224,7 @@ header {
 // Sections
 
 .section-heading {
-    margin-top: 0;
+    margin: 0 0 25px;
 }
 
 div.anchor {
@@ -315,7 +315,7 @@ div.anchor {
     margin: 20px 0 0;
     border-radius: 100%;
     background: #000;
-    opacity: 0.25;
+    opacity: 0.2;
     filter: blur(4px);
     -webkit-filter: blur(4px);
     @media (min-width: 768px) {
