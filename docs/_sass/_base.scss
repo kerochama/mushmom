@@ -64,7 +64,7 @@ p {
 }
 
 .text-faded {
-    color: rgba(white, .7);
+    color: rgba(black, .4);
 }
 
 section {
@@ -224,7 +224,14 @@ header {
 // Sections
 
 .section-heading {
-    margin: 0 0 25px;
+    margin: 0 0 40px;
+    h2 {
+        margin: 10px 0;
+    }
+    h3 {
+        margin: 10px 0;
+        font-weight: 200;
+    }
 }
 
 div.anchor {
@@ -311,15 +318,15 @@ div.anchor {
 }
 
 .demo-shadow {
-    height: 12px;
+    height: 16px;
     margin: 20px 0 0;
     border-radius: 100%;
     background: #000;
     opacity: 0.2;
-    filter: blur(4px);
-    -webkit-filter: blur(4px);
+    filter: blur(6px);
+    -webkit-filter: blur(6px);
     @media (min-width: 768px) {
-        height: 18px;
+        height: 20px;
         margin: 25px 0 0;
     }
     @media (min-width: 992px) {
