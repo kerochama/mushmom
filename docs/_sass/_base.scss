@@ -170,7 +170,7 @@ header {
     width: 100%;
     min-height: auto;
     @include background-cover;
-    background-position: center;
+    background-position: bottom;
     background-image: url('../img/header.jpg');
     text-align: center;
     color: white;
@@ -339,6 +339,54 @@ div.anchor {
     padding: 75px 25px;
 }
 
+#get-started .container {
+    width: 100%;
+    max-width: 1290px;
+    padding: 0 3%;
+}
+
+.cards-box {
+    padding: auto;
+}
+
+.card-wrapper {
+    display: flex;
+    justify-content: center;
+    padding: 10px;
+}
+
+.card {
+    padding: 12px;
+    max-width: 424px;
+    min-height: 460px;
+    background: white;
+    box-shadow: 0 0 15px 0 #ccc;
+    text-align: left;
+    img {
+        margin: 0;
+        max-width: 100%;
+        max-height: 100%;
+    }
+
+}
+
+.card-desc {
+    margin: 25px 5px 5px;
+    h3 {
+        margin: 10px 0 20px;
+        min-height: 30px;
+        font-weight: bold;
+        letter-spacing: -0.02em;
+        @media (min-width: 992px) {
+            min-height: 60px;
+        }
+    }
+}
+
+code {
+    color: #666;
+}
+
 .portfolio-box {
     position: relative;
     display: block;
@@ -428,6 +476,17 @@ div.anchor {
 .text-desc {
     @include sans-serif-font;
     font-size: 14px;
+}
+
+// Toggle links
+.toggle-bar {
+    margin: 20px;
+    a {
+        margin-left: 10px;
+    }
+    a:first-child {
+        margin-left: 0;
+    }
 }
 
 // Button Styles
