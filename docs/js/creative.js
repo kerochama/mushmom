@@ -42,6 +42,53 @@
         }
     })
 
+    // Sliders
+    var sliders = [];
+    $('.single-slider').each(function() {
+        sliders.push(
+            tns({
+                container: this,
+                controls: false,
+                navPosition: 'bottom',
+                loop: false,
+                mouseDrag: true,
+                items: 1,
+            })
+        );
+    });
+
+    // Media query for sliders
+    function collapseSlider(x) {
+        var src = $('.cards-indicators .active').attr('data-slide-to');
+        if (x.matches) {  // big
+            $('#cards').carousel(src % 2 ? 1 : 0);
+            $('.cards-indicators .btn').each(function(i) {
+                $(this).attr('data-slide-to', i);
+            });
+        } else {  // small
+            sliders[src % 2].goTo(0);
+            $('#cards').carousel(src % 2 ? 3 : 2);
+            $('.cards-indicators .btn').each(function(i) {
+                $(this).attr('data-slide-to', i+2);
+            });
+        }
+    }
+
+    var cond = window.matchMedia('(min-width: 768px)');
+    collapseSlider(cond);
+    cond.addListener(collapseSlider);
+
+    // Source toggle
+    $('#get-started .btn').click(function() {
+        $('#get-started .btn').removeClass('active');
+        $(this).addClass('active');
+        setTimeout(function() {  // animation off screen
+            sliders.forEach(function(slider) {
+                slider.goTo(0);
+            });
+        }, 1000);
+    });
+
     // Initialize WOW.js Scrolling Animations
     new WOW().init();
 

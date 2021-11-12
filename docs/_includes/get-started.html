@@ -1,0 +1,52 @@
+<section id="get-started" class="bg-tertiary">
+    <div class="container text-center">
+        <div class="row">
+            <div class="section-heading col-xl-6 col-xl-offset-3">
+                <h2>Get Started</h2>
+                <h3>so are you cute yet</h3>
+            </div>
+        </div>
+
+        <div id="cards" class="row carousel slide" data-interval="false">
+            <div class="cards-indicators btn-group" role="group" aria-label="Source">
+                <button type="button" class="btn active ind-url"
+                        data-target="#cards" data-slide-to="0">From URL</button>
+                <button type="button" class="btn ind-json"
+                        data-target="#cards" data-slide-to="1">From JSON</button>
+            </div>
+
+            <!-- Wrapper for slides -->
+            <div class="carousel-inner" role="listbox">
+                <div class="item active wide instruct-url">
+                    {% include _get-started/step-1-url.html %}
+                    {% include _get-started/step-2-url.html %}
+                    {% include _get-started/step-3.html %}
+                    {% include _get-started/step-4.html %}
+                </div>
+                <div class="item wide instruct-json">
+                    {% include _get-started/step-1-json.html %}
+                    {% include _get-started/step-2-json.html %}
+                    {% include _get-started/step-3.html %}
+                    {% include _get-started/step-4.html %}
+                </div>
+                <div class="item narrow instruct-url">
+                    <div class="single-slider">
+                        <div>{% include _get-started/step-1-url.html %}</div>
+                        <div>{% include _get-started/step-2-url.html %}</div>
+                        <div>{% include _get-started/step-3.html %}</div>
+                        <div>{% include _get-started/step-4.html %}</div>
+                    </div>
+                </div>
+                <div class="item narrow instruct-json">
+                    <div class="single-slider">
+                        <div>{% include _get-started/step-1-json.html %}</div>
+                        <div>{% include _get-started/step-2-json.html %}</div>
+                        <div>{% include _get-started/step-3.html %}</div>
+                        <div>{% include _get-started/step-4.html %}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>

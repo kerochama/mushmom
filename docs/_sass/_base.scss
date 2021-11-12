@@ -339,13 +339,40 @@ div.anchor {
     padding: 75px 25px;
 }
 
-#get-started .container {
-    width: 100%;
-    max-width: 1290px;
-    padding: 0 3%;
+#get-started {
+    .container {
+        width: 100%;
+        max-width: 1290px;
+        padding: 0 3%;
+    }
+    .btn-group {
+        margin: 0 0 20px;
+    }
+    .btn {
+        @include serif-font;
+        padding: 0;
+        margin: 0 10px;
+        border-radius: 0;
+        color: $theme-1;
+        background: none;
+        text-transform: none;
+        font-weight: 400;
+        border-bottom: 2px solid rgba(0, 0, 0, 0);
+    }
+    .btn:hover,
+    .btn.active {
+        border: 0;
+        border-bottom: 2px solid $theme-1;
+        box-shadow: none;
+    }
+    .btn:hover,
+    .btn:focus {
+        color: #d67609;
+        outline: 0;
+    }
 }
 
-.cards-box {
+#cards {
     padding: auto;
 }
 
@@ -386,6 +413,20 @@ div.anchor {
 
 code {
     color: #666;
+}
+
+.tns-nav button {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      margin: 0 5px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .7);
+      padding: 0;
+      border: 0;
+      &.tns-nav-active {
+        background: #bbb;
+      }
 }
 
 .portfolio-box {
