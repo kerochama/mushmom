@@ -171,7 +171,7 @@ header {
     min-height: auto;
     @include background-cover;
     background-position: bottom;
-    background-image: url('../img/header.jpg');
+    background-image: url('../img/header-small.jpg');
     text-align: center;
     color: white;
     .header-content {
@@ -201,6 +201,7 @@ header {
     }
     @media (min-width: 768px) {
         min-height: 100%;
+        background-image: url('../img/header.jpg');
         .header-content {
             position: absolute;
             top: 50%;
