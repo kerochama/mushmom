@@ -22,6 +22,12 @@ hr.hr-color-5 {
     border-color: $theme-5;
 }
 
+hr.footer {
+    border: 0;
+    border-bottom: 1px solid #ddd;
+    max-width: 95%;
+}
+
 a {
     @include transition-all;
     color: $theme-1;
@@ -350,8 +356,7 @@ div.anchor {
         margin: 0 0 20px;
     }
     .btn {
-        @include serif-font;
-        padding: 0;
+        padding: 6px;
         margin: 0 10px;
         border-radius: 0;
         color: $theme-1;
@@ -426,7 +431,7 @@ code {
       padding: 0;
       border: 0;
       &.tns-nav-active {
-        background: #bbb;
+          background: #bbb;
       }
 }
 
@@ -434,6 +439,79 @@ code {
     h2 {
         margin: 0 auto 20px;
     }
+}
+
+// Footer
+
+footer {
+    @include sans-serif-font;
+    font-size: 12px;
+    padding: 0px 25px;
+    .container {
+        width: 100%;
+        max-width: 1290px;
+        &.content {
+            padding: 30px 3% 10px;
+        }
+        &.copyright {
+            padding: 0 3% 30px;
+            color: #aaa;
+        }
+    }
+    h5 {
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+    ul {
+        list-style: none;
+        padding-inline-start: 0;
+    }
+    .links h5 {
+        margin-top: 30px;
+        @media (min-width: 768px) {
+            margin-top: 0;
+        }
+    }
+    .links a {
+        margin-left: 1px;
+        color: #999;
+        &:hover,
+        &:focus {
+            color: $theme-1;
+        }
+    }
+}
+
+.logos-wrapper {
+    display: flex;
+}
+
+.logo-box {
+    display: inline-block;
+    padding-right: 5px;
+}
+
+.logo-icon {
+    font-size: 14px;
+    color: white;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    text-align: center;
+    line-height: 30px;
+}
+
+.logo-discord {
+    background: #5865f2;
+}
+
+.logo-gmail {
+    background: #55a954;
+}
+
+.logo-github {
+    color: #333;
+    font-size: 30px;
 }
 
 // Bootstrap Overrides
