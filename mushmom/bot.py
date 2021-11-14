@@ -81,6 +81,12 @@ class Mushmom(commands.Bot):
     def __init__(self, db_client: AsyncIOMotorClient):
         super().__init__(command_prefix=_prefix_callable)
         self.session = None  # set in on_ready
+        self.user_agent = '{bot}/{version} {default}'.format(
+            bot=config.core.bot_name,
+            version=config.core.version,
+            default=aiohttp.http.SERVER_SOFTWARE
+        )
+
         self.reply_cache = io.MessageCache(seconds=300)
         self.db = db.Database(db_client)
         self.timer = Timer()
@@ -98,7 +104,12 @@ class Mushmom(commands.Bot):
         print(f'{self.user} is ready to mush!')
 
         if not self.session:
-            self.session = aiohttp.ClientSession(loop=self.loop)
+            self.session = aiohttp.ClientSession(
+                loop=self.loop,
+                headers={
+                    'User-Agent': self.user_agent
+                }
+            )
 
         if not self._verify_cache_integrity.is_running:
             self._verify_cache_integrity.start()
