@@ -129,11 +129,12 @@ class Mushmom(commands.Bot):
 
         """
         ctx = await self.get_context(message)
+        cmd = ctx.command
         self.timer.start(ctx)
 
         # not handled by other commands
-        if (ctx.prefix and not ctx.command
-                and all([await check(ctx) for check in self._checks])):
+        if (ctx.prefix and not cmd
+                and all([await c(ctx) for c in self._checks])):
             no_prefix = message.content[len(ctx.prefix):]
             args = no_prefix.split(' ')
             cmd = args.pop(0)
@@ -144,9 +145,15 @@ class Mushmom(commands.Bot):
 
             message.content = f'{ctx.prefix}emote {no_prefix}'
             new_ctx = await self.get_context(message)
+            cmd = new_ctx.command
             await self.invoke(new_ctx)
         else:
             await self.process_commands(message)
+
+        # track command calls
+        if config.database.track and cmd and not cmd.hidden:
+            await self.db.track(
+                ctx.guild.id, ctx.author.id, cmd.qualified_name)
 
         self.timer.stop(ctx)
 

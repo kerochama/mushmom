@@ -19,6 +19,7 @@ discord:
 
 database:                              # mongodb
   name: mushmom
+  track: True                          # keep count of command calls
 
 mapleio:
   api_url: https://maplestory.io/api

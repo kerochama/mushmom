@@ -3,7 +3,7 @@ Functions related to database connection.  Currently using MongoDB,
 but could be replaced easily as long as functionality is the same
 
 """
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
+from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.results import InsertOneResult, UpdateResult
 from datetime import datetime
 from typing import Optional, Union
@@ -46,7 +46,6 @@ class Database:
             self,
             userid: int,
             projection: Optional[Union[list[str], dict[str, bool]]] = None,
-            track: bool = True
     ) -> Optional[dict]:
         """
         Returns data for user
@@ -58,9 +57,6 @@ class Database:
         projection: Optional[Union[list[str], dict[str, bool]]]
             a list of keys to be returned or a dict with {key: bool}
             (True to include, False to exclude)
-        track: bool
-            whether or not to track this call. mostly used to prevent
-            double counting
 
         Returns
         -------
@@ -68,9 +64,6 @@ class Database:
             found user data or None
 
         """
-        if track:
-            await self.update_access(self.users, userid)
-
         return await self.users.find_one({'_id': userid}, projection)
 
     async def add_user(
@@ -102,7 +95,6 @@ class Database:
             'fame_log': [],
             'create_time': datetime.utcnow(),
             'update_time': datetime.utcnow(),
-            'n_access': 1
         }
 
         return await self.users.insert_one(data)
@@ -111,7 +103,6 @@ class Database:
             self,
             userid: int,
             data: dict,
-            track: bool = False
     ) -> UpdateResult:
         """
         Set/update user data fields
@@ -122,9 +113,6 @@ class Database:
             the discord user id
         data: dict
             keys are fields to update and values are new values
-        track: bool
-            whether or not to track this call. mostly used to prevent
-            double counting
 
         Returns
         -------
@@ -142,46 +130,12 @@ class Database:
         data.pop('userid', None)
         update = {'$set': data}
 
-        # update tracking
-        if track:
-            data['update_time'] = datetime.utcnow()  # note: updates reference
-            update['$inc'] = {'n_access': 1}
-
         return await self.users.update_one({'_id': userid}, update)
-
-    @staticmethod
-    async def update_access(
-            collection: AsyncIOMotorCollection,
-            id: int
-    ) -> UpdateResult:
-        """
-        Updates access tracking. For now, just keeping track of
-        overall times a user/guild accesses the database
-
-        Parameters
-        ----------
-        collection: AsyncIOMotorCollection
-            collection that contains record to increment
-        id: int
-            the discord user or guild id
-
-        Returns
-        -------
-        UpdateResult
-            result of incrementing access
-
-        """
-        update = {
-            '$set': {'update_time': datetime.utcnow()},
-            '$inc': {'n_access': 1}
-        }
-        return await collection.update_one({'_id': id}, update)
 
     async def get_guild(
             self,
             guildid: int,
             projection: Optional[Union[list[str], dict[str, bool]]] = None,
-            track: bool = True
     ) -> Optional[dict]:
         """
         Returns data for guild
@@ -193,9 +147,6 @@ class Database:
         projection: Optional[Union[list[str], dict[str, bool]]]
             a list of keys to be returned or a dict with {key: bool}
             (True to include, False to exclude)
-        track: bool
-            whether or not to track this call. mostly used to prevent
-            double counting
 
         Returns
         -------
@@ -203,9 +154,6 @@ class Database:
             found guild data or None
 
         """
-        if track:
-            await self.update_access(self.guilds, guildid)
-
         return await self.guilds.find_one({'_id': guildid}, projection)
 
     async def add_guild(
@@ -235,7 +183,6 @@ class Database:
             'channel': None,
             'create_time': datetime.utcnow(),
             'update_time': datetime.utcnow(),
-            'n_access': 1
         }
         _data.update(data or {})
 
@@ -245,7 +192,6 @@ class Database:
             self,
             guildid: int,
             data: dict,
-            track: bool = False
     ) -> UpdateResult:
         """
         Set/update guild data fields
@@ -256,9 +202,6 @@ class Database:
             the discord guild id
         data: dict
             keys are fields to update and values are new values
-        track: bool
-            whether or not to track this call. mostly used to prevent
-            double counting
 
         Returns
         -------
@@ -276,12 +219,41 @@ class Database:
         data.pop('guildid', None)
         update = {'$set': data}
 
-        # update tracking
-        if track:
-            data['update_time'] = datetime.utcnow()  # note: updates reference
-            update['$inc'] = {'n_access': 1}
-
         return await self.guilds.update_one({'_id': guildid}, update)
+
+    async def track(
+            self,
+            guildid: int,
+            userid: int,
+            command: str
+    ) -> tuple[UpdateResult, UpdateResult]:
+        """
+        Keep track of command calls
+
+        Parameters
+        ----------
+        guildid: int
+            the discord user id
+        userid: int
+            the discord user id
+        command: str
+            the command to track
+
+        Returns
+        -------
+        tuple[UpdateResult, UpdateResult]
+            tuple of results for updating the guild and user
+
+        """
+        update = {
+            '$set': {'update_time': datetime.utcnow()},
+            '$inc': {f'commands.{command}': 1}
+        }
+
+        return (
+            await self.guilds.update_one({'_id': guildid}, update),
+            await self.users.update_one({'_id': userid}, update)
+        )
 
     def close(self):  # not coroutine
         self.client.close()

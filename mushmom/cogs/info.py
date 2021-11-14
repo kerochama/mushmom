@@ -287,7 +287,7 @@ class Info(commands.Cog):
         if user.id == member.id and user.id != self.bot.owner_id:
             raise errors.SelfFameError
 
-        target = await self.bot.db.get_user(member.id, track=False)
+        target = await self.bot.db.get_user(member.id)
         if not target:
             raise errors.DataNotFound
 
