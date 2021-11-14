@@ -455,8 +455,19 @@ code {
     vertical-align: middle;
 }
 
-.modal-body {
-    padding: 5px 10px;
+.modal-content {
+    background: transparent;
+    box-shadow: none;
+    border: 0;
+    .close,
+     {
+        color: white;
+    }
+
+}
+
+.modal-backdrop.in {
+    opacity: 0.85;
 }
 
 .img-container {
@@ -477,7 +488,7 @@ code {
 }
 
 .img-preview {
-    margin: 5px 5px 10px;
+    padding: 5px;
 }
 
 .call-to-action {
