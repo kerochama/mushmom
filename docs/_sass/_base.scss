@@ -435,6 +435,51 @@ code {
       }
 }
 
+.modal {
+  text-align: center;
+  padding: 0!important;
+}
+
+.modal:before {
+  content: '';
+  display: inline-block;
+  height: 100%;
+  vertical-align: middle;
+  margin-right: -4px; /* Adjusts for spacing */
+}
+
+.modal-dialog {
+    width: fit-content;
+    display: inline-block;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.modal-body {
+    padding: 5px 10px;
+}
+
+.img-container {
+    overflow: hidden;
+}
+
+.img-pop {
+    cursor: pointer;
+    -webkit-transform: scale(1);
+    transform: scale(1);
+    -webkit-transition: .2s ease-in-out;
+    transition: .2s ease-in-out;
+}
+
+.img-pop:hover {
+    -webkit-transform: scale(1.05);
+    transform: scale(1.05);
+}
+
+.img-preview {
+    margin: 5px 5px 10px;
+}
+
 .call-to-action {
     h2 {
         margin: 0 auto 20px;

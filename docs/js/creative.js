@@ -89,6 +89,13 @@
         }, 1000);
     });
 
+    // Modal preview
+    $('.narrow .card img').removeClass('img-pop');  // no modal on mobile
+    $('.img-pop').click(function() {
+        $('.img-preview').attr('src', $(this).attr('src'));
+        $('#img-modal').modal('show');
+    });
+
     // Initialize WOW.js Scrolling Animations
     new WOW().init();
 
