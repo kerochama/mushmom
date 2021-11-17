@@ -16,18 +16,6 @@ class Server(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def hello(self, ctx: commands.Context) -> None:
-        """
-        Say hello!
-
-        Parameters
-        ----------
-        ctx: commands.Context
-
-        """
-        await ctx.send('hai')
-
-    @commands.command()
     async def prefixes(self, ctx: commands.Context) -> None:
         """
         Send the current list of prefixes

@@ -23,6 +23,7 @@ from .cogs.resources import EMOJIS
 initial_extensions = (
     'cogs.meta',
     'cogs.help',
+    'cogs.self',
     'cogs.info',
     'cogs.actions',
     'cogs.characters',
