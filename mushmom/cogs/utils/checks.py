@@ -13,7 +13,7 @@ global_commands = (  # commands that will bypass channel check
 )
 
 global_cogs = (
-    'Actions'
+    'Actions',
 )
 
 
