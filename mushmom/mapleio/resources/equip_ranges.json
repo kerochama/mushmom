@@ -113,6 +113,16 @@
             "subCategory": "Hair",
             "lowItemId": 30000,
             "highItemId": 49999
+        },
+        {
+            "subCategory": "Face",
+            "lowItemId": 50000,
+            "highItemId": 59999
+        },
+        {
+            "subCategory": "Hair",
+            "lowItemId": 60000,
+            "highItemId": 69999
         }
     ],
     "One-Handed Weapon": [
