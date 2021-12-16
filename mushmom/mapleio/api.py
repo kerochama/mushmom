@@ -140,7 +140,12 @@ async def get_emote(
 
     """
     emotion = emotion or char.emotion
-    u = char.url(emotion=emotion, zoom=zoom, remove=['Cape', 'Weapon'])
+    u = char.url(
+        pose='stand1',
+        emotion=emotion,
+        zoom=zoom,
+        remove=['Cape', 'Weapon']
+    )
 
     async with session.get(u) as r:
         if r.status == 200:
