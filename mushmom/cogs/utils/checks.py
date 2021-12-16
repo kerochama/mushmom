@@ -56,7 +56,7 @@ async def in_guild_channel(ctx: commands.Context) -> bool:
     cog = ctx.command.cog_name if ctx.command else None
     
     # no guild channel set or in allowed globals
-    if (not guild or not guild['channel']
+    if (not guild or not guild['channel'] or not command
             or command in global_commands or cog in global_cogs):
         return True
     else:
