@@ -6,7 +6,7 @@ import discord
 import inspect
 
 from discord.ext import commands
-from typing import Optional
+from typing import Optional, Union
 
 from .. import config
 from .utils import converters, errors, io
@@ -83,6 +83,7 @@ class Import(commands.Cog):
             if i is not None:  # exists; prompt if want to replace
                 text = f'**{name}** already exists. Replace?'
                 replace = await io.confirm_prompt(ctx, text)
+                self.copy_info(chars[i], char)
                 chars[i] = char.to_dict()
 
                 if not replace:
@@ -102,6 +103,7 @@ class Import(commands.Cog):
                     await ctx.send(f'**{name}** was not saved')
                     return
                 else:
+                    self.copy_info(chars[i], char)
                     chars[i] = char.to_dict()
 
             # update database
@@ -146,6 +148,26 @@ class Import(commands.Cog):
 
         err = await self.bot.send_error(ctx, msg, ref_cmds=['import'])
         self.bot.reply_cache.add(ctx.message, err)  # stop default error handler
+
+    @staticmethod
+    def copy_info(source: Union[Character, dict], target: Character) -> None:
+        """
+        Copy char info from source to target
+
+        Parameters
+        ----------
+        source: Union[Character, dict]
+            the source character
+        target: Character
+            the target character
+
+        """
+        if isinstance(source, dict):
+            source = Character.from_json(source)
+
+        for flag in converters.InfoFlags.get_flags().values():
+            value = getattr(source, flag.attribute)
+            setattr(target, flag.attribute, value)
 
     async def cog_after_invoke(self, ctx: commands.Context) -> None:
         # unregister reply cache if successful
