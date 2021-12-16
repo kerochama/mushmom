@@ -60,7 +60,10 @@ class Sprites(commands.Cog):
 
         if data:
             if not config.core.debug:
-                await ctx.message.delete()  # delete original message
+                try:
+                    await ctx.message.delete()  # delete original message
+                except commands.MissingPermissions:
+                    pass
 
             img = discord.File(fp=BytesIO(data),
                                filename=f'{name}_{emotion}_{pose}.png')

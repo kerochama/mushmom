@@ -55,7 +55,10 @@ class Emotes(commands.Cog):
 
         if data:
             if not config.core.debug:
-                await ctx.message.delete()  # delete original message
+                try:
+                    await ctx.message.delete()  # delete original message
+                except commands.MissingPermissions:
+                    pass
 
             filename = f'{name}_{emote}.png'
             img = discord.File(fp=BytesIO(data), filename=filename)

@@ -266,7 +266,10 @@ class Mushmom(commands.Bot):
 
         # delete original message after successful send
         if delete_message:
-            await ctx.message.delete(delay=delay)
+            try:
+                await ctx.message.delete(delay=delay)
+            except commands.MissingPermissions:
+                pass
 
         return error
 
@@ -368,7 +371,10 @@ class Mushmom(commands.Bot):
         except asyncio.TimeoutError:
             # delete immediately so main error handler runs
             if not config.core.debug:
-                await prompt.delete()
+                try:
+                    await prompt.delete()
+                except commands.MissingPermissions:
+                    pass
 
             self.reply_cache.remove(ctx.message)
             raise errors.TimeoutError  # handle in command errors
