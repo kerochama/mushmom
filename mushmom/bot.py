@@ -181,6 +181,9 @@ class Mushmom(commands.Bot):
             self.reply_cache.remove(ctx.message)
             return
 
+        if isinstance(error, commands.CommandNotFound):
+            return  # ignore
+
         cmd = ctx.command.qualified_name
         cog = ctx.command.cog_name.lower()
         err_ns = ('errors' if isinstance(error, errors.MushmomError)
