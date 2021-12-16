@@ -33,8 +33,8 @@ class Character:
         Enum value of ears from maplestory.io representation
     equips: list[Equip]
         equips worn by character
-    pose: str
-        default pose
+    action: str
+        default action/pose
     emotion: str
         default emotion
     job: str
@@ -57,12 +57,17 @@ class Character:
         self.equips = []
 
         # info
-        self.pose = 'stand1'
+        self.action = 'stand1'
         self.emotion = 'default'
         self.job = None
         self.game = None
         self.server = None
         self.guild = None
+
+    @property
+    def pose(self):
+        """Alias action"""
+        return self.action
 
     @classmethod
     def from_json(cls, data: Union[str, dict]) -> Character:
@@ -90,7 +95,7 @@ class Character:
 
         char = Character()
         char.name = data.get('name')
-        char.pose = data.get('action', 'stand1')
+        char.action = data.get('action', 'stand1')
         char.emotion = data.get('emotion', 'default')
         char.skin = Skin.get(data.get('skin', 2005))  # default green
         char.ears = Ears.get(data.get('mercEars', False),
@@ -186,7 +191,7 @@ class Character:
             char.equips = cls._validate_equips(equips)
 
         # pose should be after item_str
-        char.pose = path[item_i+1]
+        char.action = path[item_i+1]
 
         return char
 
@@ -359,7 +364,7 @@ class Character:
                 eq.type: eq.to_dict(map={'itemId': 'id'}, exclude=['type'])
                 for eq in self.equips
             },
-            'action': self.pose,
+            'action': self.action,
             'emotion': self.emotion,
             'job': self.job,
             'game': self.game,

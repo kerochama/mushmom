@@ -165,7 +165,7 @@ class InfoFlags(StrictFlagConverter, delimiter=' '):
     name: Optional[str] = commands.flag(
         name='--name', aliases=['-n'], default=None)
     action: Optional[PoseConverter] = commands.flag(
-        name='--pose', aliases=['-p'], default=None)
+        name='--action', aliases=['-a', '--pose', '-p'], default=None)
     emotion: Optional[EmotionConverter] = commands.flag(
         name='--emotion', aliases=['-e'], default=None)
     job: Optional[JobConverter] = commands.flag(
