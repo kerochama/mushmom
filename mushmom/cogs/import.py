@@ -150,9 +150,12 @@ class Import(commands.Cog):
         self.bot.reply_cache.add(ctx.message, err)  # stop default error handler
 
     @staticmethod
-    def copy_info(source: Union[Character, dict], target: Character) -> None:
+    def copy_info(
+            source: Union[Character, dict],
+            target: Character
+    ) -> None:
         """
-        Copy char info from source to target
+        Copy char info from source to target. Does not copy pose/emotion
 
         Parameters
         ----------
@@ -166,8 +169,9 @@ class Import(commands.Cog):
             source = Character.from_json(source)
 
         for flag in converters.InfoFlags.get_flags().values():
-            value = getattr(source, flag.attribute)
-            setattr(target, flag.attribute, value)
+            if flag.attribute not in ['action', 'emotion']:
+                value = getattr(source, flag.attribute)
+                setattr(target, flag.attribute, value)
 
     async def cog_after_invoke(self, ctx: commands.Context) -> None:
         # unregister reply cache if successful
