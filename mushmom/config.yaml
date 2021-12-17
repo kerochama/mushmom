@@ -5,7 +5,7 @@ core:
   bot_name: Mushmom                         # change bot class name and errors
   version: 1.0.0
   hook_name: Mushmom
-  default_prefix: "mush "
+  default_prefix: ["mush ", "Mush "]
   embed_color: 0xf49c00                     # current color matching pfp
   embed_bg_color: 0x2f3136
   max_chars: 5                              # reactions will break if > 9

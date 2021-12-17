@@ -52,7 +52,8 @@ async def _prefix_callable(
         list of prefixes
 
     """
-    default = [config.core.default_prefix]
+    _default = config.core.default_prefix
+    default = [_default] if isinstance(_default, str) else _default
     guild = await bot.db.get_guild(message.guild.id)
     prefixes = default + (guild['prefixes'] if guild else [])
     return commands.when_mentioned_or(*prefixes)(bot, message)
