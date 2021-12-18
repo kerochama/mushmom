@@ -361,7 +361,7 @@ class Character:
             'illiumEars': self.ears is Ears.FLORA,
             'highFloraEars': self.ears is Ears.HIGH_FLORA,
             'selectedItems': {
-                eq.type: eq.to_dict(map={'itemId': 'id'}, exclude=['type'])
+                eq.type: eq.to_dict(key_map={'itemid': 'id', 'type': None})
                 for eq in self.equips
             },
             'action': self.action,

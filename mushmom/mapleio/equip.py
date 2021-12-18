@@ -17,6 +17,8 @@ EQUIP_TYPES = [
     for d in data
 ]
 
+DEFAULT_HSV = namedtuple('hsv', 'h s v')(0, 1, 1)
+
 
 class Equip:
     """
@@ -70,17 +72,15 @@ class Equip:
 
     def to_dict(
             self,
-            map: dict[str, str] = None,
-            exclude: Optional[Iterable[str]] = None
+            key_map: Optional[dict[str, str]] = None
     ) -> dict[str, Any]:
         """
+        dict representation of equip
 
         Parameters
         ----------
-        map: dict[str, str]
-            mapping of key to new key
-        exclude: Optional[Iterable[str]]
-            list of keys to exclude
+        key_map: Optional[dict[str, Optional[str]]]
+            mapping of attribute to dict key. Passing None as value removes key
 
         Returns
         -------
@@ -88,20 +88,23 @@ class Equip:
             dict representation of equip
 
         """
-        d = {'type': self.type, 'itemId': self.itemid, 'version': self.version}
+        _key_map = {
+            'type': 'type',
+            'itemid': 'itemId',
+            'version': 'version',
+            'region': 'region',
+            '_name': 'name'
+        }
+        _key_map.update(key_map or {})
+        _key_map = {k: v for k, v in _key_map.items() if v is not None}
 
-        if self.region != 'GMS':
-            d['region'] = self.region
+        d = {v: getattr(self, k) for k, v in _key_map.items()
+             if getattr(self, k) is not None}
 
-        if self._name:
-            d['name'] = self._name
+        if self.region == 'GMS':
+            d.pop('region')
 
-        # pop any excluded keys
-        for k in exclude or []:
-            d.pop(k, None)
-
-        map = map or {}
-        return {map[k] if k in map else k: v for k, v in d.items()}
+        return d
 
     @classmethod
     def get_equip_type(cls, itemid: Union[int, str]) -> str:
@@ -146,3 +149,44 @@ class Equip:
                 for k, v in self.__dict__.items() if v}
         return 'Equip({})'.format(', '.join(['{}={}'.format(k, v)
                                              for k, v in args.items()]))
+
+
+class BeautyItem(Equip):
+    """
+    Representation of a maplestory/maplestory.io hair or face. Adds HSV
+    color attributes to simulate mix coupons
+
+    Attributes
+    ----------
+    hsv: tuple[Union[int, str, None], ...]
+        the hsv value
+
+    """
+    def __init__(
+            self,
+            itemid: Union[int, str],
+            version: str,
+            region: str = 'GMS',
+            name: Optional[str] = None,
+            type: Optional[str] = None,
+            hsv: tuple[Union[int, str, None], ...] = DEFAULT_HSV
+    ):
+        super().__init__(itemid, version, region, name, type)
+        self.hsv = hsv
+        self.hue = self.hsv[0]
+        self.saturation = self.hsv[1]
+        self.value = self.hsv[2]
+        self.brightness = self.value  # alias
+
+    def to_dict(
+            self,
+            key_map: Optional[dict[str, str]] = None
+    ) -> dict[str, Any]:
+        """See Equip. add hue, saturation, value"""
+        _key_map = {
+            'hue': 'hue',
+            'saturation': 'saturation',
+            'brightness': 'brightness'
+        }
+        _key_map.update(key_map or {})
+        super().to_dict(_key_map)
