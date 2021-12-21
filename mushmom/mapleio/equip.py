@@ -147,7 +147,9 @@ class Equip:
         return cls.get_equip_type(itemid) is not None
 
     def __repr__(self):
-        args = {k.strip('_'): v if isinstance(v, int) else '"{}"'.format(v.replace('"', '\\"'))
+        args = {k.strip('_'): v
+                if isinstance(v, (int, float))
+                else '"{}"'.format(v.replace('"', '\\"'))
                 for k, v in self.__dict__.items() if v}
         return 'Equip({})'.format(', '.join(['{}={}'.format(k, v)
                                              for k, v in args.items()]))
