@@ -4,7 +4,7 @@ in order to read in and recreate API calls
 
 """
 from collections import namedtuple
-from typing import Optional, Union, Any, Iterable
+from typing import Optional, Union, Any
 
 from . import resources, api
 
@@ -172,11 +172,25 @@ class BeautyItem(Equip):
             hsv: tuple[Union[int, str, None], ...] = DEFAULT_HSV
     ):
         super().__init__(itemid, version, region, name, type)
-        self.hsv = hsv
         self.hue = self.hsv[0]
         self.saturation = self.hsv[1]
         self.value = self.hsv[2]
-        self.brightness = self.value  # alias
+
+    @property
+    def hsv(self):
+        return self.hue, self.saturation, self.value
+
+    @hsv.setter
+    def hsv(self, val):
+        self.hue, self.saturation, self.value = val
+
+    @property
+    def brightness(self):
+        return self.value
+
+    @brightness.setter
+    def brightness(self, val):
+        self.value = val
 
     def to_dict(
             self,
