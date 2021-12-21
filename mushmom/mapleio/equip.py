@@ -99,10 +99,10 @@ class Equip:
         }
         _key_map.update(key_map or {})
         _key_map = {k: v for k, v in _key_map.items() if v is not None}
-        print(_key_map)
+
         d = {v: getattr(self, k) for k, v in _key_map.items()
              if getattr(self, k) is not None}
-        print(d)
+
         if self.region == 'GMS':
             d.pop('region')
 
@@ -244,4 +244,12 @@ class BeautyItem(Equip):
             'brightness': 'brightness'
         }
         _key_map.update(key_map or {})
-        super().to_dict(_key_map)
+        d = super().to_dict(_key_map)
+
+        # remove if default value
+        attrs = ('hue', 'saturation', 'brightness')
+        for attr, k in zip(attrs, DEFAULT_HSV._fields):
+            if getattr(self, attr) == getattr(DEFAULT_HSV, k):
+                d.pop(attr)
+
+        return d
