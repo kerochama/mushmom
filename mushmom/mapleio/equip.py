@@ -150,7 +150,7 @@ class Equip:
         args = {k.strip('_'): v
                 if isinstance(v, (int, float))
                 else '"{}"'.format(v.replace('"', '\\"'))
-                for k, v in self.__dict__.items() if v}
+                for k, v in self.__dict__.items() if v is not None}
         return '{}({})'.format(type(self).__name__,
                                ', '.join(['{}={}'.format(k, v)
                                           for k, v in args.items()]))
