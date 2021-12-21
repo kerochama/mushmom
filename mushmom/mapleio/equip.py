@@ -172,9 +172,9 @@ class BeautyItem(Equip):
             hsv: tuple[Union[int, str, None], ...] = DEFAULT_HSV
     ):
         super().__init__(itemid, version, region, name, type)
-        self.hue = self.hsv[0]
-        self.saturation = self.hsv[1]
-        self.value = self.hsv[2]
+        self.hue = hsv[0]
+        self.saturation = hsv[1]
+        self.value = hsv[2]
 
     @property
     def hsv(self):
