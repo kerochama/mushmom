@@ -99,10 +99,10 @@ class Equip:
         }
         _key_map.update(key_map or {})
         _key_map = {k: v for k, v in _key_map.items() if v is not None}
-
+        print(_key_map)
         d = {v: getattr(self, k) for k, v in _key_map.items()
              if getattr(self, k) is not None}
-
+        print(d)
         if self.region == 'GMS':
             d.pop('region')
 
@@ -151,8 +151,9 @@ class Equip:
                 if isinstance(v, (int, float))
                 else '"{}"'.format(v.replace('"', '\\"'))
                 for k, v in self.__dict__.items() if v}
-        return 'Equip({})'.format(', '.join(['{}={}'.format(k, v)
-                                             for k, v in args.items()]))
+        return '{}({})'.format(type(self).__name__,
+                               ', '.join(['{}={}'.format(k, v)
+                                          for k, v in args.items()]))
 
 
 class BeautyItem(Equip):
