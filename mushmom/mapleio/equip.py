@@ -3,6 +3,8 @@ Representation of a maplestory equip.  Attributes stored are those needed
 in order to read in and recreate API calls
 
 """
+from __future__ import annotations
+
 from collections import namedtuple
 from typing import Optional, Union, Any
 
@@ -175,6 +177,42 @@ class BeautyItem(Equip):
         self.hue = hsv[0]
         self.saturation = hsv[1]
         self.value = hsv[2]
+
+    @classmethod
+    def from_equip(
+            cls,
+            equip: Equip,
+            hsv: tuple[Union[int, str, None], ...] = DEFAULT_HSV
+    ) -> BeautyItem:
+        """
+        Create from an existing Equip item
+
+        Parameters
+        ----------
+        equip: Equip
+            the equip item to copy
+        hsv: tuple[Union[int, str, None], ...]
+            the h, s, v (brightness) values
+
+        Returns
+        -------
+        BeautyItem
+            the new BeautyItem instance
+
+        """
+        item = BeautyItem(
+            equip.itemid,
+            equip.version,
+            equip.region,
+            equip._name,
+            equip.type
+        )
+
+        item.hue = hsv[0]
+        item.saturation = hsv[1]
+        item.value = hsv[2]
+
+        return item
 
     @property
     def hsv(self):
