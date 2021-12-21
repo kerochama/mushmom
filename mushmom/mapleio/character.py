@@ -12,7 +12,7 @@ from typing import Union, Optional, Any, Iterable
 
 from .. import config
 from . import resources
-from .equip import Equip
+from .equip import Equip, BeautyItem, DEFAULT_HSV
 
 
 class Character:
@@ -97,7 +97,7 @@ class Character:
         char.name = data.get('name')
         char.action = data.get('action', 'stand1')
         char.emotion = data.get('emotion', 'default')
-        char.skin = Skin.get(data.get('skin', 2005))  # default green
+        char.skin = Skin.get(int(data.get('skin', 2005)))  # default green
         char.ears = Ears.get(data.get('mercEars', False),
                              data.get('illiumEars', False),
                              data.get('highFloraEars', False))
@@ -111,13 +111,24 @@ class Character:
             char.version = item0.get('version', config.mapleio.default_version)
             char.region = item0.get('region', 'GMS')
 
-            equips = [
-                Equip(item.get('id', 0),
-                      item.get('version', char.version),
-                      item.get('region', 'GMS'),
-                      item.get('name'))
-                for type, item in items.items() if type not in ['Body', 'Head']
-            ]
+            equips = []
+            for type, item in items.items():
+                if type in ['Body', 'Head']:
+                    continue
+
+                equip = Equip(item.get('id', 0),
+                              item.get('version', char.version),
+                              item.get('region', 'GMS'),
+                              item.get('name'))
+
+                if type in ['Hair', 'Face']:
+                    hsv = (item.get('hue', DEFAULT_HSV.h),
+                           item.get('saturation', DEFAULT_HSV.s),
+                           item.get('brightness', DEFAULT_HSV.v))
+                    equip = BeautyItem.from_equip(equip, hsv)
+
+                equips.append(equip)
+
             char.equips = cls._validate_equips(equips)
 
         # read extra info for profile
@@ -181,13 +192,23 @@ class Character:
             char.emotion = next((x['animationName']
                                  for x in items if 'animationName' in x),
                                 'default')
+            equips = []
+            for item in items:
+                if not Equip.valid_equip(item.get('itemId', 0)):
+                    continue
 
-            equips = [
-                Equip(item.get('itemId', 0),
-                      item.get('version', char.version),
-                      item.get('region', 'GMS'))
-                for item in items if Equip.valid_equip(item.get('itemId', 0))
-            ]
+                equip = Equip(item.get('itemId', 0),
+                              item.get('version', char.version),
+                              item.get('region', 'GMS'))
+
+                if equip.type in ['Hair', 'Face']:
+                    hsv = (item.get('hue', DEFAULT_HSV.h),
+                           item.get('saturation', DEFAULT_HSV.s),
+                           item.get('brightness', DEFAULT_HSV.v))
+                    equip = BeautyItem.from_equip(equip, hsv)
+
+                equips.append(equip)
+
             char.equips = cls._validate_equips(equips)
 
         # pose should be after item_str
