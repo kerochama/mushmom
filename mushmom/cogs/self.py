@@ -107,18 +107,19 @@ class Self(commands.Cog, name=config.core.bot_name):
 
         embed.add_field(
             name='Get Started',
-            value=(':one: Create your character using '
+            value=(':one: \u200b Create your character using '
                    '[maplestory.studio](https://maplestory.studio) or '
-                   '[maples.im](https://maples.im)\n'
-                   ':two: On a desktop, right click the sprite and select `Copy '
-                   'Image Address`. For mobile, long-press the download button'
-                   ' and copy the address that way\n'
-                   f':three: Use the `{ctx.prefix}import [char name] [url]` '
-                   'command with the url you just copied\n'
-                   ':four: The bot should respond with a success message and you '
-                   'can begin using emotes, actions, etc.\n\nFor more detailed'
-                   ' instructions, you can check out [Get Started]'
-                   f'({config.website.url + "#get-started"})\n\u200b'),
+                   '[maples.im](https://maples.im)\n\n'
+                   ':two: \u200b On a desktop, right click the sprite and '
+                   'select `Copy Image Address`. For mobile, long-press the '
+                   'download button and copy the address that way\n\n'
+                   f':three: \u200b Use the `{ctx.prefix}import [char name] '
+                   '[url]` command with the url you just copied\n\n'
+                   ':four: \u200b The bot should respond with a success '
+                   'message and you can begin using emotes, actions, etc.\n\n'
+                   'For more detailed instructions, you can check out '
+                   f'[Get Started]({config.website.url + "#get-started"})'
+                   '\n\u200b'),
             inline=False
         )
         embed.add_field(
@@ -127,7 +128,55 @@ class Self(commands.Cog, name=config.core.bot_name):
                    f'`{ctx.prefix}admin` for instructions to get started.')
         )
 
-        return await ctx.send(embed=embed)
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    async def admin(self, ctx: commands.Context) -> None:
+        """
+        Instructions for admins to set up server
+
+        Parameters
+        ----------
+        ctx: commands.Context
+
+        """
+        embed = discord.Embed(
+            description=('Admins have a number of configuration commands that '
+                         f'can be used to customize {config.core.bot_name} to '
+                         'your server. A few common settings/issues are '
+                         'highlighted below:\n\u200b'),
+            color=config.core.embed_color
+        )
+
+        embed.set_author(name=f'{config.core.bot_name} Admin',
+                         icon_url=self.bot.user.display_avatar.url)
+        thumbnail = self.bot.get_emoji_url(EMOJIS['mushparty'])
+        embed.set_thumbnail(url=thumbnail)
+
+        embed.add_field(
+            name='Bot Channel',
+            value=('```Admins can restrict commands to a specific channel '
+                   f'by using the command `{ctx.prefix}set channel` in '
+                   'the desired channel. Emotes, sprites, and actions '
+                   'can still be used in everywhere.```\u200b'),
+            inline=False
+        )
+        embed.add_field(
+            name='Prefixes',
+            value=('```Additional prefixes can be added in addition to the '
+                   f'default ones by using `{ctx.prefix}set prefixes '
+                   '[prefix1] [prefix2] [etc]` ```\u200b'),
+            inline=False
+        )
+        embed.add_field(
+            name='Emotes Command Deletion',
+            value=('```If your commands are not deleting properly in certain '
+                   'channels, make sure the bot has the ability to both '
+                   '`Manage Webhooks` and `Manage Messages` ```\u200b'),
+            inline=False
+        )
+
+        await ctx.send(embed=embed)
 
 
 def setup(bot):
