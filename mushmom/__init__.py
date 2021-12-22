@@ -3,9 +3,14 @@ Parse config and make it accessible
 
 """
 import munch
+import os
 
 from importlib import resources
+from dotenv import load_dotenv
 
+load_dotenv()  # use env variables from .env
 
-with resources.open_binary(__package__, 'config.yaml') as fp:
+file = os.getenv('CONFIG_FILE') or 'config.yaml'
+
+with resources.open_binary(__package__, file) as fp:
     config = munch.Munch.fromYAML(fp)
