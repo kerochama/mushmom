@@ -103,7 +103,7 @@ async def list_chars(
 
     """
     embed = discord.Embed(description=text, color=config.core.embed_color)
-    embed.set_author(name='Characters', icon_url=ctx.bot.user.avatar.url)
+    embed.set_author(name='Characters', icon_url=ctx.bot.user.display_avatar.url)
 
     if not thumbnail:
         thumbnail = ctx.bot.get_emoji_url(EMOJIS['mushparty'])
@@ -198,7 +198,7 @@ async def confirm_prompt(ctx: commands.Context, text) -> bool:
 
     """
     embed = discord.Embed(description=text, color=config.core.embed_color)
-    embed.set_author(name='Confirmation', url=ctx.bot.user.avatar.url)
+    embed.set_author(name='Confirmation', url=ctx.bot.user.display_avatar.url)
     thumbnail = ctx.bot.get_emoji_url(EMOJIS['mushping'])
     embed.set_thumbnail(url=thumbnail)
     prompt = await ctx.send(embed=embed)

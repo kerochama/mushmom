@@ -250,7 +250,7 @@ class Mushmom(commands.Bot):
         # send error
         embed = discord.Embed(description=text,
                               color=config.core.embed_color)
-        embed.set_author(name='Error', icon_url=ctx.bot.user.avatar.url)
+        embed.set_author(name='Error', icon_url=ctx.bot.user.display_avatar.url)
         embed.set_thumbnail(url=ctx.bot.get_emoji_url(EMOJIS['mushshock']))
 
         # add referenced commands
@@ -308,7 +308,7 @@ class Mushmom(commands.Bot):
 
         return await webhook.send(*args, **kwargs,
                                   username=ctx.author.display_name,
-                                  avatar_url=ctx.author.avatar.url)
+                                  avatar_url=ctx.author.display_avatar.url)
 
     @staticmethod
     async def add_delayed_reaction(
@@ -475,7 +475,7 @@ class Mushmom(commands.Bot):
             return emoji.url
         else:
             warnings.warn(f'Emoji<{emoji_id}> was not found', ResourceWarning)
-            return self.user.avatar.url  # fall back on profile pic
+            return self.user.display_avatar.url  # fall back on profile pic
 
     @staticmethod
     def get_attachment_url(

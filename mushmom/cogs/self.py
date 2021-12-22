@@ -44,7 +44,7 @@ class Self(commands.Cog, name=config.core.bot_name):
         )
 
         embed.set_author(name=f'About {config.core.bot_name}',
-                         icon_url=self.bot.user.avatar.url)
+                         icon_url=self.bot.user.display_avatar.url)
 
         thumbnail = self.bot.get_emoji_url(EMOJIS['mushparty'])
         embed.set_thumbnail(url=thumbnail)

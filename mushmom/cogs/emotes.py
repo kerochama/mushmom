@@ -81,7 +81,7 @@ class Emotes(commands.Cog):
             color=config.core.embed_color
         )
 
-        embed.set_author(name='Emotes', icon_url=self.bot.user.avatar.url)
+        embed.set_author(name='Emotes', icon_url=self.bot.user.display_avatar.url)
         thumbnail = self.bot.get_emoji_url(EMOJIS['mushheart'])
         embed.set_thumbnail(url=thumbnail)
 
