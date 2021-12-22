@@ -65,6 +65,18 @@ class Self(commands.Cog, name=config.core.bot_name):
         """
         await ctx.send(f'{config.discord.invite}')
 
+    @commands.command()
+    async def version(self, ctx: commands.Context) -> None:
+        """
+        Get the current bot version
+
+        Parameters
+        ----------
+        ctx: commands.Context
+
+        """
+        await ctx.send(f'v{config.core.version}')
+
 
 def setup(bot):
     bot.add_cog(Self(bot))
