@@ -323,5 +323,5 @@ class Actions(commands.Cog):
                           duration=dur, title=msg, desc=f'_Bam! Bam! Bam!_')
 
 
-def setup(bot):
-    bot.add_cog(Actions(bot))
+async def setup(bot):
+    await bot.add_cog(Actions(bot))

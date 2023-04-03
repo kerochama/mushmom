@@ -99,11 +99,6 @@ class Mushmom(commands.Bot):
         self.add_check(checks.not_bot)
         self.add_check(checks.in_guild_channel)
 
-        # load extensions
-        self.remove_command('help')
-        for ext in initial_extensions:
-            self.load_extension(f'{__package__}.{ext}')
-
     async def on_ready(self):
         print(f'{self.user} is ready to mush!')
 
@@ -122,6 +117,11 @@ class Mushmom(commands.Bot):
         if not self.owner_id:
             app = await self.application_info()
             self.owner_id = app.owner.id
+
+        # load extensions
+        self.remove_command('help')
+        for ext in initial_extensions:
+            await self.load_extension(f'{__package__}.{ext}')
 
     async def on_message(self, message: discord.Message) -> None:
         """

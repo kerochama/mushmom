@@ -225,5 +225,5 @@ class Server(commands.Cog):
             await ctx.send(msg)
 
 
-def setup(bot):
-    bot.add_cog(Server(bot))
+async def setup(bot):
+    await bot.add_cog(Server(bot))
