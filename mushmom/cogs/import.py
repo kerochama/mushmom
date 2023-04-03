@@ -188,5 +188,5 @@ class Import(commands.Cog):
             await self.bot.reply_cache.clean_up(ctx.message)
 
 
-def setup(bot):
-    bot.add_cog(Import(bot))
+async def setup(bot):
+    await bot.add_cog(Import(bot))

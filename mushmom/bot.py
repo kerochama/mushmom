@@ -81,7 +81,9 @@ class Mushmom(commands.Bot):
 
     """
     def __init__(self, db_client: AsyncIOMotorClient):
-        super().__init__(command_prefix=_prefix_callable)
+        intents = discord.Intents.default()
+
+        super().__init__(command_prefix=_prefix_callable, intents=intents)
         self.session = None  # set in on_ready
         self.user_agent = '{bot}/{version} {default}'.format(
             bot=config.core.bot_name,
@@ -96,11 +98,6 @@ class Mushmom(commands.Bot):
         # add global checks
         self.add_check(checks.not_bot)
         self.add_check(checks.in_guild_channel)
-
-        # load extensions
-        self.remove_command('help')
-        for ext in initial_extensions:
-            self.load_extension(f'{__package__}.{ext}')
 
     async def on_ready(self):
         print(f'{self.user} is ready to mush!')
@@ -120,6 +117,11 @@ class Mushmom(commands.Bot):
         if not self.owner_id:
             app = await self.application_info()
             self.owner_id = app.owner.id
+
+        # load extensions
+        self.remove_command('help')
+        for ext in initial_extensions:
+            await self.load_extension(f'{__package__}.{ext}')
 
     async def on_message(self, message: discord.Message) -> None:
         """

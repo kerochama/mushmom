@@ -179,5 +179,5 @@ class Self(commands.Cog, name=config.core.bot_name):
         await ctx.send(embed=embed)
 
 
-def setup(bot):
-    bot.add_cog(Self(bot))
+async def setup(bot):
+    await bot.add_cog(Self(bot))

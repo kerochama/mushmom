@@ -474,5 +474,5 @@ class FameLog(list):
         self.append((uid, -1, datetime.utcnow()))
 
 
-def setup(bot):
-    bot.add_cog(Info(bot))
+async def setup(bot):
+    await bot.add_cog(Info(bot))
