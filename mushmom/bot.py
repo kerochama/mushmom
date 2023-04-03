@@ -81,7 +81,9 @@ class Mushmom(commands.Bot):
 
     """
     def __init__(self, db_client: AsyncIOMotorClient):
-        super().__init__(command_prefix=_prefix_callable)
+        intents = discord.Intents.default()
+
+        super().__init__(command_prefix=_prefix_callable, intents=intents)
         self.session = None  # set in on_ready
         self.user_agent = '{bot}/{version} {default}'.format(
             bot=config.core.bot_name,
