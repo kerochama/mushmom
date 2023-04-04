@@ -277,6 +277,19 @@ class Mushmom(commands.Bot):
         return error
 
     @staticmethod
+    async def ephemeral(interaction: discord.Interaction,
+                        *args,
+                        **kwargs
+        ) -> None:
+        """
+        Helper function for ephemeral interactions using default timers
+
+        """
+        _kwargs = {'delete_after': config.core.default_delay}
+        _kwargs.update(kwargs)
+        await interaction.response.send_message(*args, **_kwargs, ephemeral=True)
+
+    @staticmethod
     async def send_as_author(
             ctx: commands.Context,
             *args,
@@ -309,6 +322,7 @@ class Mushmom(commands.Bot):
             webhook = await ctx.channel.create_webhook(name=config.core.hook_name)
 
         return await webhook.send(*args, **kwargs,
+                                  wait=True,
                                   username=ctx.author.display_name,
                                   avatar_url=ctx.author.display_avatar.url)
 
