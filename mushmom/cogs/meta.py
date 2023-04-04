@@ -113,7 +113,7 @@ class Meta(commands.Cog):
         ctx.bot.timer.deactivate()
         await ctx.send('Timer deactivated')
 
-    @app_commands.command(name="foo", description="blahblah")
+    @app_commands.command(name="whoami", description="whoami")
     async def whoami(self, interaction: discord.Interaction):
         await self.bot.ephemeral(interaction, interaction.user.name)
 
