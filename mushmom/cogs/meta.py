@@ -5,6 +5,8 @@ Commands to change things about the bot itself
 import discord
 
 from discord.ext import commands
+from discord import app_commands
+from typing import Optional
 
 from .. import config
 
@@ -63,6 +65,25 @@ class Meta(commands.Cog):
         await ctx.send(f'Reloaded `cogs.{extension}`')
 
     @commands.command(hidden=True)
+    async def sync(self,
+                   ctx: commands.Context,
+                   guild: Optional[int] = None
+    ) -> None:
+        """
+        Sync slash command tree
+
+        Parameters
+        ----------
+        ctx: commands.Context
+        guild: Optional[int]
+            optional guild IDs
+
+        """
+        _guild = discord.Object(id=guild) if guild else None
+        n = await self.bot.tree.sync(guild=_guild)
+        await ctx.send(f'{len(n)} slash commands synced')
+
+    @commands.command(hidden=True)
     async def quit(self, ctx: commands.Context) -> None:
         """
         Turn off bot from command
@@ -91,6 +112,10 @@ class Meta(commands.Cog):
         """Deactivate timer"""
         ctx.bot.timer.deactivate()
         await ctx.send('Timer deactivated')
+
+    @app_commands.command(name="foo", description="blahblah")
+    async def whoami(self, interaction: discord.Interaction):
+        await self.bot.ephemeral(interaction, interaction.user.name)
 
 
 async def setup(bot):
