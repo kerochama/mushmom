@@ -29,7 +29,7 @@ class Meta(commands.Cog):
             extension name (filename without .py)
 
         """
-        self.bot.load_extension(f'{__package__}.{extension}')
+        await self.bot.load_extension(f'{__package__}.{extension}')
         await ctx.send(f'Loaded `cogs.{extension}`')
 
     @commands.command(hidden=True)
@@ -44,7 +44,7 @@ class Meta(commands.Cog):
             extension name (filename without .py)
 
         """
-        self.bot.unload_extension(f'{__package__}.{extension}')
+        await self.bot.unload_extension(f'{__package__}.{extension}')
         await ctx.send(f'Unloaded `cogs.{extension}`')
 
     @commands.command(hidden=True)
@@ -59,7 +59,7 @@ class Meta(commands.Cog):
             extension name (filename without .py)
 
         """
-        self.bot.reload_extension(f'{__package__}.{extension}')
+        await self.bot.reload_extension(f'{__package__}.{extension}')
         await ctx.send(f'Reloaded `cogs.{extension}`')
 
     @commands.command(hidden=True)
