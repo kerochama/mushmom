@@ -311,8 +311,11 @@ class Mushmom(commands.Bot):
         """
         delete_after = kwargs.pop('delete_after', config.core.quick_delay)
         kwargs.update({'ephemeral': True})
+
         msg = await interaction.followup.send(*args, **kwargs)
-        await msg.delete(delay=delete_after)
+
+        if delete_after is not None:
+            await msg.delete(delay=delete_after)
 
     @staticmethod
     async def send_as_author(
