@@ -30,7 +30,8 @@ initial_extensions = (
     'cogs.import',
     'cogs.emotes',
     'cogs.server',
-    'cogs.sprites'
+    'cogs.sprites',
+    'cogs.mush'
 )
 
 
@@ -277,10 +278,11 @@ class Mushmom(commands.Bot):
         return error
 
     @staticmethod
-    async def ephemeral(interaction: discord.Interaction,
-                        *args,
-                        **kwargs
-        ) -> None:
+    async def ephemeral(
+            interaction: discord.Interaction,
+            *args,
+            **kwargs
+    ) -> None:
         """
         Helper function for ephemeral interactions using default timers
 
@@ -288,6 +290,29 @@ class Mushmom(commands.Bot):
         _kwargs = {'delete_after': config.core.default_delay}
         _kwargs.update(kwargs)
         await interaction.response.send_message(*args, **_kwargs, ephemeral=True)
+
+    @staticmethod
+    async def defer(interaction: discord.Interaction) -> None:
+        """
+        Convenience function for ephemeral thinking
+
+        """
+        await interaction.response.defer(ephemeral=True, thinking=True)
+
+    @staticmethod
+    async def followup(
+            interaction: discord.Interaction,
+            *args,
+            **kwargs,
+    ) -> None:
+        """
+        Followup from defer with auto deletion
+
+        """
+        delete_after = kwargs.pop('delete_after', config.core.quick_delay)
+        kwargs.update({'ephemeral': True})
+        msg = await interaction.followup.send(*args, **kwargs)
+        await msg.delete(delay=delete_after)
 
     @staticmethod
     async def send_as_author(
