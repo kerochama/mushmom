@@ -9,7 +9,10 @@ from importlib import resources
 
 # load all json resources
 with resources.open_binary(__package__, 'emotions.json') as fp:
-    EMOTIONS = json.load(fp)
+    _emotions = json.load(fp)
+
+EMOTIONS = list(_emotions.keys())
+ANIMATED = [k for k, v in _emotions.items() if v == 'animated']
 
 with resources.open_binary(__package__, 'equip_ranges.json') as fp:
     EQUIP_RANGES = json.load(fp)

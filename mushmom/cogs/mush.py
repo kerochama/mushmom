@@ -51,11 +51,16 @@ class Mush(commands.Cog):
             char = await converters.default_char(ctx)
 
         # create emote
-        data = await mapleio.api.get_emote(
-            char, emotion=emote.name, session=self.bot.session)
+        coro, ext = (
+            (mapleio.api.get_animated_emote, 'gif')
+            if emote.name in mapleio.resources.ANIMATED
+            else (mapleio.api.get_emote, 'png')
+        )
+        data = await coro(char, emotion=emote.name, min_width=300,
+                          session=self.bot.session)
 
         if data:
-            filename = f'{char.name or "char"}_{emote.name}.png'
+            filename = f'{char.name or "char"}_{emote.name}.{ext}'
             img = discord.File(fp=BytesIO(data), filename=filename)
             if await self.bot.send_as_author(ctx, file=img):
                 kwargs = {'delete_after': None if config.core.debug else 0}
