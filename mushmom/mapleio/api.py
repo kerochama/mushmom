@@ -12,6 +12,7 @@ from io import BytesIO
 from collections import namedtuple
 from typing import Callable, Coroutine, Any, Optional, Union, Iterable
 
+from . import imutils
 from .. import config
 
 
@@ -159,16 +160,11 @@ async def get_emote(
             w, h = img.size
 
             scaled_body_height = zoom * (config.mapleio.body_height - pad)
-            _emote = img.crop((0, 0, w, h - scaled_body_height))
-            byte_arr = BytesIO()
-            _emote.save(byte_arr, format='PNG')
+            cropped = img.crop((0, 0, w, h - scaled_body_height))
+            emote = imutils.min_width(cropped, min_width)
 
-            if w < min_width:
-                _, h2 = _emote.size
-                emote = Image.new('RGBA', (min_width, h2))
-                emote.paste(_emote, (0, 0))
-            else:
-                emote = _emote
+            byte_arr = BytesIO()
+            emote.save(byte_arr, format='PNG')
 
             return byte_arr.getvalue()
 
@@ -446,37 +442,32 @@ async def get_animated_emote(
         'zoom': zoom,
         'hide': head,
         'remove': remove,
-        'render_mode': 'centered',
         'session': session
     }
 
-    base = await get_sprite(**kwargs)
-    Image.open(BytesIO(base)).show()
+    _base = await get_sprite(**kwargs)
     kwargs['hide'] = body
-    head_frames = await get_frames(**kwargs)
+    _head_frames = await get_frames(**kwargs)
 
-    if base and head_frames:
+    if _base and _head_frames:
+        base = Image.open(BytesIO(_base))
+        head_frames = [Image.open(BytesIO(x)) for x in _head_frames]
+
+        # calc max size
+        w, h = (max(f.width for f in head_frames),
+                max(f.height for f in head_frames))
+
         # combine to create frames
         frames = []
         for f in head_frames:
-            _f = Image.open(BytesIO(f))
-            _f.show()
-            new = Image.open(BytesIO(base))
-            new.paste(_f, (0, 0), mask=_f)
+            im = Image.new('RGBA', (w, h), (0, )*4)  # paste center
+            im.paste(base, (w - base.width, h - base.height))
+            im.paste(f, (w - f.width, h - f.height), mask=f)
 
             # crop to head
-            w, h = new.size
             scaled_body_height = zoom * (config.mapleio.body_height - pad)
-            emote = new.crop((0, 0, w, h - scaled_body_height))
-
-            if w < min_width:
-                _, h2 = emote.size
-                frame = Image.new('RGBA', (min_width, h2))
-                frame.paste(emote, (0, 0))
-            else:
-                frame = emote
-
-            frames.append(frame)
+            cropped = im.crop((0, 0, w, h - scaled_body_height))
+            frames.append(imutils.min_width(cropped, min_width))
 
         byte_arr = BytesIO()
         frames[0].save(byte_arr, format='GIF', save_all=True,
