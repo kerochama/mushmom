@@ -114,6 +114,7 @@ async def get_emote(
         emotion: Optional[str] = None,
         zoom: float = 1,
         pad: int = 8,
+        min_width: int = 0,
         session: aiohttp.ClientSession = None
 ) -> Optional[bytes]:
     """
@@ -130,6 +131,8 @@ async def get_emote(
         how zoomed in the image should be (1 = 100%)
     pad: int
         number of pixels to pad below head to show body
+    min_width: int
+        min width of image. padded on right with transparent fill
     session: Optional[aiohttp.ClientSession]
         session to use when issuing http get
 
@@ -156,9 +159,16 @@ async def get_emote(
             w, h = img.size
 
             scaled_body_height = zoom * (config.mapleio.body_height - pad)
-            emote = img.crop((0, 0, w, h - scaled_body_height))
+            _emote = img.crop((0, 0, w, h - scaled_body_height))
             byte_arr = BytesIO()
-            emote.save(byte_arr, format='PNG')
+            _emote.save(byte_arr, format='PNG')
+
+            if w < min_width:
+                _, h2 = _emote.size
+                emote = Image.new('RGBA', (min_width, h2))
+                emote.paste(_emote, (0, 0))
+            else:
+                emote = _emote
 
             return byte_arr.getvalue()
 
@@ -382,3 +392,94 @@ async def get_frames(
 @with_session
 async def get_frame_layers():
     pass
+
+
+@with_session
+async def get_animated_emote(
+        char: 'Character',
+        emotion: Optional[str] = None,
+        zoom: float = 1,
+        pad: int = 8,
+        duration: Union[int, Iterable[int]] = 180,
+        min_width: int = 0,
+        session: aiohttp.ClientSession = None
+) -> Optional[bytes]:
+    """
+
+    Parameters
+    ----------
+    char: Character
+        The character from which to generate the sprite
+    emotion: str
+        emotion from emotions.json. If None, use default
+    zoom: float
+        how zoomed in the image should be (1 = 100%)
+    pad: int
+        number of pixels to pad below head to show body
+    duration: Union[int, Iterable[int]]
+        ms per frame. 180 is duration for walk1
+    min_width: int
+        min width of image. padded on right with transparent fill
+    session: Optional[aiohttp.ClientSession]
+        session to use when issuing http get
+
+    Returns
+    -------
+    Optional[bytes]
+        the byte data from the generated emote
+
+    """
+    emotion = emotion or char.emotion
+    equips = char.filtered_equips()
+
+    # divide char parts into groups
+    remove = ['Cape', 'Weapon']
+    head = ['Head', 'Face', 'Hair', 'Hat',
+            'Face Accessory', 'Eye Decoration', 'Earrings']
+    body = ['Body'] + [eq.type for eq in equips if eq.type not in head+remove]
+
+    # API calls for static body and head frames
+    kwargs = {
+        'char': char,
+        'pose': 'stand1',
+        'emotion': emotion,
+        'zoom': zoom,
+        'hide': head,
+        'remove': remove,
+        'render_mode': 'centered',
+        'session': session
+    }
+
+    base = await get_sprite(**kwargs)
+    Image.open(BytesIO(base)).show()
+    kwargs['hide'] = body
+    head_frames = await get_frames(**kwargs)
+
+    if base and head_frames:
+        # combine to create frames
+        frames = []
+        for f in head_frames:
+            _f = Image.open(BytesIO(f))
+            _f.show()
+            new = Image.open(BytesIO(base))
+            new.paste(_f, (0, 0), mask=_f)
+
+            # crop to head
+            w, h = new.size
+            scaled_body_height = zoom * (config.mapleio.body_height - pad)
+            emote = new.crop((0, 0, w, h - scaled_body_height))
+
+            if w < min_width:
+                _, h2 = emote.size
+                frame = Image.new('RGBA', (min_width, h2))
+                frame.paste(emote, (0, 0))
+            else:
+                frame = emote
+
+            frames.append(frame)
+
+        byte_arr = BytesIO()
+        frames[0].save(byte_arr, format='GIF', save_all=True,
+                       append_images=frames[1:], duration=duration, loop=0, disposal=2)
+
+        return byte_arr.getvalue()
