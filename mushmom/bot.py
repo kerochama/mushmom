@@ -320,7 +320,7 @@ class Mushmom(commands.Bot):
 
     @staticmethod
     async def send_as_author(
-            ctx: commands.Context,
+            interaction: discord.Interaction,
             *args,
             **kwargs
     ) -> discord.Message:
@@ -330,7 +330,7 @@ class Mushmom(commands.Bot):
 
         Parameters
         ----------
-        ctx: commands.Context
+        interaction: discord.Interaction
         args
             passed to discord.Webhook.send
         kwargs
@@ -342,18 +342,19 @@ class Mushmom(commands.Bot):
             the message that was sent
 
         """
-        webhooks = await ctx.channel.webhooks()
-        webhook = next((wh for wh in webhooks if wh.name == config.core.hook_name),
-                       None)
+        webhooks = await interaction.channel.webhooks()
+        hook_name = config.core.hook_name
+        webhook = next((wh for wh in webhooks if wh.name == hook_name), None)
 
         # create if does not exist
         if not webhook:
-            webhook = await ctx.channel.create_webhook(name=config.core.hook_name)
+            webhook = await interaction.channel.create_webhook(name=hook_name)
 
+        user = interaction.user
         return await webhook.send(*args, **kwargs,
                                   wait=True,
-                                  username=ctx.author.display_name,
-                                  avatar_url=ctx.author.display_avatar.url)
+                                  username=user.display_name,
+                                  avatar_url=user.display_avatar.url)
 
     @staticmethod
     async def add_delayed_reaction(

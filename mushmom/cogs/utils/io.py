@@ -6,9 +6,9 @@ import discord
 import time
 
 from discord.ext import commands
-from typing import Optional, Any
+from typing import Optional, Any, Union
 
-from ... import config
+from ... import config, mapleio
 from .. import errors
 from ..resources import EMOJIS
 
@@ -127,8 +127,27 @@ async def list_chars(
     return msg
 
 
+async def default_char(interaction: discord.Interaction):
+    """
+    Get the char saved as default (main)
+
+    Parameters
+    ----------
+    interaction: discord.Interaction
+
+    """
+    user = await interaction.client.db.get_user(interaction.user.id)
+
+    if not user or not user['chars']:
+        raise errors.NoCharacters
+
+    i = user['default']
+
+    return mapleio.character.Character.from_json(user['chars'][i])
+
+
 async def get_char(
-        ctx: commands.Context,
+        ctx: Union[commands.Context, discord.Interaction],
         user: dict,
         name: Optional[str] = None,
         text: Optional[str] = None
@@ -153,6 +172,9 @@ async def get_char(
         character index or None if cancelled
 
     """
+    if isinstance(ctx, discord.Interaction):
+        ctx = ctx.client.get_context(ctx)
+
     if name:
         chars = user['chars']
         char_iter = (i for i, x in enumerate(chars)
