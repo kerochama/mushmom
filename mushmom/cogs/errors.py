@@ -55,7 +55,7 @@ class Errors(commands.Cog):
         elif err in reference.ERRORS['_default'].keys():  # general error
             specs = reference.ERRORS['_default'][err]
         else:
-            if not isinstance(error, commands.CheckFailure):
+            if not isinstance(error, app_commands.CheckFailure):
                 print(f'Ignoring exception in command `{cmd}`:', file=sys.stderr)
                 traceback.print_exception(type(error), error, error.__traceback__,
                                           file=sys.stderr)
