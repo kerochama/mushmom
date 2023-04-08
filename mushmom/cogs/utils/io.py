@@ -173,7 +173,7 @@ async def get_char(
 
     """
     if isinstance(ctx, discord.Interaction):
-        ctx = ctx.client.get_context(ctx)
+        ctx = await ctx.client.get_context(ctx)
 
     if name:
         chars = user['chars']
