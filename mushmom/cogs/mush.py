@@ -11,7 +11,8 @@ from io import BytesIO
 from aenum import Enum
 
 from .. import config, mapleio
-from .utils import converters, errors
+from . import errors
+from .utils import converters
 from .resources import EMOJIS
 
 Emotes = Enum('Emotes', mapleio.resources.EMOTIONS)

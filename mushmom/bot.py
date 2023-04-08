@@ -31,7 +31,8 @@ initial_extensions = (
     'cogs.emotes',
     'cogs.server',
     'cogs.sprites',
-    'cogs.mush'
+    'cogs.mush',
+    'cogs.errors'
 )
 
 

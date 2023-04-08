@@ -9,7 +9,7 @@ from discord.ext import commands
 from typing import Optional, Any
 
 from ... import config
-from . import errors
+from .. import errors
 from ..resources import EMOJIS
 
 
@@ -160,7 +160,7 @@ async def get_char(
         ind = next(char_iter, None)
 
         if ind is None:
-            raise errors.DataNotFound
+            raise errors.CharacterNotFound
         else:
             return ind
 

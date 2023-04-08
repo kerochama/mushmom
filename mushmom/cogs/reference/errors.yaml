@@ -184,3 +184,14 @@ sprites:
       <<: *missingchar
     errors.MapleIOError:
       <<: *apierror
+
+_default:
+  NoCharacters:
+    msg: "No registered characters. Please import one to use command"
+    see_also: [ import ]
+  CharacterNotFound:
+    msg: "Could not find character. List your characters to see what's been imported"
+    see_also: [ list chars ]
+  MapleIOError:
+    msg: Maplestory.io request failed or timed out. Try again later
+    see_also: null
