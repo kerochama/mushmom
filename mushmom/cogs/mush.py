@@ -12,8 +12,12 @@ from aenum import Enum
 
 from .. import config, mapleio
 from . import errors
-from .utils import converters
+from .utils import io, transformers
 from .resources import EMOJIS
+
+Character = mapleio.character.Character
+CharacterTransformer = transformers.CharacterTransformer
+Transform = app_commands.Transform
 
 Emotes = Enum('Emotes', mapleio.resources.EMOTIONS)
 
@@ -27,7 +31,7 @@ class Mush(commands.Cog):
             self,
             interaction: discord.Interaction,
             emote: Emotes,
-            char: Optional[str] = None
+            char: Optional[Transform[Character, CharacterTransformer]] = None
     ) -> None:
         """
         Send maple emotes of your character
@@ -42,14 +46,7 @@ class Mush(commands.Cog):
 
         """
         await self.bot.defer(interaction)
-        ctx = await self.bot.get_context(interaction)
-
-        # get char data
-        if char:
-            cvtr = converters.CharacterConverter()
-            char = await cvtr.convert(ctx, char)
-        else:
-            char = await converters.default_char(ctx)
+        char = char or await io.default_char(interaction)
 
         # create emote
         coro, ext = (
@@ -63,7 +60,7 @@ class Mush(commands.Cog):
         if data:
             filename = f'{char.name or "char"}_{emote.name}.{ext}'
             img = discord.File(fp=BytesIO(data), filename=filename)
-            if await self.bot.send_as_author(ctx, file=img):
+            if await self.bot.send_as_author(interaction, file=img):
                 kwargs = {'delete_after': None if config.core.debug else 0}
                 await self.bot.followup(interaction, 'Emote was sent', **kwargs)
         else:
