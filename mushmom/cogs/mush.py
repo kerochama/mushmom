@@ -22,7 +22,7 @@ class Mush(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="mush", description="Send maple emotes of your character")
+    @app_commands.command()
     async def mush(
             self,
             interaction: discord.Interaction,
