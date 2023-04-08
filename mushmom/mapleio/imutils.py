@@ -3,9 +3,10 @@ Image utils to help to manipulate sprites
 
 """
 
+import numpy as np
+
 from PIL import Image
 from io import BytesIO
-from aenum import Enum
 
 
 def min_width(img: Image, width: int) -> Image:
@@ -33,3 +34,34 @@ def min_width(img: Image, width: int) -> Image:
         res = img
 
     return res
+
+
+def thresh_alpha(img: Image, thresh: int = 128) -> Image:
+    """
+    Round alpha channel to 0 or 255
+
+    Parameters
+    ----------
+    img: Image
+      source image
+    thresh: int
+      threshold value
+
+    Returns
+    -------
+    Resulting image
+
+    """
+    res = img.copy()
+    _alpha = res.getchannel('A')
+
+    # manipulate array
+    arr = np.array(_alpha)
+    arr[arr < thresh] = 0
+    arr[arr >= thresh] = 255
+
+    # update alpha channel
+    alpha = Image.fromarray(arr)
+    res.putalpha(alpha)
+    return res
+
