@@ -6,18 +6,18 @@ import discord
 
 from discord.ext import commands
 from discord import app_commands
+
 from typing import Optional
 from io import BytesIO
 from aenum import Enum
 
 from .. import config, mapleio
 from . import errors
-from .utils import io, transformers
-from .resources import EMOJIS
+from .utils import io
 
-Character = mapleio.character.Character
-CharacterTransformer = transformers.CharacterTransformer
-Transform = app_commands.Transform
+from discord.app_commands import Transform
+from ..mapleio.character import Character
+from .utils.transformers import CharacterTransformer
 
 Emotes = Enum('Emotes', mapleio.resources.EMOTIONS)
 
