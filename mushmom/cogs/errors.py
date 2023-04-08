@@ -105,8 +105,10 @@ class Errors(commands.Cog):
             fmt = [f'`{cmd}`' for cmd in see_also]
             embed.add_field(name='See also', value=', '.join(fmt))
 
-        return await self.bot.followup(interaction, content=raw_content,
-                                       embed=embed, delete_after=None)
+        coro = (self.bot.followup if interaction.response.is_done()
+                else self.bot.ephemeral)
+        return await coro(interaction, content=raw_content, embed=embed,
+                          delete_after=None)
 
 
 async def setup(bot: commands.Bot):
