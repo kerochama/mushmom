@@ -301,21 +301,39 @@ class Mushmom(commands.Bot):
     @staticmethod
     async def followup(
             interaction: discord.Interaction,
-            *args,
+            *,  # only key word arguments, since edit only takes kwargs
+            prev_msg: Optional[discord.WebhookMessage] = None,
+            delete_after: Optional[int] = None,
             **kwargs,
-    ) -> None:
+    ) -> Optional[discord.WebhookMessage]:
         """
-        Followup from defer with auto deletion
+        Followup from defer with or previous followup
+
+        Parameters
+        ----------
+        interaction: discord.Interaction
+        prev_msg: Optional[discord.WebhookMessage]
+            the previous followup
+        delete_after: Optional[int]
+            ms to wait before deleting
+
+        Returns
+        -------
+        Optional[discord.WebhookMessage]
+            the message sent if not deleted
 
         """
-        _kwargs = {'ephemeral': True}
-        delete_after = kwargs.pop('delete_after', None)
-        _kwargs.update(kwargs)
-
-        msg = await interaction.followup.send(*args, **_kwargs)
+        if prev_msg:  # only kwargs
+            msg = await prev_msg.edit(**kwargs)
+        else:
+            _kwargs = {'ephemeral': True}
+            _kwargs.update(kwargs)
+            msg = await interaction.followup.send(**_kwargs)
 
         if delete_after is not None:
             await msg.delete(delay=delete_after)
+        else:
+            return msg
 
     @staticmethod
     async def send_as_author(

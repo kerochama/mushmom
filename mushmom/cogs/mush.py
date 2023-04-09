@@ -61,8 +61,8 @@ class Mush(commands.Cog):
             filename = f'{char.name or "char"}_{emote.name}.{ext}'
             img = discord.File(fp=BytesIO(data), filename=filename)
             if await self.bot.send_as_author(interaction, file=img):
-                kwargs = {'delete_after': None if config.core.debug else 0}
-                await self.bot.followup(interaction, 'Emote was sent', **kwargs)
+                await self.bot.followup(interaction, content='Emote was sent',
+                                        delete_after=0)  # delete immediately
         else:
             raise errors.MapleIOError
 
