@@ -288,9 +288,7 @@ class Mushmom(commands.Bot):
         Helper function for ephemeral interactions using default timers
 
         """
-        _kwargs = {'delete_after': config.core.default_delay}
-        _kwargs.update(kwargs)
-        await interaction.response.send_message(*args, **_kwargs, ephemeral=True)
+        await interaction.response.send_message(*args, **kwargs, ephemeral=True)
 
     @staticmethod
     async def defer(interaction: discord.Interaction) -> None:
@@ -310,10 +308,11 @@ class Mushmom(commands.Bot):
         Followup from defer with auto deletion
 
         """
-        delete_after = kwargs.pop('delete_after', config.core.quick_delay)
-        kwargs.update({'ephemeral': True})
+        _kwargs = {'ephemeral': True}
+        delete_after = kwargs.pop('delete_after', None)
+        _kwargs.update(kwargs)
 
-        msg = await interaction.followup.send(*args, **kwargs)
+        msg = await interaction.followup.send(*args, **_kwargs)
 
         if delete_after is not None:
             await msg.delete(delay=delete_after)
