@@ -302,38 +302,24 @@ class Mushmom(commands.Bot):
     async def followup(
             interaction: discord.Interaction,
             *,  # only key word arguments, since edit only takes kwargs
-            prev_msg: Optional[discord.WebhookMessage] = None,
             delete_after: Optional[int] = None,
-            **kwargs,
-    ) -> Optional[discord.WebhookMessage]:
+            **kwargs
+    ) -> None:
         """
-        Followup from defer with or previous followup
+        Version of followup that keeps overwriting the orig message
 
         Parameters
         ----------
         interaction: discord.Interaction
-        prev_msg: Optional[discord.WebhookMessage]
-            the previous followup
         delete_after: Optional[int]
             ms to wait before deleting
 
-        Returns
-        -------
-        Optional[discord.WebhookMessage]
-            the message sent if not deleted
-
         """
-        if prev_msg:  # only kwargs
-            msg = await prev_msg.edit(**kwargs)
-        else:
-            _kwargs = {'ephemeral': True}
-            _kwargs.update(kwargs)
-            msg = await interaction.followup.send(**_kwargs)
+        await interaction.edit_original_response(**kwargs)
 
         if delete_after is not None:
-            await msg.delete(delay=delete_after)
-        else:
-            return msg
+            await asyncio.sleep(delete_after)
+            await interaction.delete_original_response()
 
     @staticmethod
     async def send_as_author(
