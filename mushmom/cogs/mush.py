@@ -41,7 +41,7 @@ class Mush(commands.Cog):
         interaction: discord.Interaction,
         emote: Emotes
             the emote to send
-        char: Optional[str]
+        char: Optional[Transform[Character, CharacterTransformer]]
             character to use. Default char if not provided
 
         """
