@@ -147,8 +147,8 @@ emotes:
     errors.MapleIOError:
       <<: *apierror
 
-import:
-  import:
+import2:
+  import2:
     commands.BadArgument:
       msg: "Supply a character name to start mushing. Try:\n\u200b"
       ref_cmds: [import]
@@ -187,11 +187,26 @@ sprites:
 
 _default:
   NoCharacters:
-    msg: "No registered characters. Please import one to use command"
+    msg: No registered characters. Please import one to use command
     see_also: [ import ]
   CharacterNotFound:
-    msg: "Could not find character. List your characters to see what's been imported"
+    msg: Could not find character. List your characters to see what's been imported
     see_also: [ list chars ]
   MapleIOError:
     msg: Maplestory.io request failed or timed out. Try again later
-    see_also: null
+  DatabaseWriteError:
+    msg: Problem writing to database. Try again later
+
+import:
+  BadArgument:
+    msg: Not a valid maplestory.io API call
+  MissingArgument:
+    msg: >-
+      No source data was found. Please supply either a JSON file with character
+      data or a `https://maplestory.io/api/character` url
+  UnexpectedFileTypeError:
+    msg: Only JSON files are accepted
+  CharacterParseError:
+    msg: There was an error parsing your source data
+  DiscordIOError:
+    msg: Error trying to read attached JSON file. Try again later

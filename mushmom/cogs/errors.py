@@ -121,6 +121,11 @@ class MushError(app_commands.AppCommandError):
     pass
 
 
+class DatabaseWriteError(MushError):
+    """Database error when updating"""
+    pass
+
+
 class NoCharacters(MushError):
     """New user. No registered chars"""
     pass
@@ -133,4 +138,29 @@ class CharacterNotFound(MushError):
 
 class MapleIOError(MushError):
     """General MapleIO error"""
+    pass
+
+
+class BadArgument(MushError):
+    """General bad argument error"""
+    pass
+
+
+class MissingArgument(MushError):
+    """General required arg missing error"""
+    pass
+
+
+class UnexpectedFileTypeError(MushError):
+    """Wrong file type"""
+    pass
+
+
+class CharacterParseError(MushError):
+    """Error when parsing source data"""
+    pass
+
+
+class DiscordIOError(MushError):
+    """Error reading attachments from Discord"""
     pass
