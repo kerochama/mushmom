@@ -160,56 +160,6 @@ class MessageCache:
                 pass
 
 
-async def list_chars(
-        ctx: commands.Context,
-        user: dict,
-        text: str,
-        thumbnail: str = None
-) -> discord.Message:
-    """
-    List users chars
-
-    Parameters
-    ----------
-    ctx: commands.Context
-    user: dict
-        user data from database
-    text: str
-        description displayed in embed
-    thumbnail: str
-        url to the embed thumbnail
-
-    Returns
-    -------
-    discord.Message
-        the message, if sent
-
-    """
-    embed = discord.Embed(description=text, color=config.core.embed_color)
-    embed.set_author(name='Characters', icon_url=ctx.bot.user.display_avatar.url)
-
-    if not thumbnail:
-        thumbnail = ctx.bot.get_emoji_url(EMOJIS['mushparty'])
-
-    embed.set_thumbnail(url=thumbnail)
-
-    # format char names
-    char_names = ['-'] * config.core.max_chars
-
-    for i, char in enumerate(user['chars']):
-        template = '**{} (default)**' if i == user['default'] else '{}'
-        char_names[i] = template.format(char['name'])
-
-    # full width numbers
-    char_list = [f'{chr(65297 + i)} \u200b {name}'
-                 for i, name in enumerate(char_names)]
-
-    embed.add_field(name='Characters', value='\n'.join(char_list))
-    msg = await ctx.send(embed=embed)
-
-    return msg
-
-
 async def default_char(interaction: discord.Interaction):
     """
     Get the char saved as default (main)
