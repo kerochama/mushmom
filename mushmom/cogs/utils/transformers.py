@@ -42,5 +42,5 @@ class CharacterTransformer(app_commands.Transformer):
             raise errors.NoCharacters
 
         # passing a name does not prompt anything
-        i = await io.get_char(interaction, user, name=value)
+        i = await io.get_char_index(interaction, user, name=value)
         return Character.from_json(user['chars'][i])

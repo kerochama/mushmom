@@ -102,7 +102,7 @@ class Import(commands.Cog):
                 text = (f'{config.core.bot_name} can only save '
                         f'{config.core.max_chars} character(s). Choose a '
                         'character to replace.')
-                i = await io.get_char(interaction, user, text=text)
+                i = await io.get_char_index(interaction, user, text=text)
 
                 if i is not None:
                     chars[i] = char.to_dict()

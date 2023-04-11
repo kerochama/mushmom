@@ -160,7 +160,7 @@ class MessageCache:
                 pass
 
 
-async def default_char(interaction: discord.Interaction):
+async def get_default_char(interaction: discord.Interaction):
     """
     Get the char saved as default (main)
 
@@ -179,7 +179,7 @@ async def default_char(interaction: discord.Interaction):
     return mapleio.character.Character.from_json(user['chars'][i])
 
 
-async def get_char(
+async def get_char_index(
         interaction: discord.Interaction,
         user: dict,
         name: Optional[str] = None,

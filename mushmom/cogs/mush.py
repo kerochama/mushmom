@@ -46,7 +46,7 @@ class Mush(commands.Cog):
 
         """
         await self.bot.defer(interaction)
-        char = char or await io.default_char(interaction)
+        char = char or await io.get_default_char(interaction)
 
         # create emote
         coro, ext = (
