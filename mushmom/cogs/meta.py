@@ -67,7 +67,7 @@ class Meta(commands.Cog):
     @commands.command(hidden=True)
     async def sync(self,
                    ctx: commands.Context,
-                   guild: Optional[int] = None
+                   sync_level: Optional[str] = None
     ) -> None:
         """
         Sync slash command tree
@@ -75,12 +75,12 @@ class Meta(commands.Cog):
         Parameters
         ----------
         ctx: commands.Context
-        guild: Optional[int]
-            optional guild IDs
+        sync_level: Optional[str]
+            None or 'all'
 
         """
-        _guild = discord.Object(id=guild) if guild else None
-        n = await self.bot.tree.sync(guild=_guild)
+        guild = None if sync_level == 'all' else ctx.guild
+        n = await self.bot.tree.sync(guild=guild)
         await ctx.send(f'{len(n)} slash commands synced')
 
     @commands.command(hidden=True)
