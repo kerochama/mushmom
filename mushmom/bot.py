@@ -8,6 +8,7 @@ import warnings
 import traceback
 import functools
 import time
+import logging
 
 from discord.ext import commands, tasks
 from discord import Emoji, Reaction, PartialEmoji
@@ -19,6 +20,8 @@ from . import config, database as db, mapleio
 from .cogs import reference
 from .cogs.utils import errors, checks, io
 from .cogs.resources import EMOJIS
+
+_log = logging.getLogger('discord')
 
 initial_extensions = (
     'cogs.meta',
@@ -83,7 +86,11 @@ class Mushmom(commands.Bot):
         the MongoDB database holding collections
 
     """
-    def __init__(self, db_client: AsyncIOMotorClient):
+    def __init__(
+            self,
+            db_client: AsyncIOMotorClient,
+            sync: Optional[int, bool] = None  # specific guild id or all
+    ):
         intents = discord.Intents.default()
 
         super().__init__(command_prefix=_prefix_callable, intents=intents)
@@ -97,14 +104,13 @@ class Mushmom(commands.Bot):
         self.reply_cache = io.MessageCache(seconds=300)
         self.db = db.Database(db_client)
         self.timer = Timer()
+        self.init_sync = sync
 
         # add global checks
         self.add_check(checks.not_bot)
         self.add_check(checks.in_guild_channel)
 
-    async def on_ready(self):
-        print(f'{self.user} is ready to mush!')
-
+    async def setup_hook(self):
         if not self.session:
             self.session = aiohttp.ClientSession(
                 loop=self.loop,
@@ -112,9 +118,6 @@ class Mushmom(commands.Bot):
                     'User-Agent': self.user_agent
                 }
             )
-
-        if not self._verify_cache_integrity.is_running:
-            self._verify_cache_integrity.start()
 
         # set owner. assume not team
         if not self.owner_id:
@@ -125,6 +128,19 @@ class Mushmom(commands.Bot):
         self.remove_command('help')
         for ext in initial_extensions:
             await self.load_extension(f'{__package__}.{ext}')
+
+        # sync slash commands
+        if self.init_sync:
+            guild = (discord.Object(id=self.init_sync)
+                     if isinstance(self.init_sync, int) else None)
+            n = await self.tree.sync(guild=guild)
+            _log.info(f'{len(n)} slash command(s) synced')
+
+    async def on_ready(self):
+        _log.info(f'{self.user} is ready to mush!')
+
+        if not self._verify_cache_integrity.is_running:
+            self._verify_cache_integrity.start()
 
     async def on_message(self, message: discord.Message) -> None:
         """
