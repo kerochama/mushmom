@@ -7,13 +7,10 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 
-from typing import Optional
-from io import BytesIO
-from aenum import Enum
+from itertools import cycle
 
 from .. import config
 from . import errors
-from .utils import io
 
 from ..mapleio.character import Character
 
@@ -46,19 +43,8 @@ class List(commands.Cog):
                          icon_url=interaction.client.user.display_avatar.url)
         embed.set_thumbnail(url=interaction.user.display_avatar.url)
 
-        # format char names
-        char_names = ['-'] * config.core.max_chars
-
-        for i, char in enumerate(user['chars']):
-            template = '**{} (default)**' if i == user['default'] else '{}'
-            char_names[i] = template.format(char['name'])
-
-        # full width numbers
-        char_list = [f'\u2727 \u200b {name}'  # shine outline
-                     for i, name in enumerate(char_names)]
-        char_list += ['\u200b']  # extra space
-
-        embed.add_field(name='Characters', value='\n'.join(char_list))
+        char_names = _fmt_char_names(user, user['default'])
+        embed.add_field(name='Characters', value='\n'.join(char_names))
 
         # image is char
         embed.add_field(name='Preview', value='', inline=False)
@@ -66,7 +52,99 @@ class List(commands.Cog):
         char = Character.from_json(user['chars'][i])
         embed.set_image(url=char.url())
 
-        await self.bot.followup(interaction, embed=embed)
+        view = CharacterScrollView(user, i, embed)
+        await self.bot.followup(interaction, embed=embed, view=view)
+
+
+class CharacterScrollView(discord.ui.View):
+    def __init__(
+            self,
+            user: dict,
+            curr: int,
+            embed: discord.Embed,
+            timeout: int = 180
+    ):
+        super().__init__(timeout=timeout)
+        self.user = user
+        self.curr = curr
+        self.embed = embed
+        self._n = len(user['chars'])
+
+        # disabled if already default
+        self.set_default_button.disabled = True
+
+    @property
+    def set_default_button(self):
+        return next(x for x in self.children if x.label == 'Set Default')
+
+    async def _update_char(self, interaction: discord.Interaction, cyc: cycle):
+        """Update char based on next in cycle"""
+        i = next(cyc)
+        while i != self.curr:  # cycle until curr
+            i = next(cyc)
+
+        self.curr = next(cyc)
+        self.set_default_button.disabled = self.curr == self.user['default']
+
+        # update list
+        chars = _fmt_char_names(self.user, self.curr)
+        self.embed.set_field_at(0, name='Characters', value='\n'.join(chars))
+
+        # update image
+        char = Character.from_json(self.user['chars'][self.curr])
+        self.embed.set_image(url=char.url())
+
+        await interaction.response.edit_message(embed=self.embed, view=self)
+
+    @discord.ui.button(label='\u2190')
+    async def prev(
+            self,
+            interaction: discord.Interaction,
+            button: discord.ui.Button
+    ):
+        cyc = cycle(reversed(range(self._n)))
+        await self._update_char(interaction, cyc)
+
+    @discord.ui.button(label='\u2192')
+    async def next(
+            self,
+            interaction: discord.Interaction,
+            button: discord.ui.Button
+    ):
+        cyc = cycle(range(self._n))
+        await self._update_char(interaction, cyc)
+
+    @discord.ui.button(label='Set Default', style=discord.ButtonStyle.blurple)
+    async def set_default(
+            self,
+            interaction: discord.Interaction,
+            button: discord.ui.Button
+    ):
+        update = {'default': self.curr}
+        ret = await interaction.client.db.set_user(interaction.user.id, update)
+
+        if ret and ret.acknowledged:
+            name = self.user['chars'][self.curr]['name']
+            text = f'Default was changed to **{name}**'
+            await interaction.response.edit_message(content=text,
+                                                    embed=None, view=None)
+        else:
+            raise errors.DatabaseWriteError
+
+
+def _fmt_char_names(user: dict, bold_i: int):
+    """Format char names for chars embed"""
+    char_names = ['-'] * config.core.max_chars  # placeholder
+
+    # add bullets and bold current selection
+    for i, char in enumerate(user['chars']):
+        default = '{} (default)' if i == user['default'] else '{}'
+        bold = '\u2726 \u200b **{}**' if i == bold_i else '\u2727 \u200b {}'
+        char_names[i] = bold.format(default).format(char['name'])
+
+    # extra space
+    char_names += ['\u200b']
+    return char_names
 
 
 async def setup(bot):
