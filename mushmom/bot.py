@@ -131,10 +131,11 @@ class Mushmom(commands.Bot):
 
         # sync slash commands
         if self.init_sync:
-            guild = (discord.Object(id=self.init_sync)
-                     if isinstance(self.init_sync, int) else None)
-            n = await self.tree.sync(guild=guild)
-            _log.info(f'{len(n)} slash command(s) synced')
+            guild = (discord.Object(id=self.init_sync)  # bool subclass int
+                     if type(self.init_sync) is int else None)
+
+            cmds = await self.tree.sync(guild=guild)
+            _log.info(f'{len(cmds)} slash command(s) synced')
 
     async def on_ready(self):
         _log.info(f'{self.user} is ready to mush!')
