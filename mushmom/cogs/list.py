@@ -52,19 +52,21 @@ class List(commands.Cog):
         char = Character.from_json(user['chars'][i])
         embed.set_image(url=char.url())
 
-        view = CharacterScrollView(user, i, embed)
+        view = CharacterScrollView(interaction, user, i, embed)
         await self.bot.followup(interaction, embed=embed, view=view)
 
 
 class CharacterScrollView(discord.ui.View):
     def __init__(
             self,
+            interaction: discord.Interaction,
             user: dict,
             curr: int,
             embed: discord.Embed,
             timeout: int = 180
     ):
         super().__init__(timeout=timeout)
+        self.orig_interaction = interaction
         self.user = user
         self.curr = curr
         self.embed = embed
@@ -130,6 +132,12 @@ class CharacterScrollView(discord.ui.View):
                                                     embed=None, view=None)
         else:
             raise errors.DatabaseWriteError
+
+    async def on_timeout(self):
+        for button in self.children:
+            button.disabled = True
+
+        await self.orig_interaction.edit_original_response(view=self)
 
 
 def _fmt_char_names(user: dict, bold_i: int):
