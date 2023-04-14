@@ -99,10 +99,12 @@ class Import(commands.Cog):
             elif len(user['chars']) < config.core.max_chars:  # has empty space
                 chars.append(char.to_dict())
             else:  # too many chars; replace?
+                title = 'Max Characters Reached'
                 text = (f'{config.core.bot_name} can only save '
                         f'{config.core.max_chars} character(s). Choose a '
                         'character to replace.')
-                i = await io.get_char_index(interaction, user, text=text)
+                i = await io.get_char_index(interaction, user,
+                                            title=title, text=text)
 
                 if i is not None:
                     chars[i] = char.to_dict()

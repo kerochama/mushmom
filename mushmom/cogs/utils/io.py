@@ -12,6 +12,8 @@ from ... import config, mapleio
 from .. import errors
 from ..resources import EMOJIS
 
+from ...mapleio.character import Character
+
 
 class ConfirmView(discord.ui.View):
     def __init__(self, timeout: int = 180):
@@ -50,6 +52,7 @@ class CharacterSelect(discord.ui.Select):
             user data from database
 
         """
+        self.user = user
         options = [
             discord.SelectOption(label=char['name'], value=str(i))
             for i, char in enumerate(user['chars'])
@@ -59,19 +62,41 @@ class CharacterSelect(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         self.view.select = int(self.values[0])
-        await interaction.response.defer()
+        confirm = self.view.get_button('Confirm')
+        confirm.disabled = False
+
+        for opt in self.options:
+            opt.default = str(self.view.select) == opt.value
+
+        char = Character.from_json(self.user['chars'][self.view.select])
+        self.view.embed.set_image(url=char.url())
+
+        await interaction.response.edit_message(embed=self.view.embed, view=self.view)
 
 
 class CharacterSelectView(discord.ui.View):
-    def __init__(self, user: dict, timeout: int = 180):
+    def __init__(
+            self,
+            interaction: discord.Interaction,
+            user: dict,
+            embed: discord.Embed,
+            timeout: int = 180
+    ):
         super().__init__(timeout=timeout)
+        self.orig_interaction = interaction
+        self.embed = embed
         self.select = None  # select menu value
         self.response = None  # button value
 
         select = CharacterSelect(user)
         self.add_item(select)
 
-    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green, row=1)
+    def get_button(self, label: str):
+        buttons = [x for x in self.children if isinstance(x, discord.ui.Button)]
+        return next((b for b in buttons if b.label == label), None)
+
+    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green,
+                       disabled=True, row=1)
     async def confirm(
             self,
             interaction: discord.Interaction,
@@ -84,7 +109,7 @@ class CharacterSelectView(discord.ui.View):
         else:  # reset if nothing selected
             await interaction.response.edit_message(view=self)
 
-    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.gray, row=1)
+    @discord.ui.button(label="Cancel", row=1)
     async def cancel(
             self,
             interaction: discord.Interaction,
@@ -94,6 +119,12 @@ class CharacterSelectView(discord.ui.View):
         self.response = False
         self.stop()
         await interaction.response.defer()
+
+    async def on_timeout(self):
+        for comp in self.children:
+            comp.disabled = True
+
+        await self.orig_interaction.edit_original_response(view=self)
 
 
 class MessageCache:
@@ -183,6 +214,7 @@ async def get_char_index(
         interaction: discord.Interaction,
         user: dict,
         name: Optional[str] = None,
+        title: Optional[str] = None,
         text: Optional[str] = None
 ) -> Optional[int]:
     """
@@ -196,6 +228,8 @@ async def get_char_index(
         user data from database
     name: str
         the character to be found
+    title: Optional[str]
+        title displayed in embed prior to instructions
     text:
         description displayed in embed prior to instructions
 
@@ -216,9 +250,12 @@ async def get_char_index(
         else:
             return ind
 
-    # prompt if no name given
-    view = CharacterSelectView(user)
-    await interaction.edit_original_response(content=text, view=view)
+    # prompt if no name
+    embed = discord.Embed(description=text, color=config.core.embed_color)
+    embed.set_author(name=title)
+
+    view = CharacterSelectView(interaction, user, embed)
+    await interaction.edit_original_response(embed=embed, view=view)
     await view.wait()  # wait for response
     return None if not view.select else int(view.select)
 
