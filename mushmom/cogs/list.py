@@ -77,7 +77,7 @@ class List(commands.Cog):
         embed.set_thumbnail(url=thumbnail)
 
         # static, animated, custom
-        static = [emote for emote in mapleio.resources.EMOTIONS
+        static = [emote for emote in mapleio.resources.EXPRESSIONS
                   if emote not in mapleio.resources.ANIMATED] + ['\u200b']
         embed.add_field(name='Static', value='\n'.join(static))
         animated = mapleio.resources.ANIMATED + ['\u200b']

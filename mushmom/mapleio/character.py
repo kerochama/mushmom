@@ -36,7 +36,7 @@ class Character:
     action: str
         default action/pose
     emotion: str
-        default emotion
+        default emotion/expression
     job: str
         character's job
 
@@ -68,6 +68,11 @@ class Character:
     def pose(self):
         """Alias action"""
         return self.action
+
+    @property
+    def expression(self):
+        """Alias emotion"""
+        return self.emotion
 
     @classmethod
     def from_json(cls, data: Union[str, dict]) -> Character:
@@ -269,7 +274,7 @@ class Character:
     def url(
             self,
             pose: Optional[str] = None,
-            emotion: Optional[str] = None,
+            expression: Optional[str] = None,
             frame: Union[int, str] = 0,
             zoom: float = 1,
             flipx: bool = False,
@@ -286,8 +291,8 @@ class Character:
         ----------
         pose: Optional[str]
             pose from poses.json. If None, use default
-        emotion: Optional[str]
-            emotion from emotions.json. If None, use default
+        expression: Optional[str]
+            expression from expressions.json. If None, use default
         frame: Union[int, str]
             the animation frame. animated for gif
         zoom: float
@@ -312,9 +317,9 @@ class Character:
 
         """
         pose = pose or self.pose
-        emotion = emotion or self.emotion
+        expression = expression or self.expression
 
-        # format equips. emotion placed in face/face accessory dicts
+        # format equips. expression placed in face/face accessory dicts
         items = [
             {'type': 'Body', 'itemId': self.skin.value, 'version': self.version},
             {'type': 'Head', 'itemId': 10000+self.skin.value, 'version': self.version}
@@ -332,7 +337,7 @@ class Character:
             _type = equip.pop('type')
 
             if _type in ['Face', 'Face Accessory']:
-                equip['animationName'] = emotion
+                equip['animationName'] = expression
 
             if _type in (hide or []):
                 equip['alpha'] = 0

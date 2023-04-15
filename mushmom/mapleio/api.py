@@ -112,7 +112,7 @@ async def get_item(
 @with_session
 async def get_emote(
         char: 'Character',
-        emotion: Optional[str] = None,
+        expression: Optional[str] = None,
         zoom: float = 1,
         pad: int = 8,
         min_width: int = 0,
@@ -126,8 +126,8 @@ async def get_emote(
     ----------
     char: Character
         The character from which to generate the sprite
-    emotion: str
-        emotion from emotions.json. If None, use default
+    expression: str
+        expression from expressions.json. If None, use default
     zoom: float
         how zoomed in the image should be (1 = 100%)
     pad: int
@@ -143,10 +143,10 @@ async def get_emote(
         the byte data from the generated emote
 
     """
-    emotion = emotion or char.emotion
+    expression = expression or char.expression
     u = char.url(
         pose='stand1',
-        emotion=emotion,
+        expression=expression,
         zoom=zoom,
         remove=['Cape', 'Weapon']
     )
@@ -173,7 +173,7 @@ async def get_emote(
 async def get_sprite(
         char: 'Character',
         pose: Optional[str] = None,
-        emotion: Optional[str] = None,
+        expression: Optional[str] = None,
         frame: Union[int, str] = 0,
         zoom: float = 1,
         flipx: bool = False,
@@ -193,8 +193,8 @@ async def get_sprite(
         The character from which to generate the sprite
     pose: str
         pose from poses.json. If None, use default
-    emotion: str
-        emotion from emotions.json. If None, use default
+    expression: str
+        expression from expressions.json. If None, use default
     frame: Union[int, str]
             the animation frame. animated for gif
     zoom: float
@@ -221,7 +221,7 @@ async def get_sprite(
 
     """
     pose = pose or char.pose
-    emotion = emotion or char.emotion
+    expression = expression or char.expression
 
     args = locals().copy()
     args.pop('char')
@@ -238,7 +238,7 @@ async def get_sprite(
 async def get_layers(
         char: 'Character',
         pose: Optional[str] = None,
-        emotion: Optional[str] = None,
+        expression: Optional[str] = None,
         frame: Union[int, str] = 0,
         zoom: float = 1,
         flipx: bool = False,
@@ -259,8 +259,8 @@ async def get_layers(
         The character from which to generate the sprite
     pose: str
         pose from poses.json. If None, use default
-    emotion: str
-        emotion from emotions.json. If None, use default
+    expression: str
+        expression from expressions.json. If None, use default
     frame: Union[int, str]
             the animation frame. animated for gif
     zoom: float
@@ -287,7 +287,7 @@ async def get_layers(
 
     """
     pose = pose or char.pose
-    emotion = emotion or char.emotion
+    expression = expression or char.expression
 
     args = locals().copy()
     args.pop('hide')
@@ -311,7 +311,7 @@ async def get_layers(
 async def get_frames(
         char: 'Character',
         pose: Optional[str] = None,
-        emotion: Optional[str] = None,
+        expression: Optional[str] = None,
         frame: Union[int, str] = 0,
         zoom: float = 1,
         flipx: bool = False,
@@ -332,8 +332,8 @@ async def get_frames(
         The character from which to generate the sprite
     pose: str
         pose from poses.json. If None, use default
-    emotion: str
-        emotion from emotions.json. If None, use default
+    expression: str
+        expression from expressions.json. If None, use default
     frame: Union[int, str]
             the animation frame. animated for gif
     zoom: float
@@ -359,7 +359,7 @@ async def get_frames(
 
     """
     pose = pose or char.pose
-    emotion = emotion or char.emotion
+    expression = expression or char.expression
 
     args = locals().copy()
     args.pop('char')
@@ -393,7 +393,7 @@ async def get_frame_layers():
 @with_session
 async def get_animated_emote(
         char: 'Character',
-        emotion: Optional[str] = None,
+        expression: Optional[str] = None,
         zoom: float = 1,
         pad: int = 8,
         duration: Union[int, Iterable[int]] = 180,
@@ -406,8 +406,8 @@ async def get_animated_emote(
     ----------
     char: Character
         The character from which to generate the sprite
-    emotion: str
-        emotion from emotions.json. If None, use default
+    expression: str
+        expression from expressions.json. If None, use default
     zoom: float
         how zoomed in the image should be (1 = 100%)
     pad: int
@@ -425,7 +425,7 @@ async def get_animated_emote(
         the byte data from the generated emote
 
     """
-    emotion = emotion or char.emotion
+    expression = expression or char.expression
     equips = char.filtered_equips()
 
     # divide char parts into groups
@@ -438,7 +438,7 @@ async def get_animated_emote(
     kwargs = {
         'char': char,
         'pose': 'stand1',
-        'emotion': emotion,
+        'expression': expression,
         'zoom': zoom,
         'hide': head,
         'remove': remove,

@@ -19,7 +19,7 @@ from discord.app_commands import Transform
 from ..mapleio.character import Character
 from .utils.transformers import CharacterTransformer
 
-Emotes = Enum('Emotes', mapleio.resources.EMOTIONS)
+Emotes = Enum('Emotes', mapleio.resources.EXPRESSIONS)
 
 
 class Mush(commands.Cog):

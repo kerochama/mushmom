@@ -35,7 +35,7 @@ class Sprites(commands.Cog):
         ----------
         ctx: commands.Context
         emotion: Optional[str]
-            a word listed in in emotions.json. If None, use default
+            a word listed in in expressions.json. If None, use default
         pose: Optional[str]
             a word listed in in poses.json. If None, use default
         options: converters.ImgFlags
