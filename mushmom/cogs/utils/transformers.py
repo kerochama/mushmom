@@ -8,7 +8,7 @@ import discord
 
 from discord.ext import commands
 from discord import app_commands
-from typing import Optional, TypeVar, Type
+from typing import Union
 
 from ... import config, mapleio
 from ...mapleio.character import Character
@@ -44,3 +44,29 @@ class CharacterTransformer(app_commands.Transformer):
         # passing a name does not prompt anything
         i = await io.get_char_index(interaction, user, name=value)
         return Character.from_json(user['chars'][i])
+
+
+def contains(choices: Union[list, dict]):
+    """
+    Autocomplete function for filtering choices
+
+    Parameters
+    ----------
+    choices: Union[list, dict]
+      A list of choices or label: value choice options
+
+    Returns
+    -------
+      coroutine to be used as autocomplete callback
+
+    """
+    if isinstance(choices, list):
+        choices = dict(zip(choices, choices))
+
+    async def wrapper(interaction, current):
+        return [app_commands.Choice(name=k, value=v)
+                for k, v in choices.items()
+                if current.lower() in k.lower()][:25]
+
+    return wrapper
+
