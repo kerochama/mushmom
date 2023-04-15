@@ -207,7 +207,7 @@ async def get_default_char(interaction: discord.Interaction):
 
     i = user['default']
 
-    return mapleio.character.Character.from_json(user['chars'][i])
+    return Character.from_json(user['chars'][i])
 
 
 async def get_char_index(
