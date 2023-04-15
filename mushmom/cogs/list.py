@@ -9,9 +9,10 @@ from discord import app_commands
 
 from itertools import cycle
 
-from .. import config
+from .. import config, mapleio
 from . import errors
 
+from .resources import EMOJIS
 from ..mapleio.character import Character
 
 
@@ -54,6 +55,36 @@ class List(commands.Cog):
 
         view = CharacterScrollView(interaction, user, i, embed)
         await self.bot.followup(interaction, embed=embed, view=view)
+
+    @list_group.command()
+    async def emotes(self, interaction: discord.Interaction):
+        """
+        List all emotes available
+
+        Parameters
+        ----------
+        interaction: discord.Interaction
+
+        """
+        embed = discord.Embed(
+            description=('The following is a list of emotes you can use. '
+                         'Call these using the `/mush` command\n\u200b'),
+            color=config.core.embed_color
+        )
+
+        embed.set_author(name='Emotes', icon_url=self.bot.user.display_avatar.url)
+        thumbnail = self.bot.get_emoji_url(EMOJIS['mushcheers'])
+        embed.set_thumbnail(url=thumbnail)
+
+        # static, animated, custom
+        static = [emote for emote in mapleio.resources.EMOTIONS
+                  if emote not in mapleio.resources.ANIMATED] + ['\u200b']
+        embed.add_field(name='Static', value='\n'.join(static))
+        animated = mapleio.resources.ANIMATED + ['\u200b']
+        embed.add_field(name='Animated', value='\n'.join(animated))
+        embed.add_field(name='Custom', value='\n'.join([]))
+
+        await self.bot.ephemeral(interaction, embed=embed)
 
 
 class CharacterScrollView(discord.ui.View):

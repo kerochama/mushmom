@@ -143,44 +143,6 @@ class Mushmom(commands.Bot):
         if not self._verify_cache_integrity.is_running:
             self._verify_cache_integrity.start()
 
-    async def on_message(self, message: discord.Message) -> None:
-        """
-        Call emotes if no command found and emote name is passed
-
-        Parameters
-        ----------
-        message: discord.Message
-
-        """
-        ctx = await self.get_context(message)
-        cmd = ctx.command
-        self.timer.start(ctx)
-
-        # not handled by other commands
-        if (ctx.prefix and not cmd
-                and all([await c(ctx) for c in self._checks])):
-            no_prefix = message.content[len(ctx.prefix):]
-            args = no_prefix.split(' ')
-            cmd = args.pop(0)
-
-            # manually try to call as emote command
-            if cmd not in mapleio.resources.EMOTIONS:
-                return
-
-            message.content = f'{ctx.prefix}emote {no_prefix}'
-            new_ctx = await self.get_context(message)
-            cmd = new_ctx.command
-            await self.invoke(new_ctx)
-        else:
-            await self.process_commands(message)
-
-        # track command calls
-        if config.database.track and cmd and not cmd.hidden:
-            await self.db.track(
-                ctx.guild.id, ctx.author.id, cmd.qualified_name)
-
-        self.timer.stop(ctx)
-
     async def on_command_error(
             self,
             ctx: commands.Context,

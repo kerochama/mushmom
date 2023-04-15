@@ -132,39 +132,6 @@ server:
     errors.DataWriteError:
       <<: *dberror
 
-emotes:
-  emote:
-    errors.UnparsedArgsError:
-      msg: "Emote was not found. See:\n\u200b"
-      ref_cmds: [emotes]
-    errors.FlagParseError: &flagerr
-      msg: "Problem parsing options. Check:\n\u200b"
-      ref_cmds: [help]
-    errors.NoMoreItems:
-      <<: *nochars
-    errors.DataNotFound:
-      <<: *missingchar
-    errors.MapleIOError:
-      <<: *apierror
-
-import2:
-  import2:
-    commands.BadArgument:
-      msg: "Supply a character name to start mushing. Try:\n\u200b"
-      ref_cmds: [import]
-    # commands.MissingArgument handled in command.error
-    errors.UnexpectedFileTypeError:
-      msg: Only JSON files are accepted
-      ref_cmds: null
-    errors.CharacterParseError:
-      msg: There was an error parsing your source data
-      ref_cmds: null
-    errors.DiscordIOError:
-      msg: Error trying to read attached JSON file. Try again later
-      ref_cmds: null
-    errors.DataWriteError:
-      <<: *dberror
-
 help:
   help:
     commands.TooManyArguments:
