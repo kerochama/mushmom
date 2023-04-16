@@ -9,8 +9,7 @@ from discord import app_commands
 from typing import Optional, Union
 
 from .. import config
-from . import errors
-from .utils import converters, io
+from .utils import converters, io, errors
 from ..mapleio.character import Character
 
 from discord.app_commands import Transform
@@ -51,7 +50,10 @@ class Import(commands.Cog):
         """
         # Must supply source data
         if not (url or json):
-            raise errors.MissingArgument
+            url = f'{config.mapleio.api_url}/character'
+            msg = ('No source data was found. Please supply either a JSON file'
+                   f'with character data or a `{url}` url')
+            raise errors.MissingArgument(msg)
 
         await self.bot.defer(interaction)
 
@@ -63,7 +65,8 @@ class Import(commands.Cog):
             parser = Character.from_json
             src = await self.bot.download(json.url, errors.DiscordIOError)
         else:
-            raise errors.UnexpectedFileTypeError
+            msg = 'Only JSON files are accepted'
+            raise errors.UnexpectedFileTypeError(msg)
 
         # parse char data
         try:

@@ -5,12 +5,10 @@ Various functions for making prompts
 import discord
 import time
 
-from discord.ext import commands
-from typing import Optional, Any, Union
+from typing import Optional, Any
 
-from ... import config, mapleio
-from .. import errors
-from ..resources import EMOJIS
+from . import errors
+from ... import config
 
 from ...mapleio.character import Character
 

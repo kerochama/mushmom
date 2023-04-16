@@ -138,20 +138,6 @@ help:
       msg: Could not find command
       ref_cmds: null
 
-sprites:
-  sprite:
-    errors.UnparsedArgsError:
-      msg: "Emotion/pose not found. See:\n\u200b"
-      ref_cmds: [sprite emotions, sprite poses]
-    errors.FlagParseError:
-      <<: *flagerr
-    errors.NoMoreItems:
-      <<: *nochars
-    errors.DataNotFound:
-      <<: *missingchar
-    errors.MapleIOError:
-      <<: *apierror
-
 _default:
   NoCharacters:
     msg: No registered characters. Please import one to use command

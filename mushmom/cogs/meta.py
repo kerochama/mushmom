@@ -9,6 +9,7 @@ from discord import app_commands
 from typing import Optional
 
 from .. import config
+from .utils import errors
 
 
 class Meta(commands.Cog):
@@ -115,6 +116,7 @@ class Meta(commands.Cog):
 
     @app_commands.command(name="whoami", description="whoami")
     async def whoami(self, interaction: discord.Interaction):
+        raise errors.MushError('blah', see_also=['a'])
         await self.bot.ephemeral(interaction, interaction.user.name)
 
 

@@ -10,7 +10,7 @@ from discord import app_commands
 from itertools import cycle
 
 from .. import config, mapleio
-from . import errors
+from .utils import errors
 
 from .resources import EMOJIS
 from ..mapleio.character import Character

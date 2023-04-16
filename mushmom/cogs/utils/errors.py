@@ -2,91 +2,84 @@
 Custom errors for bot
 
 """
-import discord
+from discord import app_commands
+from typing import Optional, Iterable
 
-from discord.ext import commands
-
-
-class MushmomError(commands.CommandError):
-    pass
+from ... import config
 
 
-class DataNotFound(MushmomError):
-    """Not found in database"""
-    pass
+class MushError(app_commands.AppCommandError):
+    """
+    Base error for bot.
+
+    Attributes
+    ----------
+    cls.default_msg: Optional[str]
+      default message to send
+    cls.default_see_also: Optional[Iterable[str]]
+      default commands to reference
+    msg: Optional[str]
+      message to send
+    see_also: Optional[Iterable[str]]
+      commands to reference
+
+    """
+    default_msg = f'{config.core.bot_name} failed *cry*'
+    default_see_also = None
+
+    def __init__(
+            self,
+            msg: Optional[str] = None,
+            see_also: Optional[Iterable[str]] = None
+    ):
+        self.msg = msg or self.default_msg
+        self.see_also = see_also or self.default_see_also
+        super().__init__(self.msg)
 
 
-class DataWriteError(MushmomError):
+class DatabaseWriteError(MushError):
     """Database error when updating"""
-    pass
+    default_msg = 'Problem writing to database. Try again later'
 
 
-class MapleIOError(MushmomError):
+class NoCharacters(MushError):
+    """New user. No registered chars"""
+    default_msg = 'No registered characters. Please import one to use command'
+    default_see_also = ['import']
+
+
+class CharacterNotFound(MushError):
+    """Character not found in database"""
+    default_msg = ("Could not find character. List your characters to see "
+                   "what's been imported")
+    default_see_also = ['list chars']
+
+
+class MapleIOError(MushError):
     """General MapleIO error"""
-    pass
+    default_msg = 'Maplestory.io request failed or timed out. Try again later'
 
 
-class InvalidPoseError(MushmomError):
-    """Invalid pose"""
-    pass
+class BadArgument(MushError):
+    """General bad argument error"""
+    default_msg = 'Invalid input to argument'
 
 
-class InvalidEmotionError(MushmomError):
-    """Invalid emotion"""
-    pass
+class MissingArgument(MushError):
+    """General required arg missing error"""
+    default_msg = 'Missing argument'
 
 
-class InvalidJobError(MushmomError):
-    """Invalid job"""
-    pass
-
-
-class UnexpectedFileTypeError(MushmomError):
+class UnexpectedFileTypeError(MushError):
     """Wrong file type"""
-    pass
+    default_msg = 'Unexpected file type'
 
 
-class CharacterParseError(MushmomError):
+class CharacterParseError(MushError):
     """Error when parsing source data"""
-    pass
+    default_msg = 'There was an error parsing your source data'
 
 
-class DiscordIOError(MushmomError):
+class DiscordIOError(MushError):
     """Error reading attachments from Discord"""
-    pass
-
-
-class TimeoutError(MushmomError):
-    """Same as regular time, but inherits commands.CommandError"""
-    pass
-
-
-class NoMoreItems(MushmomError):
-    """Command error version of discord.NoMoreItems"""
-    pass
-
-
-class CharacterAlreadyExists(MushmomError):
-    """Character already exists"""
-    pass
-
-
-class UnparsedArgsError(MushmomError):
-    """Unparsed args before flags"""
-    pass
-
-
-class FlagParseError(MushmomError):
-    """Extraneous flags or args found"""
-
-
-class SelfFameError(MushmomError):
-    """Cannot fame self"""
-
-
-class AlreadyFamedError(MushmomError):
-    """Already famed user today"""
-
-
-class MaxFamesReached(MushmomError):
-    """Already famed max number of people"""
+    default_msg = 'Error trying to read attached JSON file. Try again later'

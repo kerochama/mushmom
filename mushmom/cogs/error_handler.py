@@ -11,11 +11,11 @@ from discord import app_commands
 from typing import Optional, Iterable
 
 from .. import config
-from . import reference
+from .utils import errors
 from .resources import EMOJIS
 
 
-class Errors(commands.Cog):
+class ErrorHandler(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -32,13 +32,10 @@ class Errors(commands.Cog):
     async def get_app_command_error(
             self,
             interaction: discord.Interaction,
-            error: discord.app_commands.AppCommandError
+            error: app_commands.AppCommandError
     ) -> None:
         """
-        Override default error handler to always run. Errors messages
-        are pulled from cogs.reference.ERRORS.
-
-        Local error handlers can still be used
+        Override default error handler to send ephemeral messages
 
         Parameters
         ----------
@@ -47,38 +44,30 @@ class Errors(commands.Cog):
 
         """
         cmd = interaction.command.name
-        err = error.__class__.__name__
 
-        if (cmd in reference.ERRORS.keys()   # command specific error
-                and err in reference.ERRORS[cmd].keys()):
-            specs = reference.ERRORS[cmd][err]
-        elif err in reference.ERRORS['_default'].keys():  # general error
-            specs = reference.ERRORS['_default'][err]
+        if isinstance(error, errors.MushError):
+            info = {'msg': error.msg, 'see_also': error.see_also}
+            await self.send_error(interaction, **info)
         else:
             if not isinstance(error, app_commands.CheckFailure):
                 print(f'Ignoring exception in command `{cmd}`:', file=sys.stderr)
                 traceback.print_exception(type(error), error, error.__traceback__,
                                           file=sys.stderr)
-            return
-
-        await self.send_error(interaction, *specs.values())
 
     async def send_error(
         self,
         interaction: discord.Interaction,
-        text: Optional[str] = None,
+        msg: Optional[str] = None,
         see_also: Optional[Iterable[str]] = None,
         raw_content: Optional[str] = None
     ) -> discord.WebhookMessage:
         """
-        Send a message to ctx.channel with an error message. The
-        original message and the error message will auto-delete after
-        a few seconds to keep channel clean
+        Send an ephemeral message with an error
 
         Parameters
         ----------
         interaction: discord.Interaction
-        text: Optional[str]
+        msg: Optional[str]
             the message to send in embed
         see_also: Optional[Iterable[str]]
             list of fully qualified command names to reference
@@ -92,11 +81,11 @@ class Errors(commands.Cog):
 
         """
         # defaults
-        text = text or f'{config.core.bot_name} failed *cry*'
-        text += '\n\u200b'
+        msg = msg or f'{config.core.bot_name} failed *cry*'
+        msg += '\n\u200b'
 
         # send error
-        embed = discord.Embed(description=text, color=config.core.embed_color)
+        embed = discord.Embed(description=msg, color=config.core.embed_color)
         embed.set_author(name='Error',
                          icon_url=self.bot.user.display_avatar.url)
         embed.set_thumbnail(url=self.bot.get_emoji_url(EMOJIS['mushshock']))
@@ -112,55 +101,4 @@ class Errors(commands.Cog):
 
 
 async def setup(bot: commands.Bot):
-    await bot.add_cog(Errors(bot))
-
-
-# Custom errors
-class MushError(app_commands.AppCommandError):
-    """Base bot error"""
-    pass
-
-
-class DatabaseWriteError(MushError):
-    """Database error when updating"""
-    pass
-
-
-class NoCharacters(MushError):
-    """New user. No registered chars"""
-    pass
-
-
-class CharacterNotFound(MushError):
-    """Character not found in database"""
-    pass
-
-
-class MapleIOError(MushError):
-    """General MapleIO error"""
-    pass
-
-
-class BadArgument(MushError):
-    """General bad argument error"""
-    pass
-
-
-class MissingArgument(MushError):
-    """General required arg missing error"""
-    pass
-
-
-class UnexpectedFileTypeError(MushError):
-    """Wrong file type"""
-    pass
-
-
-class CharacterParseError(MushError):
-    """Error when parsing source data"""
-    pass
-
-
-class DiscordIOError(MushError):
-    """Error reading attachments from Discord"""
-    pass
+    await bot.add_cog(ErrorHandler(bot))

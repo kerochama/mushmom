@@ -11,9 +11,8 @@ from typing import Optional
 from io import BytesIO
 from aenum import Enum
 
-from .. import config, mapleio
-from . import errors
-from .utils import io
+from .. import mapleio
+from .utils import io, errors
 
 from discord.app_commands import Transform
 from ..mapleio.character import Character

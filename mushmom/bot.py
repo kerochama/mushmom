@@ -31,12 +31,12 @@ initial_extensions = (
     'cogs.actions',
     'cogs.characters',
     'cogs.import',
-    'cogs.emotes',
     'cogs.server',
     'cogs.sprites',
     'cogs.mush',
-    'cogs.errors',
-    'cogs.list'
+    'cogs.error_handler',
+    'cogs.list',
+    'cogs.pose'
 )
 
 
