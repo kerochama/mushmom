@@ -43,7 +43,7 @@ class Pose(commands.Cog):
             character to use. Default char if not provided
 
         """
-        if pose and pose not in mapleio.POSES.keys():
+        if pose and pose not in mapleio.POSES.values():
             msg = 'Invalid pose was passed'
             raise errors.BadArgument(msg, see_also=['list poses'])
 
@@ -60,7 +60,9 @@ class Pose(commands.Cog):
 
         # create sprite
         data = await mapleio.api.get_sprite(
-            char, pose=pose, expression=expression, session=self.bot.session)
+            char, pose=pose, expression=expression, min_width=300,
+            session=self.bot.session
+        )
 
         if data:
             filename = f'{char.name or "char"}_{expression}.png'

@@ -9,7 +9,6 @@ import zipfile
 
 from PIL import Image
 from io import BytesIO
-from collections import namedtuple
 from typing import Callable, Coroutine, Any, Optional, Union, Iterable
 
 from . import imutils
@@ -182,6 +181,7 @@ async def get_sprite(
         hide: Optional[Iterable[str]] = None,
         remove: Optional[Iterable[str]] = None,
         replace: Optional[Iterable['Equip']] = None,
+        min_width: int = 0,
         session: aiohttp.ClientSession = None
 ) -> Optional[bytes]:
     """
@@ -211,6 +211,8 @@ async def get_sprite(
         list of equip types to remove
     replace: Optional[Iterable[Equip]]
         list of equip to overwrite char equips by type
+    min_width: int
+        min width of image. padded on right with transparent fill
     session: Optional[aiohttp.ClientSession]
         session to use when issuing http get
 
@@ -225,13 +227,21 @@ async def get_sprite(
 
     args = locals().copy()
     args.pop('char')
+    args.pop('min_width')
     args.pop('session')
     u = char.url(**args)
 
     # http request
     async with session.get(u) as r:
         if r.status == 200:
-            return await r.read()  # png bytes
+            img_data = await r.read()  # png bytes
+            img = Image.open(BytesIO(img_data))
+            padded = imutils.min_width(img, min_width)
+
+            byte_arr = BytesIO()
+            padded.save(byte_arr, format='PNG')
+
+            return byte_arr.getvalue()
 
 
 @with_session
