@@ -91,7 +91,7 @@ class ErrorHandler(commands.Cog):
         embed.set_thumbnail(url=self.bot.get_emoji_url(EMOJIS['mushshock']))
 
         if see_also:
-            fmt = [f'`{cmd}`' for cmd in see_also]
+            fmt = [f'`/{cmd}`' for cmd in see_also]
             embed.add_field(name='See also', value=', '.join(fmt))
 
         coro = (self.bot.followup if interaction.response.is_done()
