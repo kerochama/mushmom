@@ -53,7 +53,7 @@ class Mush(commands.Cog):
             if emote.name in mapleio.ANIMATED
             else (mapleio.api.get_emote, 'png')
         )
-        data = await coro(char, emotion=emote.name, min_width=300,
+        data = await coro(char, expression=emote.name, min_width=300,
                           session=self.bot.session)
 
         if data:
