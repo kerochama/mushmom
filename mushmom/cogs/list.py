@@ -17,10 +17,15 @@ from ..mapleio.character import Character
 
 
 class List(commands.Cog):
+    """
+    Command group used for listing values
+
+    """
+    list_group = app_commands.Group(name='list',
+                                    description='List different things')
+
     def __init__(self, bot):
         self.bot = bot
-
-    list_group = app_commands.Group(name='list', description='List different things')
 
     @list_group.command()
     async def chars(self, interaction: discord.Interaction):
@@ -83,6 +88,76 @@ class List(commands.Cog):
         animated = mapleio.ANIMATED + ['\u200b']
         embed.add_field(name='Animated', value='\n'.join(animated))
         embed.add_field(name='Custom', value='\n'.join([]))
+
+        await self.bot.ephemeral(interaction, embed=embed)
+
+    @list_group.command()
+    async def expressions(self, interaction: discord.Interaction):
+        """
+        List the expressions available for characters
+
+        Parameters
+        ----------
+        interaction: discord.Interaction
+
+        """
+        embed = discord.Embed(
+            description=('The following is a list of expressions you can use '
+                         'in the generation of your sprite in `/pose`.\n\u200b'),
+            color=config.core.embed_color
+        )
+
+        embed.set_author(name='Expressions',
+                         icon_url=self.bot.user.display_avatar.url)
+        thumbnail = self.bot.get_emoji_url(EMOJIS['mushcheers'])
+        embed.set_thumbnail(url=thumbnail)
+        embed.set_footer(text='[GMS v240]')
+
+        # split emotions into 3 lists
+        expressions = [mapleio.EXPRESSIONS[i::3] for i in range(3)]  # order not preserved
+        expressions = [lst + ['\u200b'] for lst in expressions]
+        embed.add_field(name='Expressions', value='\n'.join(expressions[0]))
+        embed.add_field(name='\u200b', value='\n'.join(expressions[1]))
+        embed.add_field(name='\u200b', value='\n'.join(expressions[2]))
+
+        await self.bot.ephemeral(interaction, embed=embed)
+
+    @list_group.command()
+    async def poses(
+            self,
+            interaction: discord.Interaction,
+            show_values: bool = False
+    ):
+        """
+        List the poses available for characters
+
+        Parameters
+        ----------
+        interaction: discord.Interaction
+        show_values: bool
+          Display raw values instead of label
+
+        """
+        embed = discord.Embed(
+            description=('The following is a list of poses you can use in the '
+                         'generation of your sprite in `/pose`.\n\u200b'),
+            color=config.core.embed_color
+        )
+
+        embed.set_author(name='Poses', icon_url=self.bot.user.display_avatar.url)
+        embed.set_thumbnail(url=self.bot.get_emoji_url(EMOJIS['mushdab']))
+        embed.set_footer(text='[GMS v240]')
+
+        label = 'Raw Values' if show_values else 'Poses'
+        vals = mapleio.POSES.values() if show_values else mapleio.POSES.keys()
+        numbered = [f'`{i+1}`\u3000{x}' for i, x in enumerate(vals)]
+
+        n = len(vals) // 3
+        poses = [list(numbered)[i*n:(i+1)*n] for i in range(3)]
+        poses = [lst + ['\u200b'] for lst in poses]
+        embed.add_field(name=label, value='\n'.join(poses[0]))
+        embed.add_field(name='\u200b', value='\n'.join(poses[1]))
+        embed.add_field(name='\u200b', value='\n'.join(poses[2]))
 
         await self.bot.ephemeral(interaction, embed=embed)
 
