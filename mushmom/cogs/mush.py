@@ -20,8 +20,6 @@ from .utils.parameters import (
     CharacterTransformer, contains, autocomplete_chars
 )
 
-Emotes = Enum('Emotes', mapleio.EXPRESSIONS)
-
 
 class Mush(commands.Cog):
     def __init__(self, bot):
@@ -33,7 +31,7 @@ class Mush(commands.Cog):
     async def mush(
             self,
             interaction: discord.Interaction,
-            emote: Emotes,
+            emote: str,
             char: Optional[Transform[Character, CharacterTransformer]] = None
     ) -> None:
         """
@@ -42,7 +40,7 @@ class Mush(commands.Cog):
         Parameters
         ----------
         interaction: discord.Interaction,
-        emote: Emotes
+        emote: str
             the emote to send
         char: Optional[Transform[Character, CharacterTransformer]]
             character to use. Default char if not provided
