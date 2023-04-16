@@ -11,7 +11,7 @@ from aenum import Enum, IntEnum, auto, extend_enum
 from typing import Union, Optional, Any, Iterable
 
 from .. import config
-from . import resources
+from . import SKINS
 from .equip import Equip, BeautyItem, DEFAULT_HSV
 
 
@@ -453,7 +453,7 @@ class Skin(IntEnum):
 
 
 # populate Skin enum
-for k, v in resources.SKINS.items():
+for k, v in SKINS.items():
     key = k.upper().replace(' ', '_')  # Pale Pink -> PALE_PINK
     extend_enum(Skin, key, v)
 

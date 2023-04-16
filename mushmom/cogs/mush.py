@@ -18,7 +18,7 @@ from discord.app_commands import Transform
 from ..mapleio.character import Character
 from .utils.transformers import CharacterTransformer
 
-Emotes = Enum('Emotes', mapleio.resources.EXPRESSIONS)
+Emotes = Enum('Emotes', mapleio.EXPRESSIONS)
 
 
 class Mush(commands.Cog):
@@ -50,7 +50,7 @@ class Mush(commands.Cog):
         # create emote
         coro, ext = (
             (mapleio.api.get_animated_emote, 'gif')
-            if emote.name in mapleio.resources.ANIMATED
+            if emote.name in mapleio.ANIMATED
             else (mapleio.api.get_emote, 'png')
         )
         data = await coro(char, emotion=emote.name, min_width=300,

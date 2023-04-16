@@ -8,14 +8,14 @@ from __future__ import annotations
 from collections import namedtuple
 from typing import Optional, Union, Any
 
-from . import resources, api
+from . import api, EQUIP_RANGES
 
 
 EquipType = namedtuple('EquipType', 'name category subcategory low high')  # pseudo class
 
 EQUIP_TYPES = [
     EquipType('Weapon' if 'Weapon' in cat else d['subCategory'], cat, *d.values())
-    for cat, data in resources.EQUIP_RANGES.items()
+    for cat, data in EQUIP_RANGES.items()
     for d in data
 ]
 
