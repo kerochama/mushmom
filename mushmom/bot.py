@@ -561,8 +561,9 @@ class Mushmom(commands.Bot):
 
     @tasks.loop(minutes=10)
     async def _verify_cache_integrity(self):
-        """Clean up stray cached replies"""
+        """Clean up stray cached data"""
         self.reply_cache.verify_cache_integrity()
+        self.db.user_cache.verify_cache_integrity()
 
     async def close(self):
         """Ensure all connections are closed"""
