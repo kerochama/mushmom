@@ -5,7 +5,6 @@ from discord import app_commands
 
 from typing import Optional
 from io import BytesIO
-from aenum import Enum
 
 from .. import mapleio
 from .utils import io, errors
@@ -27,7 +26,8 @@ class Pose(commands.Cog):
             interaction: discord.Interaction,
             pose: Optional[str] = None,
             expression: Optional[str] = None,
-            char: Optional[Transform[Character, CharacterTransformer]] = None
+            char: Optional[Transform[Character, CharacterTransformer]] = None,
+            frame: int = 0
     ):
         """
         Send a posing character as message
@@ -41,6 +41,8 @@ class Pose(commands.Cog):
             An expression from /list expressions. If None, use default
         char: Optional[Transform[Character, CharacterTransformer]]
             character to use. Default char if not provided
+        frame: int
+            frame of the animation
 
         """
         if pose and pose not in mapleio.POSES.values():
@@ -61,7 +63,7 @@ class Pose(commands.Cog):
         # create sprite
         data = await mapleio.api.get_sprite(
             char, pose=pose, expression=expression, min_width=300,
-            session=self.bot.session
+            frame=frame, session=self.bot.session
         )
 
         if data:
