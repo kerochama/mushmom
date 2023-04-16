@@ -3,10 +3,13 @@ Functions related to database connection.  Currently using MongoDB,
 but could be replaced easily as long as functionality is the same
 
 """
+import time
+import asyncio
+
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.results import InsertOneResult, UpdateResult
 from datetime import datetime
-from typing import Optional, Union
+from typing import Optional, Union, Any, Hashable
 
 from . import config
 
@@ -42,6 +45,9 @@ class Database:
         self.users = self.db.users
         self.guilds = self.db.guilds
 
+        # caches
+        self.user_cache = DatabaseCache(seconds=60)  # 5 minute cache
+
     async def get_user(
             self,
             userid: int,
@@ -64,7 +70,17 @@ class Database:
             found user data or None
 
         """
-        return await self.users.find_one({'_id': userid}, projection)
+        lock = asyncio.Lock()  # avoid update between in cache check and await
+
+        async with lock:
+            if userid in self.user_cache:
+                _data = self.user_cache.get(userid)
+                return self._handle_proj(_data, projection)
+            else:
+                data = await self.users.find_one({'_id': userid}, projection)
+                if data:
+                    self.user_cache.add(userid, data)
+                return data
 
     async def add_user(
             self, userid: int,
@@ -97,6 +113,7 @@ class Database:
             'update_time': datetime.utcnow(),
         }
 
+        self.user_cache.add(userid, data)
         return await self.users.insert_one(data)
 
     async def set_user(
@@ -105,7 +122,8 @@ class Database:
             data: dict,
     ) -> UpdateResult:
         """
-        Set/update user data fields
+        Set/update user data fields.  Invalidate cache since user can
+        do a partial update, which is difficult to handle
 
         Parameters
         ----------
@@ -125,6 +143,8 @@ class Database:
         so the default tracking is `False`
 
         """
+        self.user_cache.remove(userid)  # invalidate cache
+
         # set userid/_id manually
         data.pop('_id', None)
         data.pop('userid', None)
@@ -255,5 +275,95 @@ class Database:
             await self.users.update_one({'_id': userid}, update)
         )
 
+    @staticmethod
+    def _handle_proj(
+            d: dict,
+            proj: Optional[Union[list[str], dict[str, bool]]] = None
+    ):
+        """
+        Filter dict like MongoDB projection
+
+        """
+        filtered = d
+        if isinstance(proj, list):  # make dict for consistent handling
+            proj = {k: True for k in proj}
+
+        if proj:
+            keep = [k for k, v in proj.items() if v]
+            filtered = {k: v for k, v in d.items() if k in keep}
+            if not filtered:  # contains only Falses
+                filtered = {k: v for k, v in d.items() if k not in proj.keys()}
+
+        return filtered
+
     def close(self):  # not coroutine
         self.client.close()
+
+
+class DatabaseCache:
+    """
+    Maintains a cache of db output to reduce calls to db when changes
+    are unlikely.  Would cause issues if user makes changes in a different
+    channel/server before submitting, but the user would basically know
+    they were doing it.
+
+    Entries will expire after some time.  Verify auto calls every x calls
+    to get/add/remove
+
+    Parameters
+    ----------
+    seconds: int
+        the number of seconds to wait before expiring
+
+    """
+    def __init__(self, seconds: int):
+        super().__init__()
+        self.__ttl = seconds
+        self.__cache = {}
+
+        self.__cnt = 0
+        self.__recur = 20  # auto verify every 20 calls
+
+    def verify_cache_integrity(self) -> None:
+        """Loop through cache and remove all expired keys"""
+        current_time = time.monotonic()
+        to_remove = [k for (k, (v, t)) in self.__cache.items()
+                     if current_time > (t + self.__ttl)]
+        for k in to_remove:
+            del self.__cache[k]
+
+    def get(self, k: Hashable) -> Any:
+        self._verify_internal()
+
+        if k in self.__cache:
+            value, t = self.__cache.get(k)
+            current_time = time.monotonic()
+            if current_time <= (t + self.__ttl):
+                return value
+
+    def add(self, k: Hashable, value: Any) -> None:
+        self._verify_internal()
+        self.__cache[k] = (value, time.monotonic())
+
+    def remove(self, k: Hashable) -> None:
+        self._verify_internal()
+        self.__cache.pop(k, None)
+
+    def contains(self, k: Hashable) -> bool:
+        if k in self.__cache:
+            value, t = self.__cache.get(k)
+            current_time = time.monotonic()
+            return current_time <= (t + self.__ttl)
+        else:
+            return False
+
+    def __contains__(self, k: Hashable) -> bool:
+        return self.contains(k)
+
+    def _verify_internal(self):
+        """Verify every __recur calls"""
+        self.__cnt += 1
+
+        if self.__cnt >= self.__recur:
+            self.verify_cache_integrity()
+            self.__cnt = 0
