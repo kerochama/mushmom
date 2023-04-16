@@ -49,11 +49,11 @@ class Pose(commands.Cog):
 
         """
         if pose and pose not in mapleio.POSES.values():
-            msg = 'Invalid pose was passed'
+            msg = f'{pose} is not a valid pose'
             raise errors.BadArgument(msg, see_also=['list poses'])
 
         if expression and expression not in mapleio.EXPRESSIONS:
-            msg = 'Invalid expression was passed'
+            msg = f'{expression} is not a valid expression'
             raise errors.BadArgument(msg, see_also=['list expressions'])
 
         # wait for processing
