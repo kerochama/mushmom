@@ -47,6 +47,28 @@ class CharacterTransformer(app_commands.Transformer):
         return Character.from_json(user['chars'][i])
 
 
+async def autocomplete_chars(interaction, current):
+    """
+    Autocomplete for user's characters. Note: db call is cached,
+    so not clobbering the database
+
+    Parameters
+    ----------
+    interaction: discord.Interaction
+    current: str
+
+    Returns
+    -------
+        List[app_commands.Choice]
+    """
+    user = await interaction.client.db.get_user(interaction.user.id)
+    if user:
+        return [app_commands.Choice(name=char['name'], value=char['name'])
+                for char in user['chars']
+                if current.lower() in char['name'].lower()]
+    return []
+
+
 def contains(choices: Union[list, dict]):
     """
     Autocomplete function for filtering choices
@@ -70,4 +92,3 @@ def contains(choices: Union[list, dict]):
                 if current.lower() in k.lower()][:25]
 
     return wrapper
-

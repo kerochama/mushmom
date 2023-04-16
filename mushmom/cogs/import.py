@@ -13,7 +13,7 @@ from .utils import converters, io, errors
 from ..mapleio.character import Character
 
 from discord.app_commands import Transform
-from .utils.transformers import MapleIOURLTransformer
+from .utils.parameters import MapleIOURLTransformer
 
 
 class Import(commands.Cog):

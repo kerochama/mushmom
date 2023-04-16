@@ -11,7 +11,9 @@ from .utils import io, errors
 
 from discord.app_commands import Transform
 from ..mapleio.character import Character
-from .utils.transformers import CharacterTransformer, contains
+from .utils.parameters import (
+    CharacterTransformer, contains, autocomplete_chars
+)
 
 
 class Pose(commands.Cog):
@@ -20,7 +22,8 @@ class Pose(commands.Cog):
 
     @app_commands.command()
     @app_commands.autocomplete(pose=contains(mapleio.POSES),
-                               expression=contains(mapleio.EXPRESSIONS))
+                               expression=contains(mapleio.EXPRESSIONS),
+                               char=autocomplete_chars)
     async def pose(
             self,
             interaction: discord.Interaction,

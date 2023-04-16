@@ -16,7 +16,9 @@ from .utils import io, errors
 
 from discord.app_commands import Transform
 from ..mapleio.character import Character
-from .utils.transformers import CharacterTransformer
+from .utils.parameters import (
+    CharacterTransformer, contains, autocomplete_chars
+)
 
 Emotes = Enum('Emotes', mapleio.EXPRESSIONS)
 
@@ -26,6 +28,7 @@ class Mush(commands.Cog):
         self.bot = bot
 
     @app_commands.command()
+    @app_commands.autocomplete(char=autocomplete_chars)
     async def mush(
             self,
             interaction: discord.Interaction,
