@@ -28,7 +28,8 @@ class Mush(commands.Cog):
         self.bot = bot
 
     @app_commands.command()
-    @app_commands.autocomplete(char=autocomplete_chars)
+    @app_commands.autocomplete(emote=contains(mapleio.EXPRESSIONS),
+                               char=autocomplete_chars)
     async def mush(
             self,
             interaction: discord.Interaction,
@@ -47,6 +48,10 @@ class Mush(commands.Cog):
             character to use. Default char if not provided
 
         """
+        if emote not in mapleio.EXPRESSIONS:
+            msg = f'{emote} is not a valid emote'
+            raise errors.BadArgument(msg, see_also=['list emotes'])
+
         await self.bot.defer(interaction)
         char = char or await io.get_default_char(interaction)
 
