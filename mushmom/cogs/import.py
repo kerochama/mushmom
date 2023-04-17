@@ -86,20 +86,18 @@ class Import(commands.Cog):
             chars = user['chars']
             _iter = (i for i, c in enumerate(chars) if c['name'] == name)
             i = next(_iter, None)
-            prompt = None  # keep track of messages sent
 
             if i is not None:  # exists; prompt if want to replace
                 text = f'**{name}** already exists. Replace?'
-                replace = await io.confirm_prompt(interaction, text)
-                self.copy_info(chars[i], char)
-                chars[i] = char.to_dict()
-
-                if not replace:  # timeout or no
+                if not await io.confirm_prompt(interaction, text):  # timeout or no
                     text = f'{name} was **not** replaced'
                     await self.bot.followup(interaction, content=text, view=None)
                     return
 
+                self.copy_info(chars[i], char)
+                chars[i] = char.to_dict()
             elif len(user['chars']) < config.core.max_chars:  # has empty space
+                i = len(user['chars'])
                 chars.append(char.to_dict())
             else:  # too many chars; replace?
                 title = 'Max Characters Reached'
@@ -116,8 +114,14 @@ class Import(commands.Cog):
                     await self.bot.followup(interaction, content=text, view=None)
                     return
 
-            # update database
             update = {'chars': chars}
+
+            # set default?
+            text = f'Do you want to set {name} as default?'
+            if await io.confirm_prompt(interaction, text):
+                update.update({'default': i})
+
+            # update database
             ret = await self.bot.db.set_user(interaction.user.id, update)
 
         if ret and ret.acknowledged:
