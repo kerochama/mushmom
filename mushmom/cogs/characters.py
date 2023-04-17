@@ -4,184 +4,101 @@ Character commands
 """
 import discord
 
+from discord import app_commands
 from discord.ext import commands
-from typing import Optional
 
 from .utils import errors, io
+from .utils.parameters import autocomplete_chars
 
 
 class Characters(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
-    async def chars(self, ctx: commands.Context) -> None:
-        """
-        List all characters registered
-
-        Parameters
-        ----------
-        ctx: commands.Context
-
-        """
-        user = await self.bot.db.get_user(ctx.author.id)
-
-        if not user:
-            raise errors.NoMoreItems
-
-        msg = 'Your mushable characters\n\u200b'
-        await io.list_chars(ctx, user, msg)
-
-    @commands.command(aliases=['rr'])
-    async def reroll(
-            self,
-            ctx: commands.Context,
-            name: Optional[str] = None
-    ) -> None:
-        """
-        Switch your main character when using emotes/sprites to the
-        character specified.  If no character name is provided, a
-        reactable prompt of registered characters will appear for
-        selection
-
-        Parameters
-        ----------
-        ctx: commands.Context
-        name: Optional[str]
-            the character's name. If none, send prompt
-
-        """
-        user = await self.bot.db.get_user(ctx.author.id)
-
-        if not user or not user['chars']:  # no characters
-            raise errors.NoMoreItems
-
-        new_i = await io.get_char(ctx, user, name=name)
-
-        if new_i is None:  # cancelled
-            self.bot.reply_cache.remove(ctx.message)
-            await ctx.send('Your main was not changed')
-            return
-
-        ret = await self.bot.db.set_user(ctx.author.id, {'default': new_i})
-
-        if ret.acknowledged:
-            name = user['chars'][new_i]['name']
-            await ctx.send(f'Your main was changed to **{name}**')
-        else:
-            raise errors.DataWriteError
-
-        # no error, release from cache
-        self.bot.reply_cache.remove(ctx.message)
-
-    @commands.command()
+    @app_commands.command()
+    @app_commands.autocomplete(char=autocomplete_chars)
     async def delete(
             self,
-            ctx: commands.Context,
-            name: Optional[str] = None
+            interaction: discord.Interaction,
+            char: str
     ) -> None:
         """
-        Delete the specified character from registry. If no character
-        name is provided, a reactable prompt of registered characters
-        will appear for selection
+        Delete the specified character
 
         Parameters
         ----------
-        ctx: commands.Context
-        name: Optional[str]
-            the character's name. If none, send prompt
+        interaction: discord.Interaction
+        char: str
+            the character to delete
 
         """
-        user = await self.bot.db.get_user(ctx.author.id)
+        await self.bot.defer(interaction)
+        user = await self.bot.db.get_user(interaction.user.id)
 
         if not user or not user['chars']:
             raise errors.NoMoreItems
 
-        curr_i = user['default']
-        del_i = await io.get_char(ctx, user, name=name)
-
-        if del_i is None:  # cancelled
-            self.bot.reply_cache.remove(ctx.message)
-            await ctx.send('Deletion cancelled')
-            return
+        default_i = user['default']
+        del_i = await io.get_char_index(interaction, user, name=char)
 
         # remove char and handle default
-        if del_i > curr_i:
-            new_i = curr_i
-        elif del_i < curr_i:
-            new_i = curr_i - 1
-        else:
-            new_i = 0  # if deleted main, default to first
+        if del_i < default_i:
+            default_i -= 1  # decrement
+        elif del_i == default_i:
+            default_i = 0  # if deleted default, set to first
 
         char = user['chars'].pop(del_i)
-        update = {'default': new_i, 'chars': user['chars']}
-        ret = await self.bot.db.set_user(ctx.author.id, update)
+        update = {'default': default_i, 'chars': user['chars']}
+        ret = await self.bot.db.set_user(interaction.user.id, update)
 
         if ret.acknowledged:
-            await ctx.send(f'**{char["name"]}** was deleted')
+            text = f'**{char["name"]}** was deleted'
+            await self.bot.followup(interaction, content=text)
         else:
             raise errors.DataWriteError
 
-        # no error, release from cache
-        self.bot.reply_cache.remove(ctx.message)
-
-    @commands.command()
+    @app_commands.command()
+    @app_commands.autocomplete(char=autocomplete_chars)
     async def rename(
             self,
-            ctx: commands.Context,
-            name: str,
-            new_name: str
-    ) -> None:
+            interaction: discord.Interaction,
+            char: str,
+            name: str
+    ):
         """
         Rename a character with the new name given
 
         Parameters
         ----------
-        ctx: commands.Context
+        interaction: discord.Interaction
+        char: str
+            the character to rename
         name: str
-            the character's name. If none, send prompt
-        new_name: str
             new character name
 
         """
-        user = await self.bot.db.get_user(ctx.author.id)
+        await self.bot.defer(interaction)
+        user = await self.bot.db.get_user(interaction.user.id)
 
         if not user or not user['chars']:
             raise errors.NoMoreItems
 
         # check if new_name exists
-        chars = user['chars']
-        _iter = (c['name'] for c in chars if c['name'] == new_name)
-        exists = next(_iter, None)
-
-        if exists:
+        if name in [c['name'] for c in user['chars']]:
             raise errors.CharacterAlreadyExists
 
         # get char to replace
-        i = await io.get_char(ctx, user, name=name)
+        i = await io.get_char_index(interaction, user, name=char)
 
-        chars[i]['name'] = new_name
-        update = {'chars': chars}
-        ret = await self.bot.db.set_user(ctx.author.id, update)
+        user['chars'][i]['name'] = name
+        update = {'chars': user['chars']}
+        ret = await self.bot.db.set_user(interaction.user.id, update)
 
         if ret.acknowledged:
-            await ctx.send(f'**{name}** was renamed **{new_name}**')
+            text = f'**{char}** was renamed **{name}**'
+            await self.bot.followup(interaction, content=text)
         else:
             raise errors.DataWriteError
-
-    async def cog_after_invoke(self, ctx: commands.Context) -> None:
-        # unregister reply cache if successful
-        if not ctx.command_failed:
-            self.bot.reply_cache.remove(ctx.message)
-
-    async def cog_command_error(
-            self,
-            ctx: commands.Context,
-            error: Exception
-    ) -> None:
-        # clean up stray replies
-        if not ctx.command.has_error_handler():
-            await self.bot.reply_cache.clean_up(ctx.message)
 
 
 async def setup(bot):

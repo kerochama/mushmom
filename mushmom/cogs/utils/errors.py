@@ -50,8 +50,14 @@ class NoCharacters(MushError):
 
 class CharacterNotFound(MushError):
     """Character not found in database"""
-    default_msg = ("Could not find character. List your characters to see "
-                   "what's been imported")
+    default_msg = ('Could not find character. List your characters to see '
+                   'what characters have been imported')
+    default_see_also = ['list chars']
+
+
+class CharacterAlreadyExists(MushError):
+    """Character alraedy exists"""
+    default_msg = 'That character already exists. Please use a different name'
     default_see_also = ['list chars']
 
 
