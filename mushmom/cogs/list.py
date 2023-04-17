@@ -167,23 +167,18 @@ class CharacterScrollView(discord.ui.View):
             self,
             interaction: discord.Interaction,
             user: dict,
-            curr: int,
             embed: discord.Embed,
             timeout: int = 180
     ):
         super().__init__(timeout=timeout)
         self.orig_interaction = interaction
         self.user = user
-        self.curr = curr
+        self.curr = user['default']
         self.embed = embed
         self._n = len(user['chars'])
 
-        # disabled if already default
-        self.set_default_button.disabled = True
-
-    @property
-    def set_default_button(self):
-        return next(x for x in self.children if x.label == 'Set Default')
+    def get_button(self, label: str):
+        return next(x for x in self.children if x.label == label)
 
     async def _update_char(self, interaction: discord.Interaction, cyc: cycle):
         """Update char based on next in cycle"""
@@ -192,7 +187,8 @@ class CharacterScrollView(discord.ui.View):
             i = next(cyc)
 
         self.curr = next(cyc)
-        self.set_default_button.disabled = self.curr == self.user['default']
+        set_default = self.get_button('Set Default')
+        set_default.disabled = self.curr == self.user['default']
 
         # update list
         chars = _fmt_char_names(self.user, self.curr)
@@ -222,7 +218,8 @@ class CharacterScrollView(discord.ui.View):
         cyc = cycle(range(self._n))
         await self._update_char(interaction, cyc)
 
-    @discord.ui.button(label='Set Default', style=discord.ButtonStyle.blurple)
+    @discord.ui.button(label='Set Default', style=discord.ButtonStyle.blurple,
+                       disabled=True)
     async def set_default(
             self,
             interaction: discord.Interaction,
