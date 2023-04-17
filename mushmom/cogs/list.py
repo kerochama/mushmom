@@ -58,7 +58,7 @@ class List(commands.Cog):
         char = Character.from_json(user['chars'][i])
         embed.set_image(url=char.url())
 
-        view = CharacterScrollView(interaction, user, i, embed)
+        view = CharacterScrollView(interaction, user, embed)
         await self.bot.followup(interaction, embed=embed, view=view)
 
     @list_group.command()
