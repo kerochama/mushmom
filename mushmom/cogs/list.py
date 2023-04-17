@@ -236,6 +236,7 @@ class CharacterScrollView(discord.ui.View):
             text = f'Default was changed to **{name}**'
             await interaction.response.edit_message(content=text,
                                                     embed=None, view=None)
+            self.stop()  # keep from going to timeout
         else:
             raise errors.DatabaseWriteError
 
