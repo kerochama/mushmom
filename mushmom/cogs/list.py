@@ -21,6 +21,7 @@ class List(commands.Cog):
     Command group used for listing values
 
     """
+    # gets added in CogMeta
     list_group = app_commands.Group(name='list',
                                     description='List different things')
 
