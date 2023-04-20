@@ -50,6 +50,8 @@ class ErrorHandler(commands.Cog):
             await self.send_error(interaction, **info)
         else:
             if not isinstance(error, app_commands.CheckFailure):
+                # generic message
+                await self.send_error(interaction, errors.MushError.default_msg)
                 print(f'Ignoring exception in command `{cmd}`:', file=sys.stderr)
                 traceback.print_exception(type(error), error, error.__traceback__,
                                           file=sys.stderr)
