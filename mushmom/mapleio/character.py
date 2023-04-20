@@ -41,6 +41,9 @@ class Character:
         character's job
 
     """
+    _cosmetic_attrs = ['skin', 'ears', 'equips', 'version', 'region']
+    _info_attrs = ['action', 'emotion', 'job', 'name', 'server', 'guild']
+
     def __init__(
             self,
             name: Optional[str] = None,
@@ -362,6 +365,37 @@ class Character:
         )  # keep commas
 
         return f'{config.mapleio.api_url}/character/{items_s}/{pose}/{frame}?{qs}'
+
+    def copy_data(
+            self,
+            source: Union[Character, dict],
+            attrs: Optional[list] = None
+    ) -> None:
+        """
+        Copy specific data from another character
+
+        Parameters
+        ----------
+        source: Union[Character, dict]
+            character to copy from
+        attrs: Optional[list]
+            attributes to copy
+
+        """
+        if isinstance(source, dict):
+            source = Character.from_json(source)
+
+        for k in attrs:
+            v = getattr(source, k)
+            setattr(self, k, v)
+
+    def copy_style(self, source: Union[Character, dict]):
+        """Copy style attributes"""
+        self.copy_data(source, Character._cosmetic_attrs)
+
+    def copy_info(self, source: Union[Character, dict]):
+        """Copy info attributes"""
+        self.copy_data(source, Character._info_attrs)
 
     def to_dict(self) -> dict[str, Any]:
         """

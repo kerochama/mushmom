@@ -9,9 +9,14 @@ from discord.ext import commands
 
 from .utils import errors, io
 from .utils.parameters import autocomplete_chars
+from ..mapleio.character import Character
 
 
 class Characters(commands.Cog):
+    # groups get added in CogMeta. Just used for naming
+    swap_group = app_commands.Group(name='swap',
+                                    description='Swap things')
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -96,6 +101,53 @@ class Characters(commands.Cog):
 
         if ret.acknowledged:
             text = f'**{char}** was renamed **{name}**'
+            await self.bot.followup(interaction, content=text)
+        else:
+            raise errors.DataWriteError
+
+    @swap_group.command(name='outfit')
+    @app_commands.rename(with_char='with')
+    @app_commands.autocomplete(with_char=autocomplete_chars)
+    async def swap_outfit(
+            self,
+            interaction: discord.Interaction,
+            with_char: str
+    ):
+        """
+        Swap all style elements with specified character
+
+        Parameters
+        ----------
+        interaction: discord.Interaction
+        with_char: str
+            the character to swap with
+
+        """
+        await self.bot.defer(interaction)
+        user = await self.bot.db.get_user(interaction.user.id)
+
+        if not user or not user['chars']:
+            raise errors.NoMoreItems
+
+        # get char data
+        default_i = user['default']
+        swap_i = await io.get_char_index(interaction, user, name=with_char)
+        default = Character.from_json(user['chars'][default_i])
+        swap = Character.from_json(user['chars'][swap_i])
+
+        # swap
+        tmp = default.to_dict()
+        default.copy_style(swap)
+        swap.copy_style(tmp)
+
+        # push to db
+        user['chars'][default_i] = default.to_dict()
+        user['chars'][swap_i] = swap.to_dict()
+        update = {'chars': user['chars']}
+        ret = await self.bot.db.set_user(interaction.user.id, update)
+
+        if ret.acknowledged:
+            text = f'**{default.name}** swapped appearance with **{swap.name}**'
             await self.bot.followup(interaction, content=text)
         else:
             raise errors.DataWriteError
