@@ -42,7 +42,8 @@ class Character:
 
     """
     _cosmetic_attrs = ['skin', 'ears', 'equips', 'version', 'region']
-    _info_attrs = ['action', 'emotion', 'job', 'name', 'server', 'guild']
+    _info_attrs = ['job', 'game', 'server', 'guild']
+    _state_attrs = ['action', 'emotion']
 
     def __init__(
             self,

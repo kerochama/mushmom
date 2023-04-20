@@ -30,7 +30,6 @@ initial_extensions = (
     'cogs.info',
     'cogs.actions',
     'cogs.characters',
-    'cogs.import',
     'cogs.server',
     'cogs.mush',
     'cogs.error_handler',
