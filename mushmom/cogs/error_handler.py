@@ -96,10 +96,28 @@ class ErrorHandler(commands.Cog):
             fmt = [f'`/{cmd}`' for cmd in see_also]
             embed.add_field(name='See also', value=', '.join(fmt))
 
-        coro = (self.bot.followup if interaction.response.is_done()
-                else self.bot.ephemeral)
-        return await coro(interaction, content=raw_content, embed=embed,
-                          delete_after=None)
+        error_args = {
+            'content': raw_content,
+            'embed': embed,
+            'ephemeral': True
+        }
+
+        try:  # try to get orig message
+            orig_msg = await interaction.original_response()
+        except discord.NotFound:
+            orig_msg = None
+
+        if interaction.response.is_done():
+            if orig_msg and not orig_msg.flags.ephemeral:
+                await orig_msg.delete()  # delete if not ephemeral
+                coro = interaction.followup.send
+            else:
+                coro = interaction.edit_original_response
+                error_args.pop('ephemeral')
+        else:
+            coro = interaction.response.send_message
+
+        await coro(**error_args)
 
 
 async def setup(bot: commands.Bot):
