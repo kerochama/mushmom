@@ -90,7 +90,7 @@ class ErrorHandler(commands.Cog):
         embed = discord.Embed(description=msg, color=config.core.embed_color)
         embed.set_author(name='Error',
                          icon_url=self.bot.user.display_avatar.url)
-        embed.set_thumbnail(url=self.bot.get_emoji_url(EMOJIS['mushshock']))
+        embed.set_thumbnail(url=self.bot.get_emoji_url(EMOJIS['mushshock'].id))
 
         if see_also:
             fmt = [f'`/{cmd}`' for cmd in see_also]

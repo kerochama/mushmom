@@ -287,7 +287,7 @@ class Mushmom(commands.Bot):
 
         """
         if msg is not None:
-            _msg = f'<a:loading:{EMOJIS["loading"]}> {msg}'
+            _msg = f'<a:loading:{EMOJIS["loading"].id}> {msg}'
             await interaction.response.send_message(_msg, ephemeral=ephemeral)
         else:
             await interaction.response.defer(ephemeral=ephemeral, thinking=True)
