@@ -4,15 +4,14 @@ Image utils to help to manipulate sprites
 """
 
 import numpy as np
-import aiohttp
 
-from PIL import Image, ImageColor
+from PIL import Image
 from typing import Union, Iterable, Optional
 from itertools import cycle
 from io import BytesIO
 
 
-def min_width(img: Image, width: int) -> Image:
+def min_width(img: Image.Image, width: int) -> Image.Image:
     """
     Ensure image is wider than min width
 
@@ -39,7 +38,7 @@ def min_width(img: Image, width: int) -> Image:
     return res
 
 
-def thresh_alpha(img: Image, thresh: int = 128) -> Image:
+def thresh_alpha(img: Image.Image, thresh: int = 128) -> Image.Image:
     """
     Round alpha channel to 0 or 255
 
@@ -169,8 +168,8 @@ def merge(
 
 
 def apply_background(
-        im: Union[bytes, Image],
-        bg: Union[bytes, Image, str],
+        im: Union[bytes, Image.Image],
+        bg: Union[bytes, Image.Image, str],
         y_feet: Optional[int] = None,
         y_ground: Optional[int] = None,
 ) -> Optional[bytes]:
