@@ -20,5 +20,5 @@ EMOJIS = {k: Emoji(v) for k, v in _discord['emojis'].items()}
 ATTACHMENTS = {k: Attachment(*v) for k, v in _discord['attachments'].items()}
 BACKGROUNDS = {
     k: Background(Attachment(*v['attm']), v['y_ground'])
-    for k, v in _discord['backgrounds']
+    for k, v in _discord['backgrounds'].items()
 }

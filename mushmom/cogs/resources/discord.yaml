@@ -29,10 +29,10 @@ attachments:                           # attachments to reference
     - 910360712692518932
     - mushroom_background1.png
 
-  backgrounds:                         # https://kirimymaps.blogspot.com/
-    grassy_field:
-      attm:
-        - 900388181139144786
-        - 900539713813893140
-        - grassy_field.png
-      y_ground: 30                     # pixels from bottom for ground
+backgrounds:                           # https://kirimymaps.blogspot.com/
+  grassy_field:
+    attm:
+      - 900388181139144786
+      - 900539713813893140
+      - grassy_field.png
+    y_ground: 30                       # pixels from bottom for ground
