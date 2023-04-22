@@ -269,12 +269,28 @@ class Mushmom(commands.Bot):
         await interaction.response.send_message(*args, **kwargs, ephemeral=True)
 
     @staticmethod
-    async def defer(interaction: discord.Interaction) -> None:
+    async def defer(
+            interaction: discord.Interaction,
+            msg: Optional[str] = None,
+            ephemeral: bool = True
+    ) -> None:
         """
         Convenience function for ephemeral thinking
 
+        Parameters
+        ----------
+        interaction: discord.Interaction
+        msg: Optional[str]
+            message to send after ellipses
+        ephemeral: bool
+            whether or not to only show to user
+
         """
-        await interaction.response.defer(ephemeral=True, thinking=True)
+        if msg is not None:
+            _msg = f'<a:loading:{EMOJIS["loading"]}> {msg}'
+            await interaction.response.send_message(_msg, ephemeral=ephemeral)
+        else:
+            await interaction.response.defer(ephemeral=ephemeral, thinking=True)
 
     @staticmethod
     async def followup(
