@@ -181,8 +181,8 @@ def apply_background(
     ----------
     im: Union[bytes, Image]
         character data (should be FeetCenter)
-    bg: Union[bytes, Image, str]
-        background image data or hex color
+    bg: Union[bytes, Image, tuple]
+        background image data or RGBA color
     y_feet: Optional[int]
         pixels from bottom for feet in source image.  Default half height
     y_ground: Optional[int]
@@ -203,9 +203,8 @@ def apply_background(
     # format bg
     if isinstance(bg, bytes):
         bg = Image.open(BytesIO(bg)).convert('RGBA')
-    elif isinstance(bg, str):
-        color = ImageColor.getcolor(f'#{bg.replace("#", "")}', 'RGBA')
-        bg = Image.new('RGBA', im.size, color)
+    elif isinstance(bg, tuple):
+        bg = Image.new('RGBA', im.size, bg)
 
     w_bg, h_bg = bg.size
 
