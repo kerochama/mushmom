@@ -209,12 +209,17 @@ def apply_background(
 
     # check if image bigger than background
     y_feet = y_feet or h_im//2
-    y_ground = y_ground or h_bg
+    y_ground = y_ground or 0
+
     if ((h_im-y_feet) > (h_bg-y_ground)) | (w_im > w_bg):
         return
 
     # paste center horizontal. vertical adjust for feet and ground pos
-    bg.paste(im, ((w_bg - w_im)//2, (h_bg - h_im + y_feet - y_ground)), mask=im)
+    x1, y1 = (w_bg - w_im)//2, (h_bg - h_im + y_feet - y_ground)
+    bg.paste(im, (x1, y1), mask=im)
+
+    # recrop
+    bg = bg.crop((x1, y1, x1 + w_im, y1 + h_im))
 
     byte_arr = BytesIO()
     bg.save(byte_arr, format='PNG')
