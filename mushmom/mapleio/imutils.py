@@ -4,10 +4,12 @@ Image utils to help to manipulate sprites
 """
 
 import numpy as np
+import aiohttp
 
-from PIL import Image
+from PIL import Image, ImageColor
 from typing import Union, Iterable, Optional
 from itertools import cycle
+from io import BytesIO
 
 
 def min_width(img: Image, width: int) -> Image:
@@ -164,3 +166,58 @@ def merge(
             res.paste(im, pos, mask=im)
 
     return res
+
+
+def apply_background(
+        im: Union[bytes, Image],
+        bg: Union[bytes, Image, str],
+        y_feet: Optional[int] = None,
+        y_ground: Optional[int] = None,
+) -> Optional[bytes]:
+    """
+    Apply background to the image
+
+    Parameters
+    ----------
+    im: Union[bytes, Image]
+        character data (should be FeetCenter)
+    bg: Union[bytes, Image, str]
+        background image data or hex color
+    y_feet: Optional[int]
+        pixels from bottom for feet in source image.  Default half height
+    y_ground: Optional[int]
+        pixels from bottom for ground in background.  Default max y
+
+    Returns
+    -------
+    Optional[bytes]
+        bytes of the generated image
+
+    """
+    # format image
+    if isinstance(im, bytes):
+        im = Image.open(BytesIO(im))
+
+    w_im, h_im = im.size
+
+    # format bg
+    if isinstance(bg, bytes):
+        bg = Image.open(BytesIO(bg)).convert('RGBA')
+    elif isinstance(bg, str):
+        color = ImageColor.getcolor(f'#{bg.replace("#", "")}', 'RGBA')
+        bg = Image.new('RGBA', im.size, color)
+
+    w_bg, h_bg = bg.size
+
+    # check if image bigger than background
+    y_feet = y_feet or h_im//2
+    y_ground = y_ground or h_bg
+    if ((h_im-y_feet) > (h_bg-y_ground)) | (w_im > w_bg):
+        return
+
+    # paste center horizontal. vertical adjust for feet and ground pos
+    bg.paste(im, ((w_bg - w_im)//2, (h_bg - h_im + y_feet - y_ground)), mask=im)
+
+    byte_arr = BytesIO()
+    bg.save(byte_arr, format='PNG')
+    return byte_arr.getvalue()
