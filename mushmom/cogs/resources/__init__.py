@@ -15,6 +15,7 @@ Background = namedtuple('Background', 'attachment y_ground')
 with resources.open_binary(__package__, 'discord.yaml') as fp:
     _discord = yaml.safe_load(fp)
 
+# constant dicts to of resources
 EMOJIS = {k: Emoji(v) for k, v in _discord['emojis'].items()}
 ATTACHMENTS = {k: Attachment(*v) for k, v in _discord['attachments'].items()}
 BACKGROUNDS = {
