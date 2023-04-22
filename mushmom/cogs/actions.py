@@ -9,19 +9,20 @@ from discord.ext import commands
 from discord.app_commands import Transform
 
 from types import SimpleNamespace
-from PIL import Image, ImageOps, ImageColor
+from PIL import Image, ImageOps
 from io import BytesIO
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from typing import Optional, Union, Any, Iterable
 
 from .. import config, mapleio
-from .utils import converters, errors, io
+from .utils import errors, io
 from .utils.parameters import autocomplete_chars, CharacterTransformer
 from ..mapleio import imutils
 from ..mapleio.character import Character
 from ..mapleio.equip import Equip
 
+from .resources import BACKGROUNDS
 
 UTC = timezone.utc
 NYC = ZoneInfo('America/New_York')  # new york timezone
@@ -41,7 +42,9 @@ class Actions(commands.Cog):
             pad: int = 40,
             duration: Union[int, Iterable[int]] = 100,
             msg: str = '',
-            desc: str = ''
+            desc: str = '',
+            bg: Union[str, tuple[int]] = 'grassy_field',
+            border: int = 10
     ) -> None:
         """
         Logic for putting two images side by side
@@ -65,6 +68,10 @@ class Actions(commands.Cog):
             text for content
         desc: str
             description for embed
+        bg: Union[str, tuple[int]]
+             key from ATTACHMENTS or tuple color
+        border: int
+            pixel spacing around the trimmed image
 
         """
         defer = f'Preparing to {interaction.command.name} {target.mention}'
@@ -103,28 +110,43 @@ class Actions(commands.Cog):
             if not data:
                 raise errors.DiscordIOError
 
-        _hex = format(config.core.embed_bg_color, "x")
-        bgcolor = ImageColor.getcolor(f'#{_hex}', 'RGBA')
-
         merged = []
         for f in frames:
-            new = Image.new('RGBA', (w, h), bgcolor)
+            new = Image.new('RGBA', (w, h), (0, )*4)
             flip = ImageOps.mirror(f)
-            new.paste(flip, ((w-f.width)//2, (h-f.height)//2), mask=flip)
-            _f = imutils.merge(new, _target, pad, z_order=-1, bgcolor=bgcolor)
+            new.paste(flip, ((w-f.width)//2, (h-f.height)//2))
+            _f = imutils.merge(new, _target, pad, z_order=-1)
             merged.append(_f)
 
-        # trim
+        # calc bbox to trim white space
+        bgcolor = bg if isinstance(bg, tuple) else None
         bbox = imutils.get_bbox(merged, ignore=bgcolor)
-        merged = [f.crop(bbox) for f in merged]
-
-        # ensure somewhat symmetrical
+        y_feet = bbox[3] - h//2 + border  # y2 - half height for new feet pos
         w_diff = (w - w_target)//2
+
+        # determine background
+        y_ground = y_feet
+
+        if bg in BACKGROUNDS:
+            attm, y_ground = BACKGROUNDS[bg]
+            url = self.bot.get_attachment_url(*attm)
+            bg = await self.bot.download(url)
+
+        # gen final frame
         final = []
         for f in merged:
-            new = Image.new('RGBA', (f.width + abs(w_diff), f.height), bgcolor)
-            new.paste(f, (0 if w_diff > 0 else abs(w_diff), 0), mask=f)
-            final.append(new)
+            cropped = f.crop(bbox)  # trim
+
+            # ensure somewhat symmetrical
+            size = (cropped.width + abs(w_diff) + 2*border,
+                    cropped.height + 2*border)
+            ul = ((0 if w_diff > 0 else abs(w_diff)) + border, border)
+            new = Image.new('RGBA', size, (0, )*4)
+            new.paste(cropped, ul)
+
+            # add background
+            data = imutils.apply_background(new, bg, y_feet, y_ground)
+            final.append(Image.open(BytesIO(data)))
 
         # save
         byte_arr = BytesIO()
