@@ -25,7 +25,6 @@ _log = logging.getLogger('discord')
 
 initial_extensions = (
     'cogs.meta',
-    'cogs.help',
     'cogs.self',
     'cogs.info',
     'cogs.actions',
@@ -123,7 +122,6 @@ class Mushmom(commands.Bot):
             self.owner_id = app.owner.id
 
         # load extensions
-        self.remove_command('help')
         for ext in initial_extensions:
             await self.load_extension(f'{__package__}.{ext}')
 
@@ -140,121 +138,6 @@ class Mushmom(commands.Bot):
 
         if not self._verify_cache_integrity.is_running:
             self._verify_cache_integrity.start()
-
-    async def on_command_error(
-            self,
-            ctx: commands.Context,
-            error: Exception
-    ) -> None:
-        """
-        Override default error handler to always run. Errors messages
-        are pulled from cogs.reference.ERRORS.
-
-        Local error handlers can still be used. If a reply already
-        exists in self.reply_cache, on_command_error will assume it has
-        handled notifying user of the issue and pass
-
-        Parameters
-        ----------
-        ctx: commands.Context
-        error: Exception
-
-        """
-        if ctx.message in self.reply_cache:  # already sent message
-            self.reply_cache.remove(ctx.message)
-            return
-
-        if isinstance(error, commands.CommandNotFound):
-            return  # ignore
-
-        cmd = ctx.command.qualified_name
-        cog = ctx.command.cog_name.lower()
-        err_ns = ('errors' if isinstance(error, errors.MushmomError)
-                  else 'commands')
-        err = f'{err_ns}.{error.__class__.__name__}'
-
-        try:  # search for error
-            specs = reference.ERRORS[cog][cmd][err]
-            msg, ref_cmds = specs.values()
-        except KeyError:  # not defined
-            e = error
-            if not isinstance(e, commands.CheckFailure) or config.core.debug:
-                print(f'Ignoring exception in command {ctx.command}:', file=sys.stderr)
-                traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
-            return
-
-        await self.send_error(ctx, msg, ref_cmds)
-
-    async def send_error(
-            self,
-            ctx: commands.Context,
-            text: Optional[str] = None,
-            ref_cmds: Optional[Iterable[str]] = None,
-            delete_message: bool = not config.core.debug,
-            delete_error: bool = not config.core.debug,
-            delay: int = config.core.default_delay,
-            raw_content: Optional[str] = None
-    ) -> discord.Message:
-        """
-        Send a message to ctx.channel with an error message. The
-        original message and the error message will auto-delete after
-        a few seconds to keep channel clean
-
-        Parameters
-        ----------
-        ctx: commands.Context
-        text: Optional[str]
-            the message to send in embed
-        ref_cmds: Optional[Iterable[str]]
-            list of fully qualified command names to reference
-        delete_message: bool
-            whether or not to auto delete message
-        delete_error: bool
-            whether or not to auto delete error
-        delay: int
-            seconds to wait before deleting
-        raw_content: Optional[str]
-            content to pass directly to send, outside embed
-
-        Returns
-        -------
-        discord.Message
-            the error message that was sent
-
-        """
-        # defaults
-        if text is None:
-            text = 'Mushmom failed *cry*'
-
-        if ref_cmds is None:
-            ref_cmds = []
-
-        # send error
-        embed = discord.Embed(description=text,
-                              color=config.core.embed_color)
-        embed.set_author(name='Error', icon_url=ctx.bot.user.display_avatar.url)
-        embed.set_thumbnail(url=ctx.bot.get_emoji_url(EMOJIS['mushshock']))
-
-        # add referenced commands
-        help_cog = self.get_cog('Help')
-
-        if help_cog:
-            usages = help_cog.get_all_usages(ctx, ref_cmds, aliases=True)
-
-            if usages:
-                embed.add_field(name='Commands', value='\n'.join(usages))
-
-        error = await ctx.send(content=raw_content, embed=embed,
-                               delete_after=delay if delete_error else None)
-
-        # delete original message after successful send
-        if delete_message:
-            try:
-                await ctx.message.delete(delay=delay)
-            except commands.MissingPermissions:
-                pass
-
-        return error
 
     @staticmethod
     async def ephemeral(
@@ -424,78 +307,6 @@ class Mushmom(commands.Bot):
             raise errors.TimeoutError  # handle in command errors
 
         return next(k for k, v in reactions.items() if reaction.emoji == v)
-
-    @property
-    def ref_aliases(self) -> dict[str, commands.Command]:
-        """
-        Checks reference.HELP for commands with aliases listed
-
-        Returns
-        -------
-        dict[str, commands.Command]
-            key is alias, value is command
-
-        """
-        return {alias: self.get_command(cmd, default=True)
-                for cog, cmds in reference.HELP.items()
-                for cmd, info in cmds.items() if 'aliases' in info
-                for alias in info['aliases']}
-
-    def get_command(
-            self,
-            name: str,
-            default: bool = False
-    ) -> Optional[commands.Command]:
-        """
-        Overwrite default behavior of allowing extraneous tokens
-        after command. Also checks reference.HELP for looser alias naming
-        (e.g. can have spaces)
-
-        Parameters
-        ----------
-        name: str
-            the name of command to get
-        default: bool
-            whether or not to use the default implementation
-
-        Returns
-        -------
-        commands.Command
-            the found command or None
-
-        Notes
-        -----
-        Default implementation would allow the following
-
-        >>> bot.get_command('hello asdf')
-        Command(name=hello, ...)
-
-        """
-        if default:
-            return super().get_command(name)
-
-        # fast path, no space in name.
-        if ' ' not in name:
-            return self.all_commands.get(name)
-
-        if name in self.ref_aliases:  # check reference.HELP
-            return self.ref_aliases[name]
-
-        # handle groups
-        names = name.split()
-        if not names:
-            return None
-        obj = self.all_commands.get(names[0])
-        if not isinstance(obj, commands.GroupMixin):
-            return obj if len(names) == 1 else None
-
-        for i, name in enumerate(names[1:]):
-            try:
-                obj = obj.all_commands[name]
-            except (AttributeError, KeyError):
-                return None
-
-        return obj if i == len(names)-2 else None
 
     def get_emoji_url(self, emoji_id: int) -> str:
         """
