@@ -162,7 +162,9 @@ def merge(
         ]
 
         for im, pos in (layers if z_order == 1 else reversed(layers)):
-            res.paste(im, pos, mask=im)
+            padded = Image.new('RGBA', (w, h), (0, )*4)
+            padded.paste(im, pos)
+            res = Image.alpha_composite(res, padded)
 
     return res
 
