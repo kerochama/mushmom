@@ -6,6 +6,7 @@ import discord
 import asyncio
 import re
 
+from discord import app_commands
 from discord.ext import commands, tasks
 from io import BytesIO
 from PIL import Image
@@ -13,12 +14,13 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from typing import Optional, Union
 
-from .. import config, mapleio
-from .utils import errors, converters, io
+from .. import config, mapleio, cache
+from .utils import errors, converters
 from .reference import ERRORS
+from ..mapleio import imutils
 from ..mapleio.character import Character
 
-from ..resources import EMOJIS, ATTACHMENTS
+from ..resources import EMOJIS, ATTACHMENTS, BACKGROUNDS
 
 
 UTC = timezone.utc
@@ -33,37 +35,34 @@ class Info(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-        # watch info for reactions for 10 minutes
-        self.info_cache = io.MessageCache(seconds=600)
-
-        if not self._verify_cache_integrity.is_running:
-            self._verify_cache_integrity.start()
-
-    @commands.command()
+    @app_commands.command()
     async def info(
             self,
-            ctx: commands.Context,
+            interaction: discord.Interaction,
             member: Optional[discord.Member] = None
     ) -> None:
         """
-        Discord member profile. Reacting with an emoji named
-        `:thumbsup:` or `:thumbsdown:` will fame/defame this member
+        Discord member profile. Reacting with \U0001f44d or \U0001f44e
+        will fame/defame this member
 
         Parameters
         ----------
-        ctx: commands.Context
+        interaction: discord.Interaction
         member: Optional[discord.Member]
             member's profile to show. If not supplied, caller's profile
 
         """
         if not member:
-            member = ctx.author
+            member = interaction.user
+
+        msg = f'{config.core.bot_name} is thinking'
+        await self.bot.defer(interaction, msg=msg, ephemeral=False)
 
         embed = discord.Embed(
             title=f'{member.name}#{member.discriminator}',
             color=config.core.embed_color
         )
-        mushhuh = self.bot.get_emoji_url(EMOJIS['mushhuh'])
+        mushhuh = self.bot.get_emoji_url(EMOJIS['mushhuh'].id)
         embed.set_author(name=f'{member.display_name}\'s Info',
                          icon_url=mushhuh)
         embed.set_thumbnail(url=member.display_avatar.url)
@@ -72,7 +71,7 @@ class Info(commands.Cog):
         user = await self.bot.db.get_user(member.id)
 
         if not user:
-            user, char = {}
+            user = char = {}
         else:
             if not user['chars']:
                 char = {}
@@ -89,11 +88,11 @@ class Info(commands.Cog):
         fame = user.get('fame', 0)
 
         # format info
-        _fmt_info = [self._padded_str(f'> **{k.title()}**: {v}')
+        _fmt_info = [_padded_str(f'> **{k.title()}**: {v}')
                      for k, v in char_info.items()]
         embed.add_field(name='Active Character',
                         value='\n'.join(_fmt_info) + '\n\u200b')
-        _fmt_fame = self._padded_str(f'\u2b50 {fame}', n=12)
+        _fmt_fame = _padded_str(f'\u2b50 {fame}', n=12)
         embed.add_field(name='Fame', value=_fmt_fame + '\n\u200b')
 
         # send placeholder pfp in 3 seconds
@@ -102,7 +101,7 @@ class Info(commands.Cog):
         embed.set_image(url=pfp_temp)
         embed.set_footer(text='Still loading profile picture')
         temp_send_task = self.bot.loop.create_task(
-            self._delayed_send(ctx, embed=embed)
+            self._delayed_send(interaction, embed=embed)
         )
 
         # get real pfp
@@ -131,16 +130,17 @@ class Info(commands.Cog):
             pfp = None
 
         # cancel if not yet sent, else edit
+        args = {'embed': embed}
+
         if not temp_send_task.done():
             temp_send_task.cancel()
 
             if pfp:
                 embed.set_image(url=f'attachment://{filename}')
-                msg = await ctx.send(file=pfp, embed=embed)
+                args['attachments'] = [pfp]
             else:
                 pfp_poo = self.bot.get_attachment_url(*ATTACHMENTS['pfp_poo'])
                 embed.set_image(url=pfp_poo)
-                msg = await ctx.send(embed=embed)
         else:
             msg = temp_send_task.result()
 
@@ -158,23 +158,16 @@ class Info(commands.Cog):
                 except Exception:  # just send poo
                     pass
 
-            await msg.edit(embed=embed)
+        # send the updated message
+        msg = await self.bot.followup(interaction, **args)
 
         # start waiting for fame reactions
         if user:
-            self.info_cache.add(msg, member.id)
+            self.bot.info_cache.add(msg.id, member.id)
 
-    @staticmethod
-    async def _delayed_send(ctx, delay=3, **kwargs):
+    async def _delayed_send(self, interaction, delay=3, **kwargs):
         await asyncio.sleep(delay)
-
-        return await ctx.send(**kwargs)
-
-    @staticmethod
-    def _padded_str(text, n=30):
-        s = list('\xa0' * n)
-        s[:len(text)] = list(text)
-        return ''.join(s)
+        return await self.bot.followup(interaction, **kwargs)
 
     async def gen_profile_pic(
             self,
@@ -204,24 +197,25 @@ class Info(commands.Cog):
 
         """
         # get background
-        try:
-            url = self.bot.get_attachment_url(*ATTACHMENTS[bg])
-        except KeyError:
-            url = bg
+        if bg in BACKGROUNDS:
+            attm, y_ground = BACKGROUNDS[bg]
+            url = self.bot.get_attachment_url(*attm)
+        else:
+            url, y_ground = bg, 0
 
         bg_data = await self.bot.download(url)
         bg = Image.open(BytesIO(bg_data)).convert('RGBA')
+
+        # gen pfp
         w_bg, h_bg = bg.size
+        pfp_data = imutils.apply_background(
+            data, bg, y_ground=y_ground, crop=False
+        )
+        pfp = Image.open(BytesIO(pfp_data)).convert('RGBA')
+        pfp = pfp.crop(((w_bg - w)//2, (h_bg - h), (w_bg + w)//2, h_bg))
 
-        # paste centered, 30px from bottom
-        im = Image.open(BytesIO(data))
-        w_im, h_im = im.size
-        bg.paste(im, ((w_bg - w_im)//2, (h_bg - h_im//2 - 30)), mask=im)
-
-        # crop to size
-        out = bg.crop(((w_bg - w)//2, (h_bg - h), (w_bg + w)//2, h_bg))
         byte_arr = BytesIO()
-        out.save(byte_arr, format='PNG')
+        pfp.save(byte_arr, format='PNG')
         return byte_arr.getvalue()
 
     @commands.command(hidden=True)
@@ -429,10 +423,11 @@ class Info(commands.Cog):
                                       delete_message=False,
                                       raw_content=f'{user.mention}')
 
-    @tasks.loop(minutes=10)
-    async def _verify_cache_integrity(self):
-        """Clean up stray cached replies"""
-        self.info_cache.verify_cache_integrity()
+
+def _padded_str(text, n=30):
+    s = list('\xa0' * n)
+    s[:len(text)] = list(text)
+    return ''.join(s)
 
 
 class FameLog(list):

@@ -15,6 +15,7 @@ from aiohttp import web
 from typing import Optional, Union, Iterable
 
 from . import config, database as db
+from .cache import TTLCache
 from .cogs.utils import errors, checks, io
 from .resources import EMOJIS
 
@@ -73,9 +74,8 @@ class Mushmom(commands.Bot):
     ----------
     session: aiohttp.ClientSession
         client for making async http requests
-    reply_cache: ReplyCache
-        an expiring cache of replies to processed messages for
-        subsequent interaction or clean up
+    info_cache: TTLCache
+        an expiring cache of info msg that can be reacted to for fame
     db: AsyncIOMotorDatabase
         the MongoDB database holding collections
 
@@ -95,7 +95,7 @@ class Mushmom(commands.Bot):
             default=aiohttp.http.SERVER_SOFTWARE
         )
 
-        self.reply_cache = io.MessageCache(seconds=300)
+        self.info_cache = TTLCache(seconds=300)
         self.db = db.Database(db_client)
         self.timer = Timer()
         self.init_sync = sync
@@ -189,11 +189,13 @@ class Mushmom(commands.Bot):
             ms to wait before deleting
 
         """
-        await interaction.edit_original_response(**kwargs)
+        msg = await interaction.edit_original_response(**kwargs)
 
         if delete_after is not None:
             await asyncio.sleep(delete_after)
             await interaction.delete_original_response()
+
+        return msg
 
     @staticmethod
     async def send_as_author(
@@ -385,7 +387,7 @@ class Mushmom(commands.Bot):
     @tasks.loop(minutes=10)
     async def _verify_cache_integrity(self):
         """Clean up stray cached data"""
-        self.reply_cache.verify_cache_integrity()
+        self.info_cache.verify_cache_integrity()
         self.db.user_cache.verify_cache_integrity()
 
     async def close(self):
