@@ -12,7 +12,7 @@ from typing import Optional, Iterable
 
 from .. import config
 from .utils import errors
-from .resources import EMOJIS
+from ..resources import EMOJIS
 
 
 class ErrorHandler(commands.Cog):

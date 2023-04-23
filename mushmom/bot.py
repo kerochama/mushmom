@@ -1,11 +1,9 @@
 from __future__ import annotations  # forward reference
 
 import discord
-import sys
 import aiohttp
 import asyncio
 import warnings
-import traceback
 import functools
 import time
 import logging
@@ -16,10 +14,9 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from aiohttp import web
 from typing import Optional, Union, Iterable
 
-from . import config, database as db, mapleio
-from .cogs import reference
+from . import config, database as db
 from .cogs.utils import errors, checks, io
-from .cogs.resources import EMOJIS
+from .resources import EMOJIS
 
 _log = logging.getLogger('discord')
 

@@ -7,7 +7,7 @@ import discord
 from discord.ext import commands
 
 from .. import config
-from .resources import EMOJIS, ATTACHMENTS
+from ..resources import EMOJIS, ATTACHMENTS
 
 
 class Self(commands.Cog, name=config.core.bot_name):

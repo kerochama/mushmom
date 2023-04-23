@@ -8,7 +8,7 @@ from discord.ext import commands
 
 from .. import config
 from .utils import errors, converters
-from .resources import EMOJIS
+from ..resources import EMOJIS
 
 
 class Server(commands.Cog):

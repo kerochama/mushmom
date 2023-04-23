@@ -12,7 +12,7 @@ from itertools import cycle
 from .. import config, mapleio
 from .utils import errors
 
-from .resources import EMOJIS
+from ..resources import EMOJIS
 from ..mapleio.character import Character
 
 

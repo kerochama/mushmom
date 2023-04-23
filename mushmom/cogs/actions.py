@@ -22,7 +22,7 @@ from ..mapleio import imutils
 from ..mapleio.character import Character
 from ..mapleio.equip import Equip
 
-from .resources import BACKGROUNDS
+from ..resources import BACKGROUNDS
 
 UTC = timezone.utc
 NYC = ZoneInfo('America/New_York')  # new york timezone

@@ -15,9 +15,10 @@ from typing import Optional, Union
 
 from .. import config, mapleio
 from .utils import errors, converters, io
-from .resources import EMOJIS, ATTACHMENTS
 from .reference import ERRORS
 from ..mapleio.character import Character
+
+from ..resources import EMOJIS, ATTACHMENTS
 
 
 UTC = timezone.utc
