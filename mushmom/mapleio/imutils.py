@@ -174,6 +174,7 @@ def apply_background(
         bg: Union[bytes, Image.Image, str],
         y_feet: Optional[int] = None,
         y_ground: Optional[int] = None,
+        crop: bool = True
 ) -> Optional[bytes]:
     """
     Apply background to the image
@@ -188,6 +189,8 @@ def apply_background(
         pixels from bottom for feet in source image.  Default half height
     y_ground: Optional[int]
         pixels from bottom for ground in background.  Default max y
+    crop: bool
+        whether or not to crop to original size
 
     Returns
     -------
@@ -220,8 +223,8 @@ def apply_background(
     x1, y1 = (w_bg - w_im)//2, (h_bg - h_im + y_feet - y_ground)
     bg.paste(im, (x1, y1), mask=im)
 
-    # recrop
-    bg = bg.crop((x1, y1, x1 + w_im, y1 + h_im))
+    if crop:  # recrop
+        bg = bg.crop((x1, y1, x1 + w_im, y1 + h_im))
 
     byte_arr = BytesIO()
     bg.save(byte_arr, format='PNG')
