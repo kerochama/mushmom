@@ -101,7 +101,7 @@ class Info(commands.Cog):
         embed.set_image(url=pfp_temp)
         embed.set_footer(text='Still loading profile picture')
         temp_send_task = self.bot.loop.create_task(
-            self._delayed_send(interaction, embed=embed)
+            self._delayed_send(interaction, content='', embed=embed)
         )
 
         # get real pfp
@@ -130,7 +130,7 @@ class Info(commands.Cog):
             pfp = None
 
         # cancel if not yet sent, else edit
-        args = {'embed': embed}
+        args = dict(content='', embed=embed)
 
         if not temp_send_task.done():
             temp_send_task.cancel()
