@@ -1,0 +1,86 @@
+{
+    "Maplestory": {
+        "Korea": [
+            "Scania",
+            "Bera",
+            "Luna",
+            "Zenith",
+            "Croa",
+            "Union",
+            "Elysium",
+            "Enosis",
+            "Red",
+            "Aurora",
+            "Nova",
+            "Reboot",
+            "Reboot 2"
+        ],
+        "Japan": [
+            "Kaede",
+            "Kurumi",
+            "Yukari",
+            "Reboot"
+        ],
+        "China": [
+            "Lucid",
+            "Will",
+            "Orchid",
+            "Hilla",
+            "Magnus",
+            "Damien",
+            "Leon"
+        ],
+        "North America": [
+            "Scania",
+            "Bera",
+            "Aurora",
+            "Elysium",
+            "Reboot"
+        ],
+        "Europe": [
+            "Luna",
+            "Reboot"
+        ],
+        "SEA": [
+            "Draco",
+            "Cassiopeia",
+            "Bootes",
+            "Aquila"
+        ],
+        "Taiwan": [
+            "Aria",
+            "Freud",
+            "Ryude",
+            "Rhinne",
+            "Alicia",
+            "Orchid",
+            "Reboot"
+        ]
+    },
+    "MaplestoryM": {
+        "North America": [
+            "Scania",
+            "Inosys"
+        ],
+        "Europe": [
+            "Scania"
+        ],
+        "Asia 1": [
+            "Khaini",
+            "Zenith",
+            "Scania",
+            "Windia",
+            "Luna",
+            "Elysium"
+        ],
+        "Asia 2": [
+            "Scania",
+            "Luna",
+            "Zenith",
+            "Union",
+            "Croa"
+        ],
+        "Korea": null,
+        "Japan": null
+    }
+}
