@@ -7,24 +7,27 @@ import asyncio
 import re
 
 from discord import app_commands
-from discord.ext import commands, tasks
+from discord.ext import commands
 from io import BytesIO
 from PIL import Image
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from typing import Optional, Union
+from aenum import Enum
 
-from .. import config, mapleio, cache
+from .. import config, mapleio
 from .utils import errors, converters
+from .utils.parameters import contains
 from .reference import ERRORS
 from ..mapleio import imutils
 from ..mapleio.character import Character
 
 from ..resources import EMOJIS, ATTACHMENTS, BACKGROUNDS
-
+from ..mapleio.resources import JOBS, GAMES, SERVERS
 
 UTC = timezone.utc
 NYC = ZoneInfo('America/New_York')  # new york timezone
+Games = Enum('Games', GAMES)
 
 
 def utc(ts):
@@ -32,6 +35,9 @@ def utc(ts):
 
 
 class Info(commands.Cog):
+    # groups get added in CogMeta. Just used for naming
+    set_group = app_commands.Group(name='set', description='Set things')
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -218,43 +224,104 @@ class Info(commands.Cog):
         pfp.save(byte_arr, format='PNG')
         return byte_arr.getvalue()
 
-    @commands.command(hidden=True)
+    @set_group.command(name="info")
+    @app_commands.autocomplete(job=contains(JOBS),
+                               server=contains(SERVERS))
     async def _set_info(
             self,
-            ctx: commands.Context,
-            *,
-            options: converters.InfoFlags
-    ) -> None:
+            interaction: discord.Interaction,
+            job: Optional[str] = None,
+            game: Optional[Games] = None,
+            server: Optional[str] = None,
+            guild: Optional[str] = None
+    ):
         """
-        Set character information displayed in profile
+        Set the information displayed in /info. Enter whitespace to clear
 
         Parameters
         ----------
-        ctx: commands.Context
-        options: converters.InfoFlags
-            each of the fields that can be set
+        interaction: discord.Interaction
+        job: Optional[str]
+            E.g. Bishop, Hero, etc.
+        game: Optional[Games]
+            Maplestory/MaplestoryM
+        server: Optional[str]
+            E.g. Scania (A1), Luna (EU), Reboot (NA), etc.
+        guild: Optional[str]
+            your guild
 
         """
-        user = await self.bot.db.get_user(ctx.author.id)
+        input = locals().copy()
+        input['game'] = input['game'].value if input['game'] else None  # enum
+        user = await self.bot.db.get_user(interaction.user.id)
 
         if not user or not user['chars']:
-            raise errors.NoMoreItems
+            raise errors.NoCharacters
 
         char = user['chars'][user['default']]
+        input['name'] = char.get('name')
 
-        # go through all options
-        for opt in vars(options):
-            v = getattr(options, opt)
-            if v is not None:
-                char[opt] = v
+        # only send modal when no args are passed
+        if not (job or game or server or guild):
+            modal = SetInfoModal(char)
+            await interaction.response.send_modal(modal)
+            await modal.wait()
 
-        update = {'chars': user['chars']}  # passed by reference
-        ret = await self.bot.db.set_user(ctx.author.id, update)
+            if not modal.submit:  # cancelled
+                return
 
-        if ret.acknowledged:
-            await ctx.send(f'**{char["name"]}**\'s info was updated')
+            interaction = modal.submit
+            for field in Character._info_attrs + ['name']:
+                input[field] = getattr(modal, field).value
         else:
-            raise errors.DataWriteError
+            await self.bot.defer(interaction)
+
+        # validate input. can be NA
+        update, invalid = {}, []
+        to_validate = {  # key, list
+            'job': JOBS,
+            'game': [x.name for x in Games],
+            'server': SERVERS
+        }
+
+        for k, valid in to_validate.items():
+            if input[k] and input[k] != char.get(k):  # whitespace to clear
+                if input[k] in valid or input[k].isspace():
+                    update[k] = input[k].strip()
+                else:
+                    invalid.append(k)
+
+        # ensure not just whitespace
+        if input['name'] != char.get('name') and input['name'].strip():
+            update['name'] = input['name']
+
+        if input['guild'] != char.get('guild'):
+            update['guild'] = input['guild'].strip()
+
+        # update database
+        if update:
+            char.update(update)
+            _update = {'chars': user['chars']}
+            ret = await self.bot.db.set_user(interaction.user.id, _update)
+
+            if ret and ret.acknowledged:
+                text = f'Updated: **{", ".join(update.keys())}**'
+                await self.bot.followup(interaction, content=text)
+            else:
+                raise errors.DatabaseWriteError
+
+        if invalid:
+            text = 'The following issues occurred:\n\u200b'
+            embed = discord.Embed(description=text, color=config.core.embed_color)
+            mushshock = self.bot.get_emoji_url(EMOJIS['mushshock'].id)
+            embed.set_thumbnail(url=mushshock)
+            embed.set_author(name='Warning',
+                             icon_url=self.bot.user.display_avatar.url)
+
+            errs = [f'**{input[k]}** is not a valid format for **{k}**'
+                    for k in invalid]
+            embed.add_field(name='Warnings', value='\n'.join(errs))
+            await self.bot.followup(interaction, embed=embed)
 
     async def _fame(
             self,
@@ -428,6 +495,57 @@ def _padded_str(text, n=30):
     s = list('\xa0' * n)
     s[:len(text)] = list(text)
     return ''.join(s)
+
+
+class SetInfoModal(discord.ui.Modal, title='Set Info'):
+    def __init__(self, char: dict):
+        super().__init__()
+
+        self.char = char
+        self.submit = None
+
+        # items
+        self.name = discord.ui.TextInput(
+            label='Name',
+            placeholder="Enter your character's name...",
+            max_length=30,
+            default=char.get('name'),
+        )
+        self.job = discord.ui.TextInput(
+            label='Job',
+            placeholder="E.g. Bishop, Hero, etc.",
+            default=char.get('job'),
+            required=False
+        )
+        self.game = discord.ui.TextInput(
+            label='Game',
+            placeholder="Maplestory/MaplestoryM",
+            default=char.get('game'),
+            required=False
+        )
+        self.server = discord.ui.TextInput(
+            label='Server',
+            placeholder="E.g. Scania (A1), Luna (EU), Reboot (NA), etc.",
+            default=char.get('server'),
+            required=False
+        )
+        self.guild = discord.ui.TextInput(
+            label='Guild',
+            placeholder="Enter your guild...",
+            default=char.get('guild'),
+            required=False
+        )
+
+        # add inputs
+        self.add_item(self.name)
+        for field in Character._info_attrs:
+            self.add_item(getattr(self, field))
+
+    async def on_submit(self, interaction: discord.Interaction):
+        self.submit = interaction
+        text = f'<a:loading:{EMOJIS["loading"].id}> Processing'
+        await interaction.response.send_message(text, ephemeral=True)
+        self.stop()
 
 
 class FameLog(list):
