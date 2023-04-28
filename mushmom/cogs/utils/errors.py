@@ -89,3 +89,24 @@ class CharacterParseError(MushError):
 class DiscordIOError(MushError):
     """Error reading attachments from Discord"""
     default_msg = 'Error trying to read attached JSON file. Try again later'
+
+
+class FameError(MushError):
+    """Base fame error"""
+    default_msg = 'Error while trying to fame'
+
+
+class SelfFameError(FameError):
+    """Error from trying to fame oneself"""
+    default_msg = '+1 for self love, but you cannot fame yourself'
+
+
+class AlreadyFamedError(FameError):
+    """Error from already faming member"""
+    default_msg = "You've already famed (or defamed) this member today"
+
+
+class MaxFamesReached(FameError):
+    """Error from reaching max # of fames per day"""
+    default_msg = "You've reached the fame limit for today"
+

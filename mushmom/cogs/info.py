@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from typing import Optional, Union
 from aenum import Enum
+from collections import namedtuple
 
 from .. import config, mapleio
 from .utils import errors, converters
@@ -326,9 +327,8 @@ class Info(commands.Cog):
     async def _fame(
             self,
             user: discord.Member,
-            member: discord.Member,
+            target: discord.Member,
             amt: int = 1,
-            channel: Optional[discord.abc.Messageable] = None
     ) -> None:
         """
         Internal function for adding fame (or defame). Bot owner
@@ -338,69 +338,71 @@ class Info(commands.Cog):
         ----------
         user: discord.Member
             the member faming
-        member: discord.Member
+        target: discord.Member
             the member to fame
         amt: int
             the amount to fame. can be negative
-        channel: Optional[discord.abc.Messageable]
-            channel to send confirmation message to. can be None
 
         """
-        if user.id == member.id and user.id != self.bot.owner_id:
+        if user.id == target.id and user.id != self.bot.owner_id:
             raise errors.SelfFameError
 
-        target = await self.bot.db.get_user(member.id)
-        if not target:
-            raise errors.DataNotFound
+        _target = await self.bot.db.get_user(target.id)
+        if not _target:
+            msg = f'{target.display_name} has not used {config.core.bot_name}'
+            raise errors.NoCharacters(msg)
 
-        update = {'fame': target['fame'] + amt}
+        target_update = {'fame': _target['fame'] + amt}
 
         # owner can fame whenever
         if user.id == self.bot.owner_id:
-            await self.bot.db.set_user(member.id, update)
+            await self.bot.db.set_user(target.id, target_update)
         else:
             # regular user
             famer = await self.bot.db.get_user(user.id)
             if not famer:
                 ret = await self.bot.db.add_user(user.id)
                 if not ret.acknowledged:
-                    raise errors.DataWriteError
-                else:
+                    raise errors.DatabaseWriteError
+                else:  # cached
                     famer = await self.bot.db.get_user(user.id)
 
             # check if already famed or max fame reached
-            fame_log = FameLog(famer['fame_log'])
+            famer_log = FameLog(**famer['fame_log'])
+            famed_log = FameLog(**_target['fame_log'])
 
-            if member.id in fame_log:
+            if target.id in famer_log:
                 raise errors.AlreadyFamedError
 
             # negative amount is a defame. cnt is separate for each
-            cnt = len(fame_log.fames() if amt > 1 else fame_log.defames())
+            cnt = len(famer_log.fames() if amt > 1 else famer_log.defames())
 
-            if cnt >= config.core.max_fame_limit:
+            if cnt >= config.core.fame_daily_limit:
                 raise errors.MaxFamesReached
 
             # add fame
-            ret = await self.bot.db.set_user(member.id, update)
+            if amt > 0:
+                famer_log.add_fame(target.id)
+                famed_log.add_famer(user.id)
+            elif amt < 0:
+                famer_log.add_defame(target.id)
+                famed_log.add_defamer(user.id)
 
-            if ret.acknowledged:
-                if amt > 0:
-                    fame_log.add_fame(member.id)
-                else:
-                    fame_log.add_defame(member.id)
+            target_update['fame_log'] = famed_log.to_json()
+            reqs = {
+                target.id: target_update,
+                user.id: {'fame_log': famer_log.to_json()}
+            }
 
-                await self.bot.db.set_user(user.id, {'fame_log': fame_log})
-            else:
+            ret = await self.bot.db.bulk_user_update(reqs)
+
+            if not ret.acknowledged:
                 raise errors.DataWriteError
 
-        if channel:
-            verb = f'{"de" if amt < 0 else ""}famed'
-            await channel.send(f'You {verb} **{member.display_name}**')
-
-    @commands.command()
+    @app_commands.command()
     async def fame(
             self,
-            ctx: commands.Context,
+            interaction: discord.Interaction,
             member: discord.Member
     ) -> None:
         """
@@ -409,17 +411,22 @@ class Info(commands.Cog):
 
         Parameters
         ----------
-        ctx: commands.Context
+        interaction: discord.Interaction
         member: discord.Member
             the member to fame
 
         """
-        await self._fame(ctx.author, member, 1, ctx.channel)
+        await self.bot.defer(interaction)
+        await self._fame(interaction.user, member, 1)
 
-    @commands.command()
+        # no error
+        msg = f'You famed **{member.display_name}**'
+        await self.bot.followup(interaction, content=msg)
+
+    @app_commands.command()
     async def defame(
             self,
-            ctx: commands.Context,
+            interaction: discord.Interaction,
             member: discord.Member
     ) -> None:
         """
@@ -428,12 +435,17 @@ class Info(commands.Cog):
 
         Parameters
         ----------
-        ctx: commands.Context
+        interaction: discord.Interaction
         member: discord.Member
             the member to defame
 
         """
-        await self._fame(ctx.author, member, -1, ctx.channel)
+        await self.bot.defer(interaction)
+        await self._fame(interaction.user, member, -1)
+
+        # no error
+        msg = f'You defamed **{member.display_name}**'
+        await self.bot.followup(interaction, content=msg)
 
     @commands.Cog.listener()
     async def on_reaction_add(
@@ -548,44 +560,74 @@ class SetInfoModal(discord.ui.Modal, title='Set Info'):
         self.stop()
 
 
-class FameLog(list):
+FameRecord = namedtuple('FameRecord', 'uid amt ts')
+
+
+class FameLog:
     """
-    List of tuple[int, int, datetime], which is userid, amount,
-    and timestamp. timestamp is output of datetime.utcnow()
+    Log of fames made and famers (mostly for viewing).  Keep track of
+    userid, amount, and timestamp. timestamp is output of datetime.utcnow()
     (i.e. tz unaware, but utc)
 
-    Records that are not from today are removed on init
+    Records that are not from today are removed on init.  Slight inconsistency
+    if time between init and operation crosses midnight
 
     """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, fames: list, famers: Optional[list] = None):
         utcnow = utc(datetime.utcnow())
         today = utcnow.astimezone(NYC).date()
+        famers = famers or []
 
         # clean old records. iterate over copy
-        for fame in self[:]:
-            uid, amt, ts = fame
-            if utc(ts).astimezone(NYC).date() != today:
-                self.remove(fame)
+        self._fames = [FameRecord(*fame) for fame in fames
+                       if utc(fame[-1]).astimezone(NYC).date() == today]
+
+        self._famers, self._defamers = [], []
+        famers.sort(key=lambda x: x[1], reverse=True)
+
+        for fame in famers:
+            _fame = FameRecord(*fame)
+            lst = self._famers if _fame.amt > 0 else self._defamers
+
+            if len(self._famers) <= config.core.fame_log_length:
+                lst.append(_fame)
 
     def fames(self):
-        return FameLog(filter(lambda x: x[1]>0, self))  # x[1] is amt
+        return [fame for fame in self._fames if fame.amt > 0]
 
     def defames(self):
-        return FameLog(filter(lambda x: x[1]<0, self))  # x[1] is amt
+        return [fame for fame in self._fames if fame.amt < 0]
 
     def __contains__(self, uid):
-        for fame in self:
-            if fame[0] == uid:
+        for fame in self._fames:
+            if fame.uid == uid:
                 return True
 
         return False
 
     def add_fame(self, uid):
-        self.append((uid, 1, datetime.utcnow()))
+        self._fames.append(FameRecord(uid, 1, datetime.utcnow()))
 
     def add_defame(self, uid):
-        self.append((uid, -1, datetime.utcnow()))
+        self._fames.append(FameRecord(uid, -1, datetime.utcnow()))
+
+    def add_famer(self, uid):
+        if len(self._famers) == config.core.fame_log_length:
+            self._famers.pop()
+
+        self._famers.append(FameRecord(uid, 1, datetime.utcnow()))
+
+    def add_defamer(self, uid):
+        if len(self._defamers) == config.core.fame_log_length:
+            self._defamers.pop()
+
+        self._defamers.append(FameRecord(uid, -1, datetime.utcnow()))
+
+    def to_json(self):
+        return {
+            'fames': self._fames,
+            'famers': self._famers + self._defamers
+        }
 
 
 async def setup(bot):
