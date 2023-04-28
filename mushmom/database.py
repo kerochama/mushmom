@@ -11,7 +11,8 @@ they were doing it.
 import asyncio
 
 from motor.motor_asyncio import AsyncIOMotorClient
-from pymongo.results import InsertOneResult, UpdateResult
+from pymongo import UpdateOne
+from pymongo.results import InsertOneResult, UpdateResult, BulkWriteResult
 from datetime import datetime
 from typing import Optional, Union, Any, Hashable
 
@@ -88,7 +89,8 @@ class Database:
                 return data
 
     async def add_user(
-            self, userid: int,
+            self,
+            userid: int,
             char_data: Optional[dict] = None
     ) -> InsertOneResult:
         """
@@ -156,6 +158,34 @@ class Database:
         update = {'$set': data}
 
         return await self.users.update_one({'_id': userid}, update)
+
+    async def bulk_user_update(
+            self,
+            ops: dict[int, dict],
+            ordered: bool = False
+    ) -> BulkWriteResult:
+        """
+        Bulk write to data users database
+
+        Parameters
+        ----------
+        ops: dict[int, dict]
+            userid to data mapping
+        ordered: bool
+            whether or not to write in order
+
+        Returns
+        -------
+
+        """
+        requests = []
+
+        for userid, data in ops.items():
+            data.pop('_id', None)
+            requests.append(UpdateOne({'_id': userid}, {'$set': data}))
+            self.user_cache.remove(userid)  # invalidate cache
+
+        return await self.users.bulk_write(requests, ordered=ordered)
 
     async def get_guild(
             self,
