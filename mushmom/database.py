@@ -14,7 +14,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import UpdateOne
 from pymongo.results import InsertOneResult, UpdateResult, BulkWriteResult
 from datetime import datetime
-from typing import Optional, Union, Any, Hashable
+from typing import Optional, Union
 
 from . import config
 from .cache import TTLCache
@@ -52,7 +52,7 @@ class Database:
         self.guilds = self.db.guilds
 
         # caches
-        self.user_cache = TTLCache(seconds=60)  # 5 minute cache
+        self.user_cache = TTLCache(seconds=300)  # 5 minute cache
 
     async def get_user(
             self,
@@ -120,8 +120,12 @@ class Database:
             'update_time': datetime.utcnow(),
         }
 
-        self.user_cache.add(userid, data)
-        return await self.users.insert_one(data)
+        r = await self.users.insert_one(data)
+
+        if r.acknowledged:
+            self.user_cache.add(userid, data)
+
+        return r
 
     async def set_user(
             self,
@@ -150,14 +154,18 @@ class Database:
         so the default tracking is `False`
 
         """
-        self.user_cache.remove(userid)  # invalidate cache
-
         # set userid/_id manually
         data.pop('_id', None)
         data.pop('userid', None)
         update = {'$set': data}
 
-        return await self.users.update_one({'_id': userid}, update)
+        r = await self.users.update_one({'_id': userid}, update)
+
+        # update cache
+        if userid in self.user_cache:
+            self.user_cache.get(userid).update(data)
+
+        return r
 
     async def bulk_user_update(
             self,
@@ -183,9 +191,15 @@ class Database:
         for userid, data in ops.items():
             data.pop('_id', None)
             requests.append(UpdateOne({'_id': userid}, {'$set': data}))
-            self.user_cache.remove(userid)  # invalidate cache
 
-        return await self.users.bulk_write(requests, ordered=ordered)
+        r = await self.users.bulk_write(requests, ordered=ordered)
+
+        # update cache
+        for userid, data in ops.items():
+            if userid in self.user_cache:
+                self.user_cache.get(userid).update(data)
+
+        return r
 
     async def get_guild(
             self,
