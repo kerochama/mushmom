@@ -66,6 +66,10 @@ class TTLCache:
     def __contains__(self, k: Hashable) -> bool:
         return self.contains(k)
 
+    def __iter__(self):
+        self.verify_cache_integrity()
+        return iter(self.__cache)
+
     def __verify_internal(self):
         """Verify every __recur calls"""
         self.__cnt += 1
