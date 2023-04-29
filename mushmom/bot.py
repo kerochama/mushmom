@@ -33,31 +33,6 @@ initial_extensions = (
 )
 
 
-async def _prefix_callable(
-        bot: Mushmom,
-        message: discord.Message
-) -> Iterable[str]:
-    """
-    Get guild prefixes if exist else use defaults. Also allow mentions
-
-    Parameters
-    ----------
-    bot: commands.Bot
-    message: discord.Message
-
-    Returns
-    -------
-    Iterable[str]
-        list of prefixes
-
-    """
-    _default = config.core.default_prefix
-    default = [_default] if isinstance(_default, str) else _default
-    guild = await bot.db.get_guild(message.guild.id)
-    prefixes = default + (guild['prefixes'] if guild else [])
-    return commands.when_mentioned_or(*prefixes)(bot, message)
-
-
 class Mushmom(commands.Bot):
     """
     Bot used to send emotes and sprites by making API calls to
@@ -85,7 +60,10 @@ class Mushmom(commands.Bot):
     ):
         intents = discord.Intents.default()
 
-        super().__init__(command_prefix=_prefix_callable, intents=intents)
+        super().__init__(
+            command_prefix=commands.when_mentioned,
+            intents=intents
+        )
         self.session = None  # set in on_ready
         self.user_agent = '{bot}/{version} {default}'.format(
             bot=config.core.bot_name,
@@ -93,7 +71,7 @@ class Mushmom(commands.Bot):
             default=aiohttp.http.SERVER_SOFTWARE
         )
 
-        self.info_cache = TTLCache(seconds=300)
+        self.info_cache = TTLCache(seconds=600)
         self.db = db.Database(db_client)
         self.init_sync = sync
 
