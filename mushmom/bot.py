@@ -7,14 +7,16 @@ import warnings
 import logging
 
 from discord.ext import commands, tasks
-from discord import Emoji, Reaction, PartialEmoji
+from discord import Emoji, Reaction, PartialEmoji, app_commands
 from motor.motor_asyncio import AsyncIOMotorClient
 from aiohttp import web
-from typing import Optional, Union, Iterable
+from datetime import datetime
+from typing import Optional, Union
+from collections import namedtuple
 
 from . import config, database as db
 from .cache import TTLCache
-from .cogs.utils import errors, checks, io
+from .cogs.utils import errors, checks
 from .resources import EMOJIS
 
 _log = logging.getLogger('discord')
@@ -31,6 +33,8 @@ initial_extensions = (
     'cogs.mush',
     'cogs.pose'
 )
+
+TrackRecord = namedtuple('TrackRecord', 'guildid userid command ts')
 
 
 class Mushmom(commands.Bot):
@@ -56,14 +60,15 @@ class Mushmom(commands.Bot):
     def __init__(
             self,
             db_client: AsyncIOMotorClient,
-            sync: Optional[int, bool] = None  # specific guild id or all
+            sync: Optional[int, bool] = None,  # specific guild id or all
+            enable_tracking: bool = True
     ):
         intents = discord.Intents.default()
-
         super().__init__(
             command_prefix=commands.when_mentioned,
             intents=intents
         )
+
         self.session = None  # set in on_ready
         self.user_agent = '{bot}/{version} {default}'.format(
             bot=config.core.bot_name,
@@ -78,6 +83,10 @@ class Mushmom(commands.Bot):
         # add global checks
         self.add_check(checks.not_bot)
         self.add_check(checks.in_guild_channel)
+
+        # store tracking to push at once
+        self.enable_tracking = enable_tracking
+        self._tracking = []
 
     async def setup_hook(self):
         if not self.session:
@@ -105,11 +114,12 @@ class Mushmom(commands.Bot):
             cmds = await self.tree.sync(guild=guild)
             _log.info(f'{len(cmds)} slash command(s) synced')
 
+        # start tasks
+        self.verify_cache_integrity.start()
+        self.push_tracking.start()
+
     async def on_ready(self):
         _log.info(f'{self.user} is ready to mush!')
-
-        if not self._verify_cache_integrity.is_running:
-            self._verify_cache_integrity.start()
 
     @staticmethod
     async def ephemeral(
@@ -153,7 +163,7 @@ class Mushmom(commands.Bot):
             *,  # only key word arguments, since edit only takes kwargs
             delete_after: Optional[int] = None,
             **kwargs
-    ) -> None:
+    ) -> discord.InteractionMessage:
         """
         Version of followup that keeps overwriting the orig message
 
@@ -359,15 +369,60 @@ class Mushmom(commands.Bot):
 
             return await r.read()
 
+    async def on_app_command_completion(
+            self,
+            interaction: discord.Interaction,
+            command: app_commands.Command
+    ) -> None:
+        """Track if tracking is enabled"""
+        if self.enable_tracking:
+            record = TrackRecord(
+                guildid=interaction.guild_id,
+                userid=interaction.user.id,
+                command=command.qualified_name,
+                ts=datetime.utcnow()
+            )
+            self._tracking.append(record)
+
+    @tasks.loop(minutes=5)
+    async def push_tracking(self):
+        """Push internally stored tracking to database"""
+        users, guilds = {}, {}
+
+        for record in self._tracking:
+            guildid, userid, command, ts = record
+
+            # update guild
+            if guildid not in guilds:
+                guilds[guildid] = {'commands': {}, 'update_time': datetime.min}
+
+            guild = guilds[guildid]
+            guild['commands'][command] = guild['commands'].get(command, 0) + 1
+            guild['update_time'] = max(guild['update_time'], ts)
+
+            # update user
+            if userid not in users:
+                users[userid] = {'commands': {}, 'update_time':datetime.min}
+
+            user = users[userid]
+            user['commands'][command] = user['commands'].get(command, 0) + 1
+            user['update_time'] = max(user['update_time'], ts)
+
+        # write to db
+        await self.db.bulk_guild_update(guilds)
+        await self.db.bulk_user_update(users)
+
+        self._tracking = []  # clear
+
     @tasks.loop(minutes=10)
-    async def _verify_cache_integrity(self):
+    async def verify_cache_integrity(self):
         """Clean up stray cached data"""
         self.info_cache.verify_cache_integrity()
         self.db.user_cache.verify_cache_integrity()
 
     async def close(self):
         """Ensure all connections are closed"""
+        await self.push_tracking()
         await super().close()
         await self.session.close()
         self.db.close()
-
