@@ -55,6 +55,9 @@ class TTLCache:
             value = self.__cache.pop(k)
             self.add(k, value)  # update ts
 
+    def clear(self) -> None:
+        self.__cache = {}
+
     def contains(self, k: Hashable) -> bool:
         if k in self.__cache:
             value, t = self.__cache.get(k)
