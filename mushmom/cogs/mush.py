@@ -46,11 +46,12 @@ class Mush(commands.Cog):
             character to use. Default char if not provided
 
         """
+        await self.bot.defer(interaction)
+
         if emote not in mapleio.EXPRESSIONS:
-            msg = f'{emote} is not a valid emote'
+            msg = f'**{emote}** is not a valid emote'
             raise errors.BadArgument(msg, see_also=['list emotes'])
 
-        await self.bot.defer(interaction)
         char = char or await io.get_default_char(interaction)
 
         # create emote

@@ -48,16 +48,15 @@ class Pose(commands.Cog):
             frame of the animation
 
         """
+        await self.bot.defer(interaction)
+
         if pose and pose not in mapleio.POSES.values():
-            msg = f'{pose} is not a valid pose'
+            msg = f'**{pose}** is not a valid pose'
             raise errors.BadArgument(msg, see_also=['list poses'])
 
         if expression and expression not in mapleio.EXPRESSIONS:
-            msg = f'{expression} is not a valid expression'
+            msg = f'**{expression}** is not a valid expression'
             raise errors.BadArgument(msg, see_also=['list expressions'])
-
-        # wait for processing
-        await self.bot.defer(interaction)
 
         char = char or await io.get_default_char(interaction)
         expression = expression or char.expression
