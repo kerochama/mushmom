@@ -2,14 +2,10 @@
 Commands to change things about the bot itself
 
 """
-import discord
-
 from discord.ext import commands
-from discord import app_commands
 from typing import Optional
 
 from .. import config
-from .utils import errors
 
 
 class Meta(commands.Cog):
@@ -97,26 +93,6 @@ class Meta(commands.Cog):
         name = config.core.bot_name
         await ctx.message.reply(f'\u2620 {name} has been killed! \u2620')
         await self.bot.close()
-
-    @commands.group(hidden=True)
-    async def timer(self, ctx: commands.Context) -> None:
-        pass
-
-    @timer.command(hidden=True)
-    async def activate(self, ctx: commands.Context) -> None:
-        """Activate timer"""
-        ctx.bot.timer.activate()
-        await ctx.send('Timer activated')
-
-    @timer.command(hidden=True)
-    async def deactivate(self, ctx: commands.Context) -> None:
-        """Deactivate timer"""
-        ctx.bot.timer.deactivate()
-        await ctx.send('Timer deactivated')
-
-    @app_commands.command(name="whoami", description="whoami")
-    async def whoami(self, interaction: discord.Interaction):
-        await self.bot.ephemeral(interaction, interaction.user.name)
 
 
 async def setup(bot):
