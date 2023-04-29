@@ -248,7 +248,6 @@ class Database:
         """
         _data = {
             '_id': guildid,
-            'prefixes': [],
             'channel': None,
             'create_time': datetime.utcnow(),
             'update_time': datetime.utcnow(),
@@ -290,39 +289,32 @@ class Database:
 
         return await self.guilds.update_one({'_id': guildid}, update)
 
-    async def track(
+    async def bulk_guild_update(
             self,
-            guildid: int,
-            userid: int,
-            command: str
-    ) -> tuple[UpdateResult, UpdateResult]:
+            ops: dict[int, dict],
+            ordered: bool = False
+    ) -> BulkWriteResult:
         """
-        Keep track of command calls
+        Bulk write to data guilds database
 
         Parameters
         ----------
-        guildid: int
-            the discord user id
-        userid: int
-            the discord user id
-        command: str
-            the command to track
+        ops: dict[int, dict]
+            guildid to data mapping
+        ordered: bool
+            whether or not to write in order
 
         Returns
         -------
-        tuple[UpdateResult, UpdateResult]
-            tuple of results for updating the guild and user
 
         """
-        update = {
-            '$set': {'update_time': datetime.utcnow()},
-            '$inc': {f'commands.{command}': 1}
-        }
+        requests = []
 
-        return (
-            await self.guilds.update_one({'_id': guildid}, update),
-            await self.users.update_one({'_id': userid}, update)
-        )
+        for guildid, data in ops.items():
+            data.pop('_id', None)
+            requests.append(UpdateOne({'_id': guildid}, {'$set': data}))
+
+        return await self.guilds.bulk_write(requests, ordered=ordered)
 
     @staticmethod
     def _handle_proj(
