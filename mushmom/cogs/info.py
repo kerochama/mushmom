@@ -28,6 +28,7 @@ from ..mapleio.resources import JOBS, GAMES, SERVERS
 
 UTC = timezone.utc
 NYC = ZoneInfo('America/New_York')  # new york timezone
+InfoData = namedtuple('InfoData', 'message target')
 Games = Enum('Games', GAMES)
 
 
@@ -170,7 +171,8 @@ class Info(commands.Cog):
 
         # start waiting for fame reactions
         if user:
-            self.bot.info_cache.add(msg.id, member.id)
+            _info = InfoData(msg, member)
+            self.bot.info_cache.add(msg.id, _info)
 
     async def _delayed_send(self, interaction, delay=3, **kwargs):
         await asyncio.sleep(delay)
@@ -397,7 +399,7 @@ class Info(commands.Cog):
             ret = await self.bot.db.bulk_user_update(reqs)
 
             if not ret.acknowledged:
-                raise errors.DataWriteError
+                raise errors.DatabaseWriteError
 
     @app_commands.command()
     async def fame(
@@ -448,65 +450,58 @@ class Info(commands.Cog):
         await self.bot.followup(interaction, content=msg)
 
     @commands.Cog.listener()
-    async def on_reaction_add(
+    async def on_raw_reaction_add(
             self,
-            reaction: discord.Reaction,
-            user: Union[discord.Member, discord.User]
+            payload: discord.RawReactionActionEvent,
     ) -> None:
         """
         Monitor for fame/defame reactions to info.  Will only monitor
-        for 10 minutes and all fame restrictions apply.  Errors will
-        @mention the user
+        for 10 minutes and all fame restrictions apply.  Errors will be
+        ignored to avoid clutter
         
         Parameters
         ----------
-        reaction: discord.Reaction
-            the reaction added
-        user: Union[discord.Member, discord.User]
-            the user that added the reaction
+        payload: discord.RawReactionActionEvent
 
         """
-        if reaction.message not in self.info_cache:
+        if payload.message_id not in self.bot.info_cache:
             return
 
-        member_id = self.info_cache.get(reaction.message)
-        member = (self.bot.get_user(member_id)
-                  or await self.bot.fetch_user(member_id))
-        name = (reaction.emoji if isinstance(reaction.emoji, str)
-                else reaction.emoji.name)
+        message, target = self.bot.info_cache.get(payload.message_id)
+        react = payload.emoji.name.lower()
 
         try:
             cmd = None
-            if str(reaction) == '\U0001f44D' or 'thumbsup' in name.lower():
-                cmd, amt = 'fame', 1
-                await self._fame(user, member, 1)
-            elif str(reaction) == '\U0001f44E' or 'thumbsdown' in name.lower():
-                cmd, amt = 'defame', -1
-                await self._fame(user, member, -1)
+            if react == '\U0001f44E' or _contains_all(react, ['thumb', 'down']):
+                cmd, amt = 'fame', -1
+            elif react == '\U0001f44D' or _contains_all(react, ['thumb', 'up']):
+                cmd, amt = 'defame', 1
 
             if cmd:
+                await self._fame(payload.member, target, amt)
+
                 # edit embed. fame is the 2nd field
-                embed = reaction.message.embeds[0]
+                embed = message.embeds[0]
                 curr = re.search(r'\d+', embed.fields[1].value).group()
-                _fmt_fame = self._padded_str(f'\u2b50 {int(curr) + amt}', n=12)
+                _fmt_fame = _padded_str(f'\u2b50 {int(curr) + amt}', n=12)
                 embed.set_field_at(1, name='Fame', value=_fmt_fame + '\n\u200b')
 
                 # attached pfp pops out of embed, so remove
-                await reaction.message.edit(embed=embed, attachments=[])
-        except errors.MushmomError as error:
-            err = f'errors.{error.__class__.__name__}'
-            specs = ERRORS[self.__class__.__name__.lower()][cmd][err]
-            msg, ref_cmds = specs.values()
-            ctx = await self.bot.get_context(reaction.message)
-            await self.bot.send_error(ctx, msg, ref_cmds,
-                                      delete_message=False,
-                                      raw_content=f'{user.mention}')
+                await message.edit(embed=embed, attachments=[])
+        except errors.MushError:
+            pass  # ideally either DM or ephemeral (but no interaction)
+
+        self.bot.info_cache.refresh(payload.message_id)  # extend
 
 
 def _padded_str(text, n=30):
     s = list('\xa0' * n)
     s[:len(text)] = list(text)
     return ''.join(s)
+
+
+def _contains_all(string, iterable):
+    return all(s in string for s in iterable)
 
 
 class SetInfoModal(discord.ui.Modal, title='Set Info'):
