@@ -387,30 +387,8 @@ class Mushmom(commands.Bot):
     @tasks.loop(minutes=5)
     async def push_tracking(self):
         """Push internally stored tracking to database"""
-        users, guilds = {}, {}
-
-        for record in self._tracking:
-            guildid, userid, command, ts = record
-
-            # update guild
-            if guildid not in guilds:
-                guilds[guildid] = {'commands': {}, 'update_time': datetime.min}
-
-            guild = guilds[guildid]
-            guild['commands'][command] = guild['commands'].get(command, 0) + 1
-            guild['update_time'] = max(guild['update_time'], ts)
-
-            # update user
-            if userid not in users:
-                users[userid] = {'commands': {}, 'update_time':datetime.min}
-
-            user = users[userid]
-            user['commands'][command] = user['commands'].get(command, 0) + 1
-            user['update_time'] = max(user['update_time'], ts)
-
-        # write to db
-        await self.db.bulk_guild_update(guilds)
-        await self.db.bulk_user_update(users)
+        if self._tracking:
+            await self.db.update_tracking(self._tracking)
 
         self._tracking = []  # clear
 
