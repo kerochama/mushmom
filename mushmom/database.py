@@ -7,14 +7,18 @@ are unlikely.  Would cause issues if user makes changes in a different
 channel/server before submitting, but the user would basically know
 they were doing it.
 
+Guild cache capped at 100
+
 """
 import asyncio
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import UpdateOne
-from pymongo.results import InsertOneResult, UpdateResult, BulkWriteResult
+from pymongo.results import (
+    InsertOneResult, UpdateResult, BulkWriteResult, InsertManyResult
+)
 from datetime import datetime
-from typing import Optional, Union
+from typing import Optional, Union, Iterable
 
 from . import config
 from .cache import TTLCache
@@ -53,6 +57,7 @@ class Database:
 
         # caches
         self.user_cache = TTLCache(seconds=300)  # 5 minute cache
+        self.guild_cache = TTLCache(seconds=3600)  # 1 hour. very few guilds
 
     async def get_user(
             self,
@@ -223,7 +228,17 @@ class Database:
             found guild data or None
 
         """
-        return await self.guilds.find_one({'_id': guildid}, projection)
+        lock = asyncio.Lock()  # avoid update between in cache check and await
+
+        async with lock:
+            if guildid in self.guild_cache:
+                _data = self.guild_cache.get(guildid)
+                return self._handle_proj(_data, projection)
+            else:
+                data = await self.guilds.find_one({'_id': guildid}, projection)
+                if data:
+                    self.guild_cache.add(guildid, data)
+                return data
 
     async def add_guild(
             self,
@@ -254,7 +269,12 @@ class Database:
         }
         _data.update(data or {})
 
-        return await self.guilds.insert_one(_data)
+        r = await self.guilds.insert_one(_data)
+
+        if r.acknowledged:
+            self.guild_cache.add(guildid, data)
+
+        return r
 
     async def set_guild(
             self,
@@ -287,34 +307,107 @@ class Database:
         data.pop('guildid', None)
         update = {'$set': data}
 
-        return await self.guilds.update_one({'_id': guildid}, update)
+        r = await self.guilds.update_one({'_id': guildid}, update)
 
-    async def bulk_guild_update(
+        # update cache
+        if guildid in self.guild_cache:
+            self.user_cache.get(guildid).update(data)
+
+        return r
+
+    async def bulk_guild_add(
             self,
-            ops: dict[int, dict],
-            ordered: bool = False
-    ) -> BulkWriteResult:
+            guildids: list
+    ) -> InsertManyResult:
         """
-        Bulk write to data guilds database
+        Add many guilds at once
 
         Parameters
         ----------
-        ops: dict[int, dict]
-            guildid to data mapping
-        ordered: bool
-            whether or not to write in order
+        guildids: list
+            list of guildids to add
 
         Returns
         -------
+        InsertManyResult
+            result of the insert_many operation
 
         """
+        _data = {
+            'channel': None,
+            'create_time': datetime.utcnow(),
+            'update_time': datetime.utcnow(),
+        }
+
         requests = []
+        for guildid in guildids:
+            req = _data.copy()
+            req['_id'] = guildid
+            requests.append(req)
 
-        for guildid, data in ops.items():
-            data.pop('_id', None)
-            requests.append(UpdateOne({'_id': guildid}, {'$set': data}))
+        r = await self.guilds.insert_many(requests)
 
-        return await self.guilds.bulk_write(requests, ordered=ordered)
+        if r.acknowledged:
+            for req in requests:
+                self.guild_cache.add(req['_id'], req)
+
+        return r
+
+    async def update_tracking(
+            self,
+            tracking: Iterable[tuple],
+    ) -> tuple[BulkWriteResult, BulkWriteResult]:
+        """
+        Convert tracking to update
+
+        E.g.
+
+        {
+            '00000123': {
+                '$set': {'update_time': 2023-04-10T21:14:05.717+00:00},
+                '$inc': {
+                    'commands.mush': 3
+                    'commands.list char': 2
+                }
+            }
+        }
+
+        Parameters
+        ----------
+        tracking: Iterable[tuple]
+            iterable of (gid, uid, cmd, ts)
+
+        Returns
+        -------
+        list[BulkWriteResult, BulkWriteResult]
+            the results of updating guilds and users
+        """
+        guilds, users = {}, {}
+
+        def _update(d, id, ts):  # helper to process record
+            if id not in d:
+                d[id] = {'$set': {'update_time': datetime.min}, '$inc': {}}
+
+            _set, _inc = d[id]['$set'], d[id]['$inc']
+            _set['update_time'] = max(_set['update_time'], ts)
+            _inc[f'commands.{cmd}'] = _inc.get(f'commands.{cmd}', 0) + 1
+
+        for record in tracking:
+            gid, uid, cmd, ts = record
+
+            if not await self.get_guild(gid):
+                await self.add_guild(gid)
+
+            _update(guilds, gid, ts)
+            _update(users, uid, ts)
+
+        reqs_guild = [UpdateOne({'_id': k}, v) for k, v in guilds.items()]
+        reqs_user = [UpdateOne({'_id': k}, v) for k, v in users.items()]
+
+        return (
+            await self.guilds.bulk_write(reqs_guild, ordered=False),
+            await self.users.bulk_write(reqs_user, ordered=False)
+        )
 
     @staticmethod
     def _handle_proj(
