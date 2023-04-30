@@ -4,9 +4,10 @@ Expiring cache
 """
 import time
 from typing import Any, Hashable
+from collections import OrderedDict
 
 
-class TTLCache:
+class TTLCache(dict):
     """
     Entries will expire after some time.  Prune auto calls every x calls
     to get/add/remove
@@ -18,10 +19,8 @@ class TTLCache:
 
     """
     def __init__(self, seconds: int):
-        super().__init__()
         self.__ttl = seconds
         self.__cache = {}
-
         self.__cnt = 0
         self.__recur = 20  # auto prune every 20 calls
 
@@ -80,3 +79,52 @@ class TTLCache:
         if self.__cnt >= self.__recur:
             self.prune()
             self.__cnt = 0
+
+
+class LRUCache:
+    """
+    Least recently used entry will pop.  Just prune when adding;
+    refresh when getting and adding
+
+    Parameters
+    ----------
+    max_size: int
+        max number of entries
+
+    """
+    def __init__(self, max_size: int):
+        self.__max_size = max_size
+        self.__cache = OrderedDict()
+
+    def prune(self) -> None:
+        """Keep n entries less than max size"""
+        while len(self.__cache) > self.__max_size:
+            self.__cache.popitem(last=False)
+
+    def get(self, k: Hashable) -> Any:
+        self.refresh(k)
+        return self.__cache.get(k)
+
+    def add(self, k: Hashable, value: Any) -> None:
+        self.__cache[k] = value
+        self.refresh(k)
+        self.prune()
+
+    def remove(self, k: Hashable) -> None:
+        self.__cache.pop(k, None)
+
+    def refresh(self, k: Hashable) -> None:
+        if k in self.__cache:
+            self.__cache.move_to_end(k)
+
+    def clear(self) -> None:
+        self.__cache = OrderedDict()
+
+    def contains(self, k: Hashable) -> bool:
+        return k in self.__cache
+
+    def __contains__(self, k: Hashable) -> bool:
+        return self.contains(k)
+
+    def __iter__(self):
+        return iter(self.__cache)
