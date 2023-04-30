@@ -115,7 +115,7 @@ class Mushmom(commands.Bot):
             _log.info(f'{len(cmds)} slash command(s) synced')
 
         # start tasks
-        self.verify_cache_integrity.start()
+        self.prune_caches.start()
         self.push_tracking.start()
 
     async def on_ready(self):
@@ -393,10 +393,10 @@ class Mushmom(commands.Bot):
         self._tracking = []  # clear
 
     @tasks.loop(minutes=10)
-    async def verify_cache_integrity(self):
+    async def prune_caches(self):
         """Clean up stray cached data"""
-        self.info_cache.verify_cache_integrity()
-        self.db.user_cache.verify_cache_integrity()
+        self.info_cache.prune()
+        self.db.user_cache.prune()
 
     async def close(self):
         """Ensure all connections are closed"""
