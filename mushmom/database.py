@@ -7,21 +7,22 @@ are unlikely.  Would cause issues if user makes changes in a different
 channel/server before submitting, but the user would basically know
 they were doing it.
 
-Guild cache capped at 100
+Guild cache capped at 100.  User tracking only starts if they import or fame
 
 """
 import asyncio
 
+import pymongo
 from motor.motor_asyncio import AsyncIOMotorClient
-from pymongo import UpdateOne
+from pymongo import UpdateOne, DESCENDING
 from pymongo.results import (
-    InsertOneResult, UpdateResult, BulkWriteResult, InsertManyResult
+    InsertOneResult, UpdateResult, BulkWriteResult
 )
 from datetime import datetime
 from typing import Optional, Union, Iterable
 
 from . import config
-from .cache import TTLCache
+from .cache import TTLCache, LRUCache
 
 
 class Database:
@@ -57,7 +58,14 @@ class Database:
 
         # caches
         self.user_cache = TTLCache(seconds=300)  # 5 minute cache
-        self.guild_cache = TTLCache(seconds=3600)  # 1 hour. very few guilds
+        self.guild_cache = LRUCache(max_size=100)
+
+    async def initialize_guild_cache(self):
+        """Pull of 100 most currently updated guilds"""
+        data = self.guilds.find({}).sort('update_time', pymongo.DESCENDING)
+
+        for guild in await data.to_list(length=100):
+            self.guild_cache.add(guild['_id'], guild)
 
     async def get_user(
             self,
@@ -272,7 +280,7 @@ class Database:
         r = await self.guilds.insert_one(_data)
 
         if r.acknowledged:
-            self.guild_cache.add(guildid, data)
+            self.guild_cache.add(guildid, _data)
 
         return r
 
@@ -311,45 +319,7 @@ class Database:
 
         # update cache
         if guildid in self.guild_cache:
-            self.user_cache.get(guildid).update(data)
-
-        return r
-
-    async def bulk_guild_add(
-            self,
-            guildids: list
-    ) -> InsertManyResult:
-        """
-        Add many guilds at once
-
-        Parameters
-        ----------
-        guildids: list
-            list of guildids to add
-
-        Returns
-        -------
-        InsertManyResult
-            result of the insert_many operation
-
-        """
-        _data = {
-            'channel': None,
-            'create_time': datetime.utcnow(),
-            'update_time': datetime.utcnow(),
-        }
-
-        requests = []
-        for guildid in guildids:
-            req = _data.copy()
-            req['_id'] = guildid
-            requests.append(req)
-
-        r = await self.guilds.insert_many(requests)
-
-        if r.acknowledged:
-            for req in requests:
-                self.guild_cache.add(req['_id'], req)
+            self.guild_cache.get(guildid).update(data)
 
         return r
 
@@ -395,7 +365,7 @@ class Database:
         for record in tracking:
             gid, uid, cmd, ts = record
 
-            if not await self.get_guild(gid):
+            if not await self.get_guild(gid):  # mostly in cache
                 await self.add_guild(gid)
 
             _update(guilds, gid, ts)

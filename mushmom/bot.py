@@ -114,6 +114,9 @@ class Mushmom(commands.Bot):
             cmds = await self.tree.sync(guild=guild)
             _log.info(f'{len(cmds)} slash command(s) synced')
 
+        # update guild cache
+        await self.db.initialize_guild_cache()
+
         # start tasks
         self.prune_caches.start()
         self.push_tracking.start()
