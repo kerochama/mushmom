@@ -2,13 +2,15 @@
 Custom errors for bot
 
 """
+import discord
+from discord.ext import commands
 from discord import app_commands
 from typing import Optional, Iterable
 
 from ... import config
 
 
-class MushError(app_commands.AppCommandError):
+class MushError(app_commands.AppCommandError, commands.CommandError):
     """
     Base error for bot.
 
@@ -110,3 +112,9 @@ class MaxFamesReached(FameError):
     """Error from reaching max # of fames per day"""
     default_msg = "You've reached the fame limit for today"
 
+
+class RestrictedChannel(MushError):
+    """Error from submitting command when channels restricted"""
+    def __init__(self, channel: discord.TextChannel):
+        self.msg = f'This command can only be used in {channel.mention}'
+        super().__init__(self.msg)

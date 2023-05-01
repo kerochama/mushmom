@@ -40,64 +40,23 @@ class ErrorHandler(commands.Cog):
         Parameters
         ----------
         interaction: discord.Interaction
-        error: Exception
+        error: app_commands.AppCommandError
 
         """
         cmd = interaction.command.name
 
         if isinstance(error, errors.MushError):
             info = {'msg': error.msg, 'see_also': error.see_also}
-            await self.send_error(interaction, **info)
+            embed = self.format_error(**info)
         else:
-            if not isinstance(error, app_commands.CheckFailure):
-                # generic message
-                await self.send_error(interaction, errors.MushError.default_msg)
-                print(f'Ignoring exception in command `{cmd}`:', file=sys.stderr)
-                traceback.print_exception(type(error), error, error.__traceback__,
-                                          file=sys.stderr)
+            # generic message
+            embed = self.format_error(errors.MushError.default_msg)
+            print(f'Ignoring exception in command `{cmd}`:', file=sys.stderr)
+            traceback.print_exception(type(error), error, error.__traceback__,
+                                      file=sys.stderr)
 
-    async def send_error(
-        self,
-        interaction: discord.Interaction,
-        msg: Optional[str] = None,
-        see_also: Optional[Iterable[str]] = None,
-        raw_content: Optional[str] = None
-    ) -> discord.WebhookMessage:
-        """
-        Send an ephemeral message with an error
-
-        Parameters
-        ----------
-        interaction: discord.Interaction
-        msg: Optional[str]
-            the message to send in embed
-        see_also: Optional[Iterable[str]]
-            list of fully qualified command names to reference
-        raw_content: Optional[str]
-            content to pass directly to send, outside embed
-
-        Returns
-        -------
-        discord.WebhookMessage
-            the error message that was sent
-
-        """
-        # defaults
-        msg = msg or f'{config.core.bot_name} failed *cry*'
-        msg += '\n\u200b'
-
-        # send error
-        embed = discord.Embed(description=msg, color=config.core.embed_color)
-        embed.set_author(name='Error',
-                         icon_url=self.bot.user.display_avatar.url)
-        embed.set_thumbnail(url=self.bot.get_emoji_url(EMOJIS['mushshock'].id))
-
-        if see_also:
-            fmt = [f'`/{cmd}`' for cmd in see_also]
-            embed.add_field(name='See also', value=', '.join(fmt))
-
+        # determine coro for sending
         error_args = {
-            'content': raw_content,
             'embed': embed,
             'ephemeral': True
         }
@@ -118,6 +77,76 @@ class ErrorHandler(commands.Cog):
             coro = interaction.response.send_message
 
         await coro(**error_args)
+
+    @commands.Cog.listener()
+    async def on_command_error(
+            self,
+            ctx: commands.Context,
+            error: commands.CommandError
+    ) -> None:
+        """
+        Override default command error
+
+        Parameters
+        ----------
+        ctx: commands.Context
+        error: commands.CommandError
+
+        """
+        if not ctx.command:  # not command
+            return
+
+        cmd = ctx.command.qualified_name
+
+        if isinstance(error, commands.MissingPermissions):
+            embed = self.format_error(str(error))
+        elif isinstance(error, errors.MushError):
+            info = {'msg': error.msg, 'see_also': error.see_also}
+            embed = self.format_error(**info)
+        else:
+            embed = self.format_error(errors.MushError.default_msg)
+            print(f'Ignoring exception in command `{cmd}`:', file=sys.stderr)
+            traceback.print_exception(type(error), error, error.__traceback__,
+                                      file=sys.stderr)
+
+        await ctx.send(embed=embed, delete_after=10)
+
+    def format_error(
+            self,
+            msg: Optional[str] = None,
+            see_also: Optional[Iterable[str]] = None,
+    ) -> discord.Embed:
+        """
+        Format error into an embed
+
+        Parameters
+        ----------
+        msg: Optional[str]
+            the message to send in embed
+        see_also: Optional[Iterable[str]]
+            list of fully qualified command names to reference
+
+        Returns
+        -------
+        discord.Embed
+            the embed error
+
+        """
+        # defaults
+        msg = msg or f'{config.core.bot_name} failed *cry*'
+        msg += '\n\u200b'
+
+        # send error
+        embed = discord.Embed(description=msg, color=config.core.embed_color)
+        embed.set_author(name='Error',
+                         icon_url=self.bot.user.display_avatar.url)
+        embed.set_thumbnail(url=self.bot.get_emoji_url(EMOJIS['mushshock'].id))
+
+        if see_also:
+            fmt = [f'`/{cmd}`' for cmd in see_also]
+            embed.add_field(name='See also', value=', '.join(fmt))
+
+        return embed
 
 
 async def setup(bot: commands.Bot):
