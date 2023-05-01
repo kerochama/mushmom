@@ -16,6 +16,7 @@ from collections import namedtuple
 
 from . import config, database as db
 from .cache import TTLCache
+from .cogs.help import FullHelpCommand
 from .cogs.utils import errors, checks
 from .resources import EMOJIS
 
@@ -66,7 +67,8 @@ class Mushmom(commands.Bot):
         intents = discord.Intents.default()
         super().__init__(
             command_prefix=commands.when_mentioned,
-            intents=intents
+            intents=intents,
+            help_command=FullHelpCommand()
         )
 
         self.session = None  # set in on_ready
@@ -105,6 +107,9 @@ class Mushmom(commands.Bot):
         # load extensions
         for ext in initial_extensions:
             await self.load_extension(f'{__package__}.{ext}')
+
+        # update help command cog
+        self.help_command.cog = self.get_cog(config.core.bot_name)
 
         # sync slash commands
         if self.init_sync:
