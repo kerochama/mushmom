@@ -7,8 +7,10 @@ from . import errors
 
 
 global_commands = (  # commands that will bypass channel check
-    'set-channel',
-    'reset-channel'
+    'set',
+    'set channel',
+    'reset',
+    'reset channel'
 )
 
 
