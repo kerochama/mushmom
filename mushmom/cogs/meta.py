@@ -17,6 +17,18 @@ class Meta(commands.Cog):
         return await self.bot.is_owner(ctx.author)
 
     @commands.command(hidden=True)
+    async def hello(self, ctx: commands.Context) -> None:
+        """
+        Say hello to test that the bot is alive
+
+        Parameters
+        ----------
+        ctx: commands.Context
+
+        """
+        await ctx.send('hai')
+
+    @commands.command(hidden=True)
     async def load(self, ctx: commands.Context, extension: str) -> None:
         """
         Load an extension dynamically from cogs

@@ -15,18 +15,6 @@ class Self(commands.Cog, name=config.core.bot_name):
         self.bot = bot
 
     @commands.command()
-    async def hello(self, ctx: commands.Context) -> None:
-        """
-        Say hello!
-
-        Parameters
-        ----------
-        ctx: commands.Context
-
-        """
-        await ctx.send('hai')
-
-    @commands.command()
     async def about(self, ctx: commands.Context) -> None:
         """
         Get some info about Mushmom
