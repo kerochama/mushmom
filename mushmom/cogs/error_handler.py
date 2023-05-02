@@ -5,6 +5,7 @@ Error handler
 import sys
 import discord
 import traceback
+from datetime import datetime
 
 from discord.ext import commands
 from discord import app_commands
@@ -61,12 +62,12 @@ class ErrorHandler(commands.Cog):
             'ephemeral': True
         }
 
-        try:  # try to get orig message
-            orig_msg = await interaction.original_response()
-        except discord.NotFound:
-            orig_msg = None
-
         if interaction.response.is_done():
+            try:  # try to get orig message
+                orig_msg = await interaction.original_response()
+            except discord.NotFound:
+                orig_msg = None
+
             if orig_msg and not orig_msg.flags.ephemeral:
                 await orig_msg.delete()  # delete if not ephemeral
                 coro = interaction.followup.send
