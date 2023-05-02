@@ -2,7 +2,11 @@
 Contains command checks
 
 """
+import discord
+
 from discord.ext import commands
+from discord import app_commands
+
 from . import errors
 
 
@@ -63,3 +67,16 @@ async def in_guild_channel(ctx: commands.Context) -> bool:
 
     channel = ctx.bot.get_channel(guild['channel'])
     raise errors.RestrictedChannel(channel)
+
+
+async def _slash_in_guild_channel(interaction: discord.Interaction) -> bool:
+    """Slash command version of in_guild_channel"""
+    ctx = await interaction.client.get_context(interaction)
+    return await in_guild_channel(ctx)
+
+
+def slash_in_guild_channel():
+    """Decorator verson"""
+    async def predicate(interaction: discord.Interaction) -> bool:
+        return await _slash_in_guild_channel(interaction)
+    return app_commands.check(predicate)

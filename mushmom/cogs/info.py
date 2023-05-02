@@ -12,14 +12,14 @@ from io import BytesIO
 from PIL import Image
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
-from typing import Optional, Union
+from typing import Optional
 from aenum import Enum
 from collections import namedtuple
 
 from .. import config, mapleio
-from .utils import errors, converters
+from .utils import errors
 from .utils.parameters import contains
-from .reference import ERRORS
+from .utils.checks import slash_in_guild_channel
 from ..mapleio import imutils
 from ..mapleio.character import Character
 
@@ -49,6 +49,7 @@ class Info(commands.Cog):
         self.bot.tree.add_command(self._info_context_menu)
 
     @app_commands.command()
+    @slash_in_guild_channel()
     async def info(
             self,
             interaction: discord.Interaction,
@@ -179,6 +180,7 @@ class Info(commands.Cog):
             _info = InfoData(msg, member)
             self.bot.info_cache.add(msg.id, _info)
 
+    @slash_in_guild_channel()
     async def info_context_menu(
             self,
             interaction: discord.Interaction,
