@@ -17,19 +17,18 @@ from aenum import Enum
 from collections import namedtuple
 
 from .. import config, mapleio
-from .utils import errors
+from .utils import errors, io
 from .utils.parameters import contains
 from .utils.checks import slash_in_guild_channel
 from ..mapleio import imutils
 from ..mapleio.character import Character
 
 from ..resources import EMOJIS, ATTACHMENTS, BACKGROUNDS
-from ..mapleio.resources import JOBS, GAMES, SERVERS
 
 UTC = timezone.utc
 NYC = ZoneInfo('America/New_York')  # new york timezone
 InfoData = namedtuple('InfoData', 'message target')
-Games = Enum('Games', GAMES)
+Games = Enum('Games', mapleio.GAMES)
 
 
 def utc(ts):
@@ -252,8 +251,8 @@ class Info(commands.Cog):
         return byte_arr.getvalue()
 
     @set_group.command(name="info")
-    @app_commands.autocomplete(job=contains(JOBS),
-                               server=contains(SERVERS))
+    @app_commands.autocomplete(job=contains(mapleio.JOBS),
+                               server=contains(mapleio.SERVERS))
     async def _set_info(
             self,
             interaction: discord.Interaction,
@@ -306,9 +305,9 @@ class Info(commands.Cog):
         # validate input. can be NA
         update, invalid = {}, []
         to_validate = {  # key, list
-            'job': JOBS,
+            'job': mapleio.JOBS,
             'game': [x.name for x in Games],
-            'server': SERVERS
+            'server': mapleio.SERVERS,
         }
 
         for k, valid in to_validate.items():
@@ -349,6 +348,56 @@ class Info(commands.Cog):
                     for k in invalid]
             embed.add_field(name='Warnings', value='\n'.join(errs))
             await self.bot.followup(interaction, embed=embed)
+
+    @set_group.command(name='pose')
+    @app_commands.autocomplete(pose=contains(mapleio.POSES),
+                               expression=contains(mapleio.EXPRESSIONS))
+    async def _set_pose(
+            self,
+            interaction: discord.Interaction,
+            pose: Optional[str] = None,
+            expression: Optional[str] = None
+    ) -> None:
+        """
+        Set default pose for /info
+
+        Parameters
+        ----------
+        interaction: discord.Interaction,
+        pose: Optional[str]
+            default pose (shown in info)
+        expression: Optional[str]
+            default expression (shown in info)
+
+        """
+        await self.bot.defer(interaction)
+
+        if pose and pose not in mapleio.POSES.values():
+            msg = f'**{pose}** is not a valid pose'
+            raise errors.BadArgument(msg, see_also=['list poses'])
+
+        if expression and expression not in mapleio.EXPRESSIONS:
+            msg = f'**{expression}** is not a valid expression'
+            raise errors.BadArgument(msg, see_also=['list expressions'])
+
+        user = await self.bot.db.get_user(interaction.user.id)
+
+        if not user or not user['chars']:
+            raise errors.NoCharacters
+
+        # update
+        char = user['chars'][user['default']]
+        char['action'] = pose or char['action']
+        char['emotion'] = expression or char['emotion']
+
+        update = {'chars': user['chars']}
+        ret = await self.bot.db.set_user(interaction.user.id, update)
+
+        if ret and ret.acknowledged:
+            text = f"Updated **{char['name']}**'s pose/expression"
+            await self.bot.followup(interaction, content=text)
+        else:
+            raise errors.DatabaseWriteError
 
     async def _fame(
             self,
