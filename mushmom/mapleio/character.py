@@ -73,10 +73,18 @@ class Character:
         """Alias action"""
         return self.action
 
+    @pose.setter
+    def pose(self, value):
+        self.action = value
+
     @property
     def expression(self):
         """Alias emotion"""
         return self.emotion
+
+    @expression.setter
+    def expression(self, value):
+        self.emotion = value
 
     @classmethod
     def from_json(cls, data: Union[str, dict]) -> Character:
