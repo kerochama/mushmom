@@ -42,6 +42,11 @@ class Info(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self._info_context_menu = app_commands.ContextMenu(
+            name='Get Info',
+            callback=self.info_context_menu
+        )
+        self.bot.tree.add_command(self._info_context_menu)
 
     @app_commands.command()
     async def info(
@@ -173,6 +178,23 @@ class Info(commands.Cog):
         if user:
             _info = InfoData(msg, member)
             self.bot.info_cache.add(msg.id, _info)
+
+    async def info_context_menu(
+            self,
+            interaction: discord.Interaction,
+            member: discord.Member
+    ) -> None:
+        """
+        Context menu version of info
+
+        Parameters
+        ----------
+        interaction: discord.Interaction
+        member: Optional[discord.Member]
+            member's profile to show
+
+        """
+        await self.info.callback(self, interaction, member)
 
     async def _delayed_send(self, interaction, delay=3, **kwargs):
         await asyncio.sleep(delay)
