@@ -79,7 +79,7 @@ class List(commands.Cog):
         )
 
         embed.set_author(name='Emotes', icon_url=self.bot.user.display_avatar.url)
-        thumbnail = self.bot.get_emoji_url(EMOJIS['mushcheers'].id)
+        thumbnail = self.bot.get_emoji(EMOJIS['mushcheers'].id).url
         embed.set_thumbnail(url=thumbnail)
 
         # static, animated, custom
@@ -110,7 +110,7 @@ class List(commands.Cog):
 
         embed.set_author(name='Expressions',
                          icon_url=self.bot.user.display_avatar.url)
-        thumbnail = self.bot.get_emoji_url(EMOJIS['mushcheers'].id)
+        thumbnail = self.bot.get_emoji(EMOJIS['mushcheers'].id).url
         embed.set_thumbnail(url=thumbnail)
         embed.set_footer(text='[GMS v240]')
 
@@ -146,7 +146,7 @@ class List(commands.Cog):
         )
 
         embed.set_author(name='Poses', icon_url=self.bot.user.display_avatar.url)
-        embed.set_thumbnail(url=self.bot.get_emoji_url(EMOJIS['mushdab'].id))
+        embed.set_thumbnail(url=self.bot.get_emoji(EMOJIS['mushdab'].id).url)
         embed.set_footer(text='[GMS v240]')
 
         label = 'Raw Values' if show_values else 'Poses'

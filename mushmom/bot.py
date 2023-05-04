@@ -300,29 +300,6 @@ class Mushmom(commands.Bot):
 
         return next(k for k, v in reactions.items() if reaction.emoji == v)
 
-    def get_emoji_url(self, emoji_id: int) -> str:
-        """
-        Convenience wrapper to pull url from emoji
-
-        Parameters
-        ----------
-        emoji_id: int
-            the discord emoji id
-
-        Returns
-        -------
-        str
-            the emoji url or bot avatar url
-
-        """
-        emoji = self.get_emoji(emoji_id)
-
-        if emoji:
-            return emoji.url
-        else:
-            warnings.warn(f'Emoji<{emoji_id}> was not found', ResourceWarning)
-            return self.user.display_avatar.url  # fall back on profile pic
-
     async def download(
             self,
             url: str,

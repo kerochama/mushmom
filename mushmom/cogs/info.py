@@ -75,7 +75,7 @@ class Info(commands.Cog):
             title=f'{member.name}#{member.discriminator}',
             color=config.core.embed_color
         )
-        mushhuh = self.bot.get_emoji_url(EMOJIS['mushhuh'].id)
+        mushhuh = self.bot.get_emoji(EMOJIS['mushhuh'].id).url
         embed.set_author(name=f'{member.display_name}\'s Info',
                          icon_url=mushhuh)
         embed.set_thumbnail(url=member.display_avatar.url)
@@ -334,7 +334,7 @@ class Info(commands.Cog):
         if invalid:
             text = 'The following issues occurred:\n\u200b'
             embed = discord.Embed(description=text, color=config.core.embed_color)
-            mushshock = self.bot.get_emoji_url(EMOJIS['mushshock'].id)
+            mushshock = self.bot.get_emoji(EMOJIS['mushshock'].id).url
             embed.set_thumbnail(url=mushshock)
             embed.set_author(name='Warning',
                              icon_url=self.bot.user.display_avatar.url)

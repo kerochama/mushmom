@@ -34,7 +34,7 @@ class Self(commands.Cog, name=config.core.bot_name):
         embed.set_author(name=f'About {config.core.bot_name}',
                          icon_url=self.bot.user.display_avatar.url)
 
-        thumbnail = self.bot.get_emoji_url(EMOJIS['mushparty'])
+        thumbnail = self.bot.get_emoji(EMOJIS['mushparty'].id).url
         embed.set_thumbnail(url=thumbnail)
         embed.set_image(url=ATTACHMENTS['mushmomheader'].url)
 
@@ -87,7 +87,7 @@ class Self(commands.Cog, name=config.core.bot_name):
 
         embed.set_author(name=f'{config.core.bot_name} Get Started',
                          icon_url=self.bot.user.display_avatar.url)
-        thumbnail = self.bot.get_emoji_url(EMOJIS['mushparty'])
+        thumbnail = self.bot.get_emoji(EMOJIS['mushparty'].id).url
         embed.set_thumbnail(url=thumbnail)
         embed.set_image(url=ATTACHMENTS['mushmomheader'].url)
 
@@ -136,7 +136,7 @@ class Self(commands.Cog, name=config.core.bot_name):
 
         embed.set_author(name=f'{config.core.bot_name} Admin',
                          icon_url=self.bot.user.display_avatar.url)
-        thumbnail = self.bot.get_emoji_url(EMOJIS['mushparty'])
+        thumbnail = self.bot.get_emoji(EMOJIS['mushparty'].id).url
         embed.set_thumbnail(url=thumbnail)
 
         embed.add_field(
