@@ -109,9 +109,7 @@ class Info(commands.Cog):
         embed.add_field(name='Fame', value=_fmt_fame + '\n\u200b')
 
         # send placeholder pfp in 3 seconds
-        temp = ATTACHMENTS['pfp_loading']
-        pfp_temp = self.bot.get_attachment_url(*temp)
-        embed.set_image(url=pfp_temp)
+        embed.set_image(url=ATTACHMENTS['pfp_loading'].url)
         embed.set_footer(text='Still loading profile picture')
         temp_send_task = self.bot.loop.create_task(
             self._delayed_send(interaction, content='', embed=embed)
@@ -120,11 +118,10 @@ class Info(commands.Cog):
         # get real pfp
         if not char:
             attm = ATTACHMENTS['mushcharnotfound']
-            not_found = self.bot.get_attachment_url(*attm)
-            filename = attm[-1]  # orig filename
+            filename = attm.filename
 
             try:
-                data = await self.bot.download(not_found, errors.DiscordIOError)
+                data = await self.bot.download(attm.url, errors.DiscordIOError)
             except errors.DiscordIOError:
                 data = None
 
@@ -152,14 +149,12 @@ class Info(commands.Cog):
                 embed.set_image(url=f'attachment://{filename}')
                 args['attachments'] = [pfp]
             else:
-                pfp_poo = self.bot.get_attachment_url(*ATTACHMENTS['pfp_poo'])
-                embed.set_image(url=pfp_poo)
+                embed.set_image(url=ATTACHMENTS['pfp_poo'].url)
         else:
             msg = temp_send_task.result()
 
             # default fail
-            pfp_poo = self.bot.get_attachment_url(*ATTACHMENTS['pfp_poo'])
-            embed.set_image(url=pfp_poo)
+            embed.set_image(url=ATTACHMENTS['pfp_poo'].url)
 
             if pfp:  # upload to another channel and get the attachment url
                 uploads = config.discord.uploads
@@ -231,7 +226,7 @@ class Info(commands.Cog):
         # get background
         if bg in BACKGROUNDS:
             attm, y_ground = BACKGROUNDS[bg]
-            url = self.bot.get_attachment_url(*attm)
+            url = attm.url
         else:
             url, y_ground = bg, 0
 

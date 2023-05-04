@@ -129,8 +129,7 @@ class Actions(commands.Cog):
 
         if bg in BACKGROUNDS:
             attm, y_ground = BACKGROUNDS[bg]
-            url = self.bot.get_attachment_url(*attm)
-            bg = await self.bot.download(url)
+            bg = await self.bot.download(attm.url)
 
         # gen final frame
         final = []

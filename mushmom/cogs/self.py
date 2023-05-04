@@ -36,8 +36,7 @@ class Self(commands.Cog, name=config.core.bot_name):
 
         thumbnail = self.bot.get_emoji_url(EMOJIS['mushparty'])
         embed.set_thumbnail(url=thumbnail)
-        img = self.bot.get_attachment_url(*ATTACHMENTS['mushmomheader'])
-        embed.set_image(url=img)
+        embed.set_image(url=ATTACHMENTS['mushmomheader'].url)
 
         await ctx.send(embed=embed)
 
@@ -90,8 +89,7 @@ class Self(commands.Cog, name=config.core.bot_name):
                          icon_url=self.bot.user.display_avatar.url)
         thumbnail = self.bot.get_emoji_url(EMOJIS['mushparty'])
         embed.set_thumbnail(url=thumbnail)
-        img = self.bot.get_attachment_url(*ATTACHMENTS['mushmomheader'])
-        embed.set_image(url=img)
+        embed.set_image(url=ATTACHMENTS['mushmomheader'].url)
 
         embed.add_field(
             name='Get Started',

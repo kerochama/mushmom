@@ -323,33 +323,6 @@ class Mushmom(commands.Bot):
             warnings.warn(f'Emoji<{emoji_id}> was not found', ResourceWarning)
             return self.user.display_avatar.url  # fall back on profile pic
 
-    @staticmethod
-    def get_attachment_url(
-            channel_id: int,
-            attachment_id: int,
-            filename: str
-    ) -> str:
-        """
-        Combine to get an attachment url
-
-        Parameters
-        ----------
-        channel_id: int
-            the channel id
-        attachment_id:
-            the attachment id
-        filename: str
-            the filename
-
-        Returns
-        -------
-        str
-            the attachment url
-
-        """
-        path = 'https://cdn.discordapp.com/attachments'
-        return f'{path}/{channel_id}/{attachment_id}/{filename}'
-
     async def download(
             self,
             url: str,
