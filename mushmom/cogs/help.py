@@ -123,20 +123,18 @@ class Help(commands.Cog):
 
         embed.add_field(
             name='Bot Channel',
-            value=('Admins can restrict commands to a specific channel '
-                   f'by using the command `@{config.core.bot_name} set '
-                   'channel` in the desired channel or typing the channel at '
-                   'the end of the command. A few commands can still be called '
-                   'outside the channel (e.g. `/help`), but will appear as a '
-                   'message only the caller can see. Emotes, poses, and '
-                   'actions can still be used everywhere.\n\u200b'),
+            value=('```Restrict commands to a specific channel by using the '
+                   f'command `@{config.core.bot_name} set channel` in the '
+                   'desired channel or supplying the channel at the end of '
+                   'the command. Emotes, poses, and actions can still be used '
+                   'everywhere.```\u200b'),
             inline=False
         )
         embed.add_field(
             name='Emotes Command Deletion',
-            value=('If your commands are not deleting properly in certain '
+            value=('```If your commands are not deleting properly in certain '
                    'channels, make sure the bot has the ability to both '
-                   '`Manage Webhooks` and `Manage Messages`\n\u200b'),
+                   '`Manage Webhooks` and `Manage Messages`.```\u200b'),
             inline=False
         )
 
