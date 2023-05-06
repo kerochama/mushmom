@@ -32,6 +32,10 @@ attachments:                           # attachments to reference
     - 901105805628162099
     - 907100247170383953
     - mushmom_demo_sped_1_3.mp4
+  get_started:
+    - 900388181139144786
+    - 1104240292120506468
+    - image.png
 
 backgrounds:                           # https://kirimymaps.blogspot.com/
   grassy_field:

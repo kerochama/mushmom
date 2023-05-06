@@ -8,7 +8,176 @@ import discord
 import itertools
 
 from discord.ext import commands
+from discord import app_commands
+
 from typing import Optional, Mapping, List, Sequence, Any
+
+from .. import config
+from ..resources import EMOJIS, ATTACHMENTS
+from .utils.parameters import contains
+from .utils.checks import slash_in_guild_channel
+
+HELP_PAGES = ['Get Started', 'Demo', 'Admin', 'Invite Bot', 'Support']
+
+
+class Help(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @app_commands.command()
+    @slash_in_guild_channel()
+    @app_commands.autocomplete(topic=contains(HELP_PAGES))
+    async def help(
+            self,
+            interaction: discord.Interaction,
+            topic: Optional[str] = None
+    ) -> None:
+        """
+        Info about the bot divided by topic
+
+        Parameters
+        ----------
+        interaction: discord.Interaction
+        topic: Optional[str]
+            the topic you want to learn about
+
+        """
+        args = {}
+
+        if not topic:
+            args['embed'] = self._about_embed()
+        elif topic == 'Get Started':
+            args['content'] = ATTACHMENTS['get_started'].url
+        elif topic == 'Demo':
+            args['content'] = config.urls.demo
+        elif topic == 'Admin':
+            args['embed'] = self._admin_embed()
+        elif topic == 'Support':
+            args['content'] = config.urls.invite
+        elif topic == 'Invite Bot':
+            args['embed'] = self._add_bot_embed()
+
+        await interaction.response.send_message(**args)
+
+    def _about_embed(self) -> discord.Embed:
+        embed = discord.Embed(
+            description=(f'{config.core.bot_name} is a bot that will send '
+                         'emotes and actions for you. For a in-depth '
+                         'explanations, demos, and more, visit the '
+                         f'[{config.core.bot_name}]({config.urls.website}) '
+                         'website.\n\u200b\nTopics available in `/help` '
+                         'include:\n\u200b'),
+            color=config.core.embed_color
+        )
+
+        embed.add_field(
+            name='Get Started',
+            value='Instructions for importing your character\n\u200b',
+        )
+        embed.add_field(
+            name='Demo',
+            value='A demo of some of the commands available\n\u200b',
+        )
+        embed.add_field(
+            name='Admin',
+            value=('Instructions for admins to configure server settings'
+                   '\n\u200b'),
+        )
+        embed.add_field(
+            name='Invite Bot',
+            value=(f'[Add {config.core.bot_name}]({config.urls.add_bot}) '
+                   'to your server\n\u200b'),
+        )
+        embed.add_field(
+            name='Support',
+            value=(f'Join us on the {config.core.bot_name} [server]' 
+                   f'({config.urls.invite})\n\u200b'),
+        )
+        embed.add_field(
+            name='\u200b',
+            value='\u200b',
+        )
+
+        embed.set_author(name=f'About {config.core.bot_name}',
+                         icon_url=self.bot.user.display_avatar.url)
+        thumbnail = self.bot.get_emoji(EMOJIS['mushparty'].id).url
+        embed.set_thumbnail(url=thumbnail)
+        embed.set_image(url=ATTACHMENTS['mushmomheader'].url)
+
+        return embed
+
+    def _admin_embed(self) -> None:
+        """Instructions for admins to set up server"""
+        embed = discord.Embed(
+            description=('Admins have a number of configuration commands that '
+                         f'can be used to customize {config.core.bot_name} to '
+                         'your server. A few common settings or issues are '
+                         'highlighted below:\n\u200b'),
+            color=config.core.embed_color
+        )
+
+        embed.set_author(name=f'{config.core.bot_name} Admin',
+                         icon_url=self.bot.user.display_avatar.url)
+        thumbnail = self.bot.get_emoji(EMOJIS['mushcheers'].id).url
+        embed.set_thumbnail(url=thumbnail)
+
+        embed.add_field(
+            name='Bot Channel',
+            value=('Admins can restrict commands to a specific channel '
+                   f'by using the command `@{config.core.bot_name} set '
+                   'channel` in the desired channel or typing the channel at '
+                   'the end of the command. A few commands can still be called '
+                   'outside the channel (e.g. `/help`), but will appear as a '
+                   'message only the caller can see. Emotes, poses, and '
+                   'actions can still be used everywhere.\n\u200b'),
+            inline=False
+        )
+        embed.add_field(
+            name='Emotes Command Deletion',
+            value=('If your commands are not deleting properly in certain '
+                   'channels, make sure the bot has the ability to both '
+                   '`Manage Webhooks` and `Manage Messages`\n\u200b'),
+            inline=False
+        )
+
+        return embed
+
+    def _add_bot_embed(self) -> discord.Embed:
+        embed = discord.Embed(
+            title=f'Add {config.core.bot_name}',
+            description=(f'Click the title to invite {config.core.bot_name} '
+                         'to your server. You will be asked to grant it the '
+                         'following permissions:\n\u200b'),
+            url=config.urls.add_bot,
+            color=config.core.embed_color
+        )
+
+        permissions = [
+            'Manage Emoji and Sticks',
+            'Manage Webhooks',
+            'Read, Send, & Manage Messages',
+            'Embed Links',
+            'Attach Files',
+            'Read Message History',
+            'Mention @everyone, @here, and All Roles',
+            'Add Reactions',
+            'Use External Emoji',
+            'Use Application Commands'
+        ]
+
+        delim = '\n\u2727 \u200b '
+        embed.add_field(
+            name='Permissions',
+            value=f'\u2727 \u200b {delim.join(permissions)}\n\u200b'
+        )
+
+        embed.set_author(name=f'{config.core.bot_name}',
+                         icon_url=self.bot.user.display_avatar.url)
+        thumbnail = self.bot.get_emoji(EMOJIS['mushcheers'].id).url
+        embed.set_thumbnail(url=thumbnail)
+        embed.set_image(url=ATTACHMENTS['mushmomheader'].url)
+
+        return embed
 
 
 class FullHelpCommand(commands.DefaultHelpCommand):
@@ -73,3 +242,7 @@ class FullHelpCommand(commands.DefaultHelpCommand):
             width = max_size - (get_width(name) - len(name))
             entry = f'{self.indent * " "}{name:<{width}} {command.short_doc}'
             self.paginator.add_line(self.shorten_text(entry))
+
+
+async def setup(bot):
+    await bot.add_cog(Help(bot))
