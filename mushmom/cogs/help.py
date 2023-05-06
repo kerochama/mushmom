@@ -106,7 +106,7 @@ class Help(commands.Cog):
 
         return embed
 
-    def _admin_embed(self) -> None:
+    def _admin_embed(self) -> discord.Embed:
         """Instructions for admins to set up server"""
         embed = discord.Embed(
             description=('Admins have a number of configuration commands that '
