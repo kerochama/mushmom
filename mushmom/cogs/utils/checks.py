@@ -7,6 +7,8 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 
+from typing import Union
+
 from . import errors
 
 
@@ -38,7 +40,10 @@ async def not_bot(ctx: commands.Context) -> bool:
     raise commands.MissingPermissions(['owner'])
 
 
-async def in_guild_channel(ctx: commands.Context) -> bool:
+async def in_guild_channel(
+        ctx: Union[commands.Context, discord.Interaction],
+        raise_error: bool = True
+) -> bool:
     """
     Checks if message was sent in designated channel.  If no channel
     is set for the guild, all channels will pass
@@ -47,7 +52,9 @@ async def in_guild_channel(ctx: commands.Context) -> bool:
 
     Parameters
     ----------
-    ctx: commands.Context
+    ctx: Union[commands.Context, discord.Interaction]
+    raise_error: bool
+        whether or not to raise an error when False
 
     Returns
     -------
@@ -55,6 +62,9 @@ async def in_guild_channel(ctx: commands.Context) -> bool:
         whether or not message is in an acceptable channel
 
     """
+    if isinstance(ctx, discord.Interaction):
+        ctx = await ctx.client.get_context(ctx)
+
     guild = await ctx.bot.db.get_guild(ctx.guild.id)
     command = ctx.command.qualified_name if ctx.command else None
     
@@ -65,18 +75,17 @@ async def in_guild_channel(ctx: commands.Context) -> bool:
     elif ctx.channel.id == guild['channel']:
         return True
 
-    channel = ctx.bot.get_channel(guild['channel'])
-    raise errors.RestrictedChannel(channel)
+    if raise_error:
+        channel = ctx.bot.get_channel(guild['channel'])
+        raise errors.RestrictedChannel(channel)
 
-
-async def _slash_in_guild_channel(interaction: discord.Interaction) -> bool:
-    """Slash command version of in_guild_channel"""
-    ctx = await interaction.client.get_context(interaction)
-    return await in_guild_channel(ctx)
+    return False
 
 
 def slash_in_guild_channel():
-    """Decorator verson"""
+    """Decorator version"""
     async def predicate(interaction: discord.Interaction) -> bool:
-        return await _slash_in_guild_channel(interaction)
+        return await in_guild_channel(interaction)
     return app_commands.check(predicate)
+
+
