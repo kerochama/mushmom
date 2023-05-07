@@ -2,8 +2,10 @@
 Commands to change things about the bot itself
 
 """
+import discord
+
 from discord.ext import commands
-from typing import Optional
+from typing import Optional, Union
 
 from .. import config
 
@@ -73,10 +75,45 @@ class Meta(commands.Cog):
         await self.bot.reload_extension(f'{__package__}.{extension}')
         await ctx.send(f'Reloaded `cogs.{extension}`')
 
+    async def _sync(
+            self,
+            guild: Union[int, discord.Guild, None] = None
+    ) -> str:
+        """
+        Sync to to guild or globally
+
+        Parameters
+        ----------
+        guild_id: Optional[int]
+            the guild to sync to or None if global
+
+        Returns
+        -------
+        str
+            a message of what was done
+
+        """
+        if isinstance(guild, int):
+            guild = (self.bot.get_guild(guild)
+                     or await self.bot.fetch_guild(guild))
+            if not guild:
+                return 'Guild not found. 0 commands synced'
+
+        if guild:
+            self.bot.tree.copy_global_to(guild=guild)
+            n = await self.bot.tree.sync(guild=guild)
+            msg = f'Copied {len(n)} global commands to guild'
+        else:
+            n = await self.bot.tree.sync()
+            msg = f'{len(n)} slash commands synced globally'
+
+        return msg
+
     @commands.command(hidden=True)
-    async def sync(self,
-                   ctx: commands.Context,
-                   sync_level: Optional[str] = None
+    async def sync(
+            self,
+            ctx: commands.Context,
+            sync_level: Optional[str] = None
     ) -> None:
         """
         Sync slash command tree
@@ -89,8 +126,8 @@ class Meta(commands.Cog):
 
         """
         guild = None if sync_level == 'all' else ctx.guild
-        n = await self.bot.tree.sync(guild=guild)
-        await ctx.send(f'{len(n)} slash commands synced')
+        msg = await self._sync(guild)
+        await ctx.send(msg)
 
     @commands.command(hidden=True)
     async def quit(self, ctx: commands.Context) -> None:

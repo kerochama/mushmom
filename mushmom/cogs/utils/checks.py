@@ -13,10 +13,16 @@ from . import errors
 
 
 global_commands = (  # commands that will bypass channel check
+    'hello',
+    'load',
+    'reload',
+    'unload',
+    'sync',
+    'quit',
     'set',
     'set channel',
     'reset',
-    'reset channel'
+    'reset channel',
 )
 
 
@@ -67,12 +73,14 @@ async def in_guild_channel(
 
     guild = await ctx.bot.db.get_guild(ctx.guild.id)
     command = ctx.command.qualified_name if ctx.command else None
-    
+
     # no guild channel set or in allowed globals
-    if (not guild or not guild['channel']
-            or not command or command in global_commands):
-        return True
-    elif ctx.channel.id == guild['channel']:
+    if (not guild
+            or not guild['channel']
+            or not command
+            or command in global_commands
+            or ctx.channel.id == guild['channel']
+    ):
         return True
 
     if raise_error:

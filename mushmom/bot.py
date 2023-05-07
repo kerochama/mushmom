@@ -3,7 +3,6 @@ from __future__ import annotations  # forward reference
 import discord
 import aiohttp
 import asyncio
-import warnings
 import logging
 
 from discord.ext import commands, tasks
@@ -12,6 +11,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from aiohttp import web
 from datetime import datetime
 from typing import Optional, Union
+from types import SimpleNamespace
 from collections import namedtuple
 
 from . import config, database as db
@@ -114,11 +114,10 @@ class Mushmom(commands.Bot):
 
         # sync slash commands
         if self.init_sync:
-            guild = (discord.Object(id=self.init_sync)  # bool subclass int
-                     if type(self.init_sync) is int else None)
-
-            cmds = await self.tree.sync(guild=guild)
-            _log.info(f'{len(cmds)} slash command(s) synced')
+            guild = self.init_sync if type(self.init_sync) is int else None
+            _log.info(
+                await self.get_cog('Meta')._sync(guild)
+            )
 
         # update guild cache
         await self.db.initialize_guild_cache()
