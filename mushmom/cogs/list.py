@@ -251,7 +251,7 @@ class CharacterScrollView(discord.ui.View):
 
 def _fmt_char_names(user: dict, bold_i: int):
     """Format char names for chars embed"""
-    char_names = ['-'] * config.core.max_chars  # placeholder
+    char_names = ['\u2727'] * config.core.max_chars  # placeholder
 
     # add bullets and bold current selection
     for i, char in enumerate(user['chars']):
