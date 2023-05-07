@@ -110,6 +110,11 @@ class ErrorHandler(commands.Cog):
             traceback.print_exception(type(error), error, error.__traceback__,
                                       file=sys.stderr)
 
+        try:  # try to cleanup the original message
+            await ctx.message.delete(delay=10)
+        except (discord.Forbidden, discord.NotFound, discord.HTTPException):
+            pass
+
         await ctx.send(embed=embed, delete_after=10)
 
     def format_error(
