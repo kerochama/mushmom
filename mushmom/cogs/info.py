@@ -28,7 +28,7 @@ from ..resources import EMOJIS, ATTACHMENTS, BACKGROUNDS
 UTC = timezone.utc
 NYC = ZoneInfo('America/New_York')  # new york timezone
 InfoData = namedtuple('InfoData', 'message target')
-Games = Enum('Games', mapleio.GAMES)
+Games = Enum('Games', zip(mapleio.GAMES, mapleio.GAMES))
 
 
 def utc(ts):
@@ -313,10 +313,11 @@ class Info(commands.Cog):
                     invalid.append(k)
 
         # ensure not just whitespace
-        if input['name'] != char.get('name') and input['name'].strip():
+        if (input['name'] and input['name'] != char.get('name')
+                and input['name'].strip()):
             update['name'] = input['name']
 
-        if input['guild'] != char.get('guild'):
+        if input['guild'] and input['guild'] != char.get('guild'):
             update['guild'] = input['guild'].strip()
 
         # update database
@@ -330,6 +331,8 @@ class Info(commands.Cog):
                 await self.bot.followup(interaction, content=text)
             else:
                 raise errors.DatabaseWriteError
+        else:
+            await self.bot.followup(interaction, content='Nothing to update')
 
         if invalid:
             text = 'The following issues occurred:\n\u200b'
