@@ -7,7 +7,7 @@ import asyncio
 import functools
 import zipfile
 
-from PIL import Image
+from PIL import Image, ImageOps
 from io import BytesIO
 from typing import Callable, Coroutine, Any, Optional, Union, Iterable
 
@@ -439,7 +439,7 @@ async def get_animated_emote(
     equips = char.filtered_equips()
 
     # divide char parts into groups
-    remove = ['Cape', 'Weapon']
+    remove = ['Cape', 'Weapon', 'Shoes']  # can all go below feet
     head = ['Head', 'Face', 'Hair', 'Hat',
             'Face Accessory', 'Eye Decoration', 'Earrings']
     body = ['Body'] + [eq.type for eq in equips if eq.type not in head+remove]
@@ -468,11 +468,12 @@ async def get_animated_emote(
                 max(f.height for f in head_frames))
 
         # combine to create frames
+        # ideally use FeetCenter, but horizontally 1 pixel off
         frames = []
         for f in head_frames:
-            im = Image.new('RGBA', (w, h), (0, )*4)  # paste center
-            im.paste(base, (w - base.width, h - base.height))
-            im.paste(f, (w - f.width, h - f.height), mask=f)
+            im = Image.new('RGBA', (w, h), (0, )*4)  # aligning top right
+            im.paste(base, (w - base.width, 0))
+            im.paste(f, (w - f.width, 0), mask=f)
 
             # crop to head
             scaled_body_height = zoom * (config.mapleio.body_height - pad)
