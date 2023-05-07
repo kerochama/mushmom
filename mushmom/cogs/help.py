@@ -15,7 +15,7 @@ from typing import Optional, Mapping, List, Sequence, Any
 from .. import config
 from ..resources import EMOJIS, ATTACHMENTS
 from .utils.parameters import contains
-from .utils.checks import slash_in_guild_channel
+from .utils.checks import in_guild_channel
 
 HELP_PAGES = ['Get Started', 'Demo', 'Admin', 'Invite Bot', 'Support']
 
@@ -25,7 +25,6 @@ class Help(commands.Cog):
         self.bot = bot
 
     @app_commands.command()
-    @slash_in_guild_channel()
     @app_commands.autocomplete(topic=contains(HELP_PAGES))
     async def help(
             self,
@@ -57,6 +56,9 @@ class Help(commands.Cog):
         elif topic == 'Invite Bot':
             args['embed'] = self._add_bot_embed()
 
+        args['ephemeral'] = not await in_guild_channel(
+            interaction, raise_error=False
+        )
         await interaction.response.send_message(**args)
 
     def _about_embed(self) -> discord.Embed:
