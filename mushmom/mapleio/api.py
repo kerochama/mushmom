@@ -481,7 +481,11 @@ async def get_animated_emote(
             scaled_body_height = zoom * (config.mapleio.body_height - pad)
             cropped = im.crop((0, 0, w, h - scaled_body_height))
             emote = imutils.thresh_alpha(cropped, 64)
-            frames.append(imutils.min_width(emote, min_width))
+            frames.append(emote)
+
+        # recrop to bbox and min_width
+        bbox = imutils.get_bbox(frames)
+        frames = [imutils.min_width(f.crop(bbox), min_width) for f in frames]
 
         byte_arr = BytesIO()
         frames[0].save(byte_arr, format='GIF', save_all=True, loop=0,
