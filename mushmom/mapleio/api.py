@@ -471,9 +471,11 @@ async def get_animated_emote(
         # ideally use FeetCenter, but horizontally 1 pixel off
         frames = []
         for f in head_frames:
-            im = Image.new('RGBA', (w, h), (0, )*4)  # aligning top right
-            im.paste(f, (w - f.width, 0))
-            im.paste(base, (w - base.width, 0), mask=base)
+            head = Image.new('RGBA', (w, h), (0, )*4)  # aligning top right
+            body = head.copy()
+            head.paste(f, (w - f.width, 0), mask=f)
+            body.paste(base, (w - base.width, 0), mask=base)
+            im = Image.alpha_composite(head, body)
 
             # crop to head
             scaled_body_height = zoom * (config.mapleio.body_height - pad)
