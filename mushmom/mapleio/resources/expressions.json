@@ -22,6 +22,6 @@
     "smile": "static",
     "stunned": "static",
     "troubled": "static",
-    "vomit": "animated",
+    "vomit": "static",
     "wink": "static"
 }
