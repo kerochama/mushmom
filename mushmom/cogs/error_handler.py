@@ -49,6 +49,9 @@ class ErrorHandler(commands.Cog):
         if isinstance(error, errors.MushError):
             info = {'msg': error.msg, 'see_also': error.see_also}
             embed = self.format_error(**info)
+        elif isinstance(error.__cause__, discord.Forbidden):
+            # CommandInvokeError from e
+            embed = self.format_error(errors.MissingPermissions.default_msg)
         else:
             # generic message
             embed = self.format_error(errors.MushError.default_msg)

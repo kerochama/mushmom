@@ -118,3 +118,17 @@ class RestrictedChannel(MushError):
     def __init__(self, channel: discord.TextChannel):
         self.msg = f'This command can only be used in {channel.mention}'
         super().__init__(self.msg)
+
+
+class MissingPermissions(MushError):
+    """Missing permissions"""
+    default_msg = (f'Make sure {config.core.bot_name} has the following '
+                   'permissions in this channel.\n\n'
+                   '`Manage Webhooks`\n'
+                   '`Send Messages`\n'
+                   '`Manage Messages\n'
+                   '`Send Messages in Threads`\n'
+                   '`Create Public/Private Threads`\n'
+                   '`Manage Threads`\n\n'
+                   'Note: permissions may be defaulting to @everyone or '
+                   'another role if bot permissions are set to the grey slash')
