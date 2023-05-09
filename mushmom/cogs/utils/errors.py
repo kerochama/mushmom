@@ -129,6 +129,7 @@ class MissingPermissions(MushError):
                    '`Manage Messages\n'
                    '`Send Messages in Threads`\n'
                    '`Create Public/Private Threads`\n'
-                   '`Manage Threads`\n\n'
+                   '`Manage Threads`\n'
+                   '`Attach Files`\n\n'
                    'Note: permissions may be defaulting to @everyone or '
                    'another role if bot permissions are set to the grey slash')
