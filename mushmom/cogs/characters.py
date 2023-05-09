@@ -120,9 +120,10 @@ class Characters(commands.Cog):
             update = {'chars': chars}
 
             # set default?
-            text = f'Do you want to set {name} as default?'
-            if await io.confirm_prompt(interaction, text):
-                update.update({'default': i})
+            if i != user['default']:
+                text = f'Do you want to set {name} as default?'
+                if await io.confirm_prompt(interaction, text):
+                    update.update({'default': i})
 
             # update database
             ret = await self.bot.db.set_user(interaction.user.id, update)
