@@ -75,9 +75,9 @@ class Info(commands.Cog):
             title=f'{member.name}#{member.discriminator}',
             color=config.core.embed_color
         )
-        mushhuh = self.bot.get_emoji(EMOJIS['mushhuh'].id).url
+        mushshine = self.bot.get_emoji(EMOJIS['mushshine'].id).url
         embed.set_author(name=f'{member.display_name}\'s Info',
-                         icon_url=mushhuh)
+                         icon_url=mushshine)
         embed.set_thumbnail(url=member.display_avatar.url)
 
         # get user info
