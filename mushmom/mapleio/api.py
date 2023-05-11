@@ -147,7 +147,7 @@ async def get_emote(
         pose='stand1',
         expression=expression,
         zoom=zoom,
-        remove=['Cape', 'Weapon']
+        remove=['Cape', 'Weapon', 'Shoes']
     )
 
     async with session.get(u) as r:
