@@ -293,6 +293,7 @@ class Character:
             bgcolor: tuple[int, int, int, int] = (0, 0, 0, 0),
             render_mode: Optional[str] = None,
             hide: Optional[Iterable[str]] = None,
+            keep: Optional[Iterable[str]] = None,
             remove: Optional[Iterable[str]] = None,
             replace: Optional[Iterable[Equip]] = None
     ) -> str:
@@ -317,6 +318,8 @@ class Character:
             the render mode (e.g. centered, NavelCenter, etc.)
         hide: Optional[Iterable[str]]
             list of equip types to hide (alpha = 0, but still affects size)
+        keep: Optional[Iterable[str]]
+            list of equip types to keep (priority over remove)
         remove: Optional[Iterable[str]]
             list of equip types to remove
         replace: Optional[Iterable[Equip]]
@@ -344,7 +347,10 @@ class Character:
             if item['type'] in (hide or []):
                 item['alpha'] = 0
 
-        for equip in self.filtered_equips(remove=remove, replace=replace):
+        equips = self.filtered_equips(
+            keep=keep, remove=remove, replace=replace
+        )
+        for equip in equips:
             equip = equip.to_dict()
             _type = equip.pop('type')
 
@@ -357,7 +363,11 @@ class Character:
             items.append(equip)
 
         items_s = parse.quote(
-            json.dumps(items).lstrip('[').rstrip(']').replace(', ', ',').replace(': ', ':')
+            json.dumps(items)
+                .lstrip('[')
+                .rstrip(']')
+                .replace(', ', ',')
+                .replace(': ', ':')
         )  # remove brackets and excess whitespace
 
         # format query

@@ -179,6 +179,7 @@ async def get_sprite(
         bgcolor: tuple[int, int, int, int] = (0, 0, 0, 0),
         render_mode: Optional[str] = None,
         hide: Optional[Iterable[str]] = None,
+        keep: Optional[Iterable[str]] = None,
         remove: Optional[Iterable[str]] = None,
         replace: Optional[Iterable['Equip']] = None,
         min_width: int = 0,
@@ -207,6 +208,8 @@ async def get_sprite(
             the render mode (e.g. centered, NavelCenter, etc.)
     hide: Optional[Iterable[str]]
             list of equip types to hide (alpha = 0, but still affects size)
+    keep: Optional[Iterable[str]]
+        list of equips types to keep (priority over remove)
     remove: Optional[Iterable[str]]
         list of equip types to remove
     replace: Optional[Iterable[Equip]]
@@ -255,6 +258,7 @@ async def get_layers(
         bgcolor: tuple[int, int, int, int] = (0, 0, 0, 0),
         render_mode: Optional[str] = None,
         hide: Optional[Iterable[str]] = None,
+        keep: Optional[Iterable[str]] = None,
         remove: Optional[Iterable[str]] = None,
         replace: Optional[Iterable['Equip']] = None,
         session: aiohttp.ClientSession = None
@@ -283,6 +287,8 @@ async def get_layers(
             the render mode (e.g. centered, NavelCenter, etc.)
     hide: Optional[Iterable[str]]
             list of equip types to hide (alpha = 0, but still affects size)
+    keep: Optional[Iterable[str]]
+        list of equips types to keep (priority over remove)
     remove: Optional[Iterable[str]]
         list of equip types to remove
     replace: Optional[Iterable[Equip]]
@@ -328,6 +334,7 @@ async def get_frames(
         bgcolor: tuple[int, int, int, int] = (0, 0, 0, 0),
         render_mode: Optional[str] = None,
         hide: Optional[Iterable[str]] = None,
+        keep: Optional[Iterable[str]] = None,
         remove: Optional[Iterable[str]] = None,
         replace: Optional[Iterable['Equip']] = None,
         session: aiohttp.ClientSession = None
@@ -356,6 +363,8 @@ async def get_frames(
             the render mode (e.g. centered, NavelCenter, etc.)
     hide: Optional[Iterable[str]]
             list of equip types to hide (alpha = 0, but still affects size)
+    keep: Optional[Iterable[str]]
+        list of equips types to keep (priority over remove)
     remove: Optional[Iterable[str]]
         list of equip types to remove
     replace: Optional[Iterable[Equip]]
