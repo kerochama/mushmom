@@ -23,6 +23,7 @@ from .utils.parameters import (
 
 CUSTOM = (
     'teehee',
+    'blink'
 )
 
 FACE_ACCESSORIES = {}
@@ -150,7 +151,10 @@ class Mush(commands.Cog):
             raise errors.BadArgument(msg, see_also=['list emotes'])
 
         # create emote
-        if emote in mapleio.ANIMATED:
+        if emote in CUSTOM:
+            data = await getattr(self, emote)(char)
+            ext = 'gif'
+        elif emote in mapleio.ANIMATED:
             data = await mapleio.api.get_animated_emote(
                 char, expression=emote, min_width=300, session=self.bot.session
             )
@@ -160,9 +164,6 @@ class Mush(commands.Cog):
                 char, expression=emote, min_width=300, session=self.bot.session
             )
             ext = 'png'
-        elif emote in CUSTOM:
-            data = await getattr(self, emote)(char)
-            ext = 'gif'
 
         if data:
             filename = f'{char.name or "char"}_{emote}.{ext}'
@@ -224,6 +225,42 @@ class Mush(commands.Cog):
         byte_arr = BytesIO()
         frames[0].save(byte_arr, format='GIF', save_all=True, loop=0,
                        append_images=frames[1:], duration=100, disposal=2)
+        return byte_arr.getvalue()
+
+    async def blink(self, char: Character):
+        """
+        Custom duration for blink. Overwrites regular
+
+        Parameters
+        ----------
+        char: Character
+            the character data
+
+        Returns
+        -------
+        bytes
+            image data
+
+        """
+        data = await mapleio.api.get_animated_emote(
+            char, expression='blink', min_width=300, session=self.bot.session
+        )
+        _blink = Image.open(BytesIO(data))
+
+        # assemble frames
+        frames = []
+        for i in range(_blink.n_frames):
+            _blink.seek(i)
+            im = _blink.convert('RGBA')
+            frames.append(im)
+
+        open, closed, half, _ = frames
+        frames = [open, closed, half, open, closed, half]
+        duration = [2000, 10, 120, 10, 10, 10]
+
+        byte_arr = BytesIO()
+        frames[0].save(byte_arr, format='GIF', save_all=True, loop=0,
+                       append_images=frames[1:], duration=duration, disposal=2)
         return byte_arr.getvalue()
 
 
