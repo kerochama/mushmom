@@ -159,8 +159,9 @@ async def get_emote(
             w, h = img.size
 
             scaled_body_height = zoom * (config.mapleio.body_height - pad)
-            cropped = img.crop((0, 0, w, h - scaled_body_height))
-            emote = imutils.min_width(cropped, min_width)
+            cropped0 = img.crop((0, 0, w, h - scaled_body_height))
+            bbox = imutils.get_bbox(cropped0)  # recrop width
+            emote = imutils.min_width(cropped0.crop(bbox), min_width)
 
             byte_arr = BytesIO()
             emote.save(byte_arr, format='PNG')
