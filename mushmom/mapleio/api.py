@@ -114,6 +114,8 @@ async def get_emote(
         expression: Optional[str] = None,
         zoom: float = 1,
         pad: int = 8,
+        hide: Optional[Iterable[str]] = None,
+        replace: Optional[Iterable['Equip']] = None,
         min_width: int = 0,
         session: aiohttp.ClientSession = None
 ) -> Optional[bytes]:
@@ -131,6 +133,10 @@ async def get_emote(
         how zoomed in the image should be (1 = 100%)
     pad: int
         number of pixels to pad below head to show body
+    hide: Optional[Iterable[str]]
+            list of equip types to hide (alpha = 0, but still affects size)
+    replace: Optional[Iterable[Equip]]
+        list of equip to overwrite char equips by type
     min_width: int
         min width of image. padded on right with transparent fill
     session: Optional[aiohttp.ClientSession]
@@ -147,7 +153,9 @@ async def get_emote(
         pose='stand1',
         expression=expression,
         zoom=zoom,
-        remove=['Cape', 'Weapon', 'Shoes']
+        hide=hide,
+        remove=['Cape', 'Weapon', 'Shoes'],
+        replace=replace
     )
 
     async with session.get(u) as r:
@@ -416,6 +424,8 @@ async def get_animated_emote(
         expression: Optional[str] = None,
         zoom: float = 1,
         pad: int = 8,
+        hide: Optional[Iterable[str]] = None,
+        replace: Optional[Iterable['Equip']] = None,
         duration: Union[int, Iterable[int]] = 180,
         min_width: int = 0,
         session: aiohttp.ClientSession = None
@@ -432,6 +442,10 @@ async def get_animated_emote(
         how zoomed in the image should be (1 = 100%)
     pad: int
         number of pixels to pad below head to show body
+    hide: Optional[Iterable[str]]
+            list of equip types to hide (alpha = 0, but still affects size)
+    replace: Optional[Iterable[Equip]]
+        list of equip to overwrite char equips by type
     duration: Union[int, Iterable[int]]
         ms per frame. 180 is duration for walk1
     min_width: int
@@ -447,6 +461,7 @@ async def get_animated_emote(
     """
     expression = expression or char.expression
     equips = char.filtered_equips()
+    hide = hide or []
 
     # divide char parts into groups
     remove = ['Cape', 'Weapon', 'Shoes']  # can all go below feet
@@ -460,13 +475,14 @@ async def get_animated_emote(
         'pose': 'stand1',
         'expression': expression,
         'zoom': zoom,
-        'hide': head,
+        'hide': head + list(hide),
         'remove': remove,
+        'replace': replace,
         'session': session
     }
 
     _base = await get_sprite(**kwargs)
-    kwargs['hide'] = body
+    kwargs['hide'] = body + list(hide)
     _head_frames = await get_frames(**kwargs)
 
     if _base and _head_frames:
