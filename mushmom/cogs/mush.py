@@ -10,12 +10,14 @@ from discord import app_commands
 from typing import Optional
 from io import BytesIO
 from PIL import Image
+from collections import namedtuple
 
 from .. import mapleio, config
 from .utils import io, errors
 
 from discord.app_commands import Transform
 from ..mapleio.character import Character
+from ..mapleio.equip import Equip
 from ..mapleio import imutils
 from .utils.parameters import (
     CharacterTransformer, contains, autocomplete_chars
@@ -26,7 +28,24 @@ CUSTOM = (
     'blink'
 )
 
-FACE_ACCESSORIES = {}
+AccessoryInfo = namedtuple(
+    'AccessoryInfo', 'itemid animated hide_face', defaults=(None, False, True)
+)
+FACE_ACCESSORIES = {
+    'surprised': AccessoryInfo(1012429),
+    'pout': AccessoryInfo(1012579),
+    'grumpy': AccessoryInfo(1012621),
+    'blank': AccessoryInfo(1012593),
+    'grr': AccessoryInfo(1012685),
+    'sideeye': AccessoryInfo(1012710),
+    'sob': AccessoryInfo(1012711),
+    'coy': AccessoryInfo(1012735),
+    'shy': AccessoryInfo(1012737),
+    'sulk': AccessoryInfo(1012721),
+    # 'teary': AccessoryInfo(1012651, animated=True),
+    # 'hearts': AccessoryInfo(1012740, animated=True),
+    # 'crying': AccessoryInfo(1012761, animated=True)
+}
 
 # full list of emotes
 EMOTE_LISTS = (
@@ -154,6 +173,11 @@ class Mush(commands.Cog):
         if emote in CUSTOM:
             data = await getattr(self, emote)(char)
             ext = 'gif'
+        elif emote in FACE_ACCESSORIES:
+            data = await self._face_accessory_emote(
+                char, *FACE_ACCESSORIES[emote]
+            )
+            ext = 'gif' if FACE_ACCESSORIES[emote].animated else 'png'
         elif emote in mapleio.ANIMATED:
             data = await mapleio.api.get_animated_emote(
                 char, expression=emote, min_width=300, session=self.bot.session
@@ -168,6 +192,49 @@ class Mush(commands.Cog):
         if data:
             filename = f'{char.name or "char"}_{emote}.{ext}'
             return discord.File(fp=BytesIO(data), filename=filename)
+
+    async def _face_accessory_emote(
+            self,
+            char: Character,
+            itemid: int,
+            animated: bool = False,
+            hide_face: bool = True
+    ):
+        """
+        Create emote based off of face accessory
+
+        Parameters
+        ----------
+        char: Character
+            the character data
+        itemid: int
+            face accessory item id
+        animated: bool
+            whether or not the accessory is animated
+        hide_face: bool
+            whether or not orig face should be hidden
+
+        Returns
+        -------
+        bytes
+            image data
+
+        """
+        coro = (mapleio.api.get_animated_emote if animated
+                else mapleio.api.get_emote)
+        face_acc = Equip(itemid, char.version, char.region)
+
+        # args
+        data = await coro(
+            char,
+            expression='default',
+            hide=['Face'] if hide_face else None,
+            replace=[face_acc],
+            min_width=300,
+            session=self.bot.session
+        )
+
+        return data
 
     async def teehee(self, char: Character) -> bytes:
         """
