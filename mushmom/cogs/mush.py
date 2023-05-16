@@ -25,7 +25,8 @@ from .utils.parameters import (
 
 CUSTOM = (
     'teehee',
-    'blink'
+    'blink',
+    'kek'
 )
 
 AccessoryInfo = namedtuple(
@@ -328,6 +329,35 @@ class Mush(commands.Cog):
         byte_arr = BytesIO()
         frames[0].save(byte_arr, format='GIF', save_all=True, loop=0,
                        append_images=frames[1:], duration=duration, disposal=2)
+        return byte_arr.getvalue()
+
+    async def kek(self, char: Character):
+        """
+        Kek emote using Ushishishi Face
+
+        Parameters
+        ----------
+        char: Character
+            the character data
+
+        Returns
+        -------
+        bytes
+            image data
+
+        """
+        acc_info = AccessoryInfo(1012662)
+        data = await self._face_accessory_emote(char, *acc_info)
+        base = Image.open(BytesIO(data))
+        clean = imutils.thresh_alpha(base, 64)
+        shift = Image.new('RGBA', clean.size, (0,)*4)
+        shift.paste(clean, (0, 2), mask=clean)
+
+        # make gif
+        frames = [clean, shift]
+        byte_arr = BytesIO()
+        frames[0].save(byte_arr, format='GIF', save_all=True, loop=0,
+                       append_images=frames[1:], duration=100, disposal=2)
         return byte_arr.getvalue()
 
 
