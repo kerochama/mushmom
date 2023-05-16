@@ -31,7 +31,7 @@ def min_width(img: Image.Image, width: int) -> Image.Image:
 
     if w < width:
         res = Image.new('RGBA', (width, h))
-        res.paste(img, (0, 0))
+        res.paste(img, (0, 0), mask=img)
     else:
         res = img
 
