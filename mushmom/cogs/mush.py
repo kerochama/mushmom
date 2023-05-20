@@ -64,7 +64,10 @@ class Mush(commands.Cog):
             name='Reply with Mush',
             callback=self.mush_context_menu
         )
-        self.bot.tree.add_command(self._mush_context_menu)
+
+        # non-command methods can be useful when called directly
+        if isinstance(self.bot, discord.Client):
+            self.bot.tree.add_command(self._mush_context_menu)
 
     @app_commands.command()
     @app_commands.autocomplete(emote=contains(EMOTES),
