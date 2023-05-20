@@ -148,7 +148,8 @@ class Mush(commands.Cog):
     async def _generate_emote(
             self,
             emote: str,
-            char: Character
+            char: Character,
+            min_width: int = config.core.min_emote_width
     ) -> discord.File:
         """
         Helper function to generate emote
@@ -159,6 +160,8 @@ class Mush(commands.Cog):
             the emote to send
         char: Optional[Transform[Character, CharacterTransformer]]
             character to use. Default char if not provided
+        min_width: int
+            min width for emote
 
         Returns
         -------
@@ -181,12 +184,14 @@ class Mush(commands.Cog):
             ext = 'gif' if FACE_ACCESSORIES[emote].animated else 'png'
         elif emote in mapleio.ANIMATED:
             data = await mapleio.api.get_animated_emote(
-                char, expression=emote, min_width=300, session=self.bot.session
+                char, expression=emote, min_width=min_width,
+                session=self.bot.session
             )
             ext = 'gif'
         elif emote in mapleio.EXPRESSIONS:
             data = await mapleio.api.get_emote(
-                char, expression=emote, min_width=300, session=self.bot.session
+                char, expression=emote, min_width=min_width,
+                session=self.bot.session
             )
             ext = 'png'
 
@@ -199,7 +204,8 @@ class Mush(commands.Cog):
             char: Character,
             itemid: int,
             animated: bool = False,
-            hide_face: bool = True
+            hide_face: bool = True,
+            min_width: int = config.core.min_emote_width
     ):
         """
         Create emote based off of face accessory
@@ -214,6 +220,8 @@ class Mush(commands.Cog):
             whether or not the accessory is animated
         hide_face: bool
             whether or not orig face should be hidden
+        min_width: int
+            min width for emote
 
         Returns
         -------
@@ -231,13 +239,17 @@ class Mush(commands.Cog):
             expression='default',
             hide=['Face'] if hide_face else None,
             replace=[face_acc],
-            min_width=300,
+            min_width=min_width,
             session=self.bot.session
         )
 
         return data
 
-    async def teehee(self, char: Character) -> bytes:
+    async def teehee(
+            self,
+            char: Character,
+            min_width: int = config.core.min_emote_width
+    ) -> bytes:
         """
         Teehee emote from cheers & hand from stab01
 
@@ -245,6 +257,8 @@ class Mush(commands.Cog):
         ----------
         char: Character
             the character data
+        min_width: int
+            min width for emote
 
         Returns
         -------
@@ -288,14 +302,18 @@ class Mush(commands.Cog):
             x, y = center - hand.width + arm_offset_x, base.height - arm_height
             frame.paste(hand, (x, y), mask=hand)
             frame = imutils.thresh_alpha(frame, 64)
-            frames.append(imutils.min_width(frame, 300))
+            frames.append(imutils.min_width(frame, min_width))
 
         byte_arr = BytesIO()
         frames[0].save(byte_arr, format='GIF', save_all=True, loop=0,
                        append_images=frames[1:], duration=100, disposal=2)
         return byte_arr.getvalue()
 
-    async def blink(self, char: Character):
+    async def blink(
+            self,
+            char: Character,
+            min_width: int = config.core.min_emote_width
+    ):
         """
         Custom duration for blink. Overwrites regular
 
@@ -303,6 +321,8 @@ class Mush(commands.Cog):
         ----------
         char: Character
             the character data
+        min_width: int
+            min width for emote
 
         Returns
         -------
@@ -311,7 +331,8 @@ class Mush(commands.Cog):
 
         """
         data = await mapleio.api.get_animated_emote(
-            char, expression='blink', min_width=300, session=self.bot.session
+            char, expression='blink', min_width=min_width,
+            session=self.bot.session
         )
         _blink = Image.open(BytesIO(data))
 
@@ -331,7 +352,11 @@ class Mush(commands.Cog):
                        append_images=frames[1:], duration=duration, disposal=2)
         return byte_arr.getvalue()
 
-    async def kek(self, char: Character):
+    async def kek(
+            self,
+            char: Character,
+            min_width: int = config.core.min_emote_width
+    ):
         """
         Kek emote using Ushishishi Face
 
@@ -339,6 +364,8 @@ class Mush(commands.Cog):
         ----------
         char: Character
             the character data
+        min_width: int
+            min width for emote
 
         Returns
         -------
@@ -346,8 +373,10 @@ class Mush(commands.Cog):
             image data
 
         """
-        acc_info = AccessoryInfo(1012662)
-        data = await self._face_accessory_emote(char, *acc_info)
+        acc = AccessoryInfo(1012662)
+        data = await self._face_accessory_emote(
+            char, acc.itemid, acc.animated, acc.hide_face, min_width
+        )
         base = Image.open(BytesIO(data))
         clean = imutils.thresh_alpha(base, 64)
         shift = Image.new('RGBA', clean.size, (0,)*4)

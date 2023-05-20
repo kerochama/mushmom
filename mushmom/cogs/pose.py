@@ -6,7 +6,7 @@ from discord import app_commands
 from typing import Optional
 from io import BytesIO
 
-from .. import mapleio
+from .. import mapleio, config
 from .utils import io, errors
 
 from discord.app_commands import Transform
@@ -63,8 +63,9 @@ class Pose(commands.Cog):
         pose = pose or char.pose
 
         # create sprite
+        min_width = config.core.min_emote_width
         data = await mapleio.api.get_sprite(
-            char, pose=pose, expression=expression, min_width=300,
+            char, pose=pose, expression=expression, min_width=min_width,
             frame=frame, session=self.bot.session
         )
 
