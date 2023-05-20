@@ -175,11 +175,11 @@ class Mush(commands.Cog):
 
         # create emote
         if emote in CUSTOM:
-            data = await getattr(self, emote)(char)
+            data = await getattr(self, emote)(char, min_width=min_width)
             ext = 'gif'
         elif emote in FACE_ACCESSORIES:
             data = await self._face_accessory_emote(
-                char, *FACE_ACCESSORIES[emote]
+                char, *FACE_ACCESSORIES[emote], min_width=min_width
             )
             ext = 'gif' if FACE_ACCESSORIES[emote].animated else 'png'
         elif emote in mapleio.ANIMATED:
@@ -375,7 +375,7 @@ class Mush(commands.Cog):
         """
         acc = AccessoryInfo(1012662)
         data = await self._face_accessory_emote(
-            char, acc.itemid, acc.animated, acc.hide_face, min_width
+            char, *acc, min_width=min_width
         )
         base = Image.open(BytesIO(data))
         clean = imutils.thresh_alpha(base, 64)
