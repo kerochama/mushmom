@@ -55,8 +55,9 @@ async def gen_emotes(char: Character, session: Optional[aiohttp.ClientSession]):
 
 def gen_emotes_preview(
         emotes: list[tuple[str, Image]],
-        cols: int = 8,
-        cell_size: tuple[int, int] = (75, 90)
+        cols: int = 6,
+        cell_size: tuple[int, int] = (75, 90),
+        save = True
 ):
     """
     Generate a table of labeled emotes
@@ -69,6 +70,8 @@ def gen_emotes_preview(
         number of emotes per row
     cell_size: tuple[int, int]
         (width, height) pixels
+    save: bool
+        whether or not to save
 
     """
     rows = math.ceil(len(emotes)/cols)
@@ -86,6 +89,7 @@ def gen_emotes_preview(
 
             # add label
             draw = ImageDraw.Draw(cell)
+            draw.fontmode = '1'
             font = ImageFont.truetype('/Library/Fonts/Arial.ttf', 10)
             _, _, tw, th = draw.textbbox((0, 0), name, font)
             tpos = ((w - tw)//2, h - th - 10)
@@ -96,7 +100,87 @@ def gen_emotes_preview(
             padded.paste(cell, (j * w, i * h))
             base = Image.alpha_composite(base, padded)
 
-    base.save(f'{ROOT}/emotes_preview.png', format='PNG')
+    if save:
+        base.save(f'{ROOT}/emotes_preview.png', format='PNG')
+
+    return base
+
+
+def gen_animated_emotes_preview(
+        emotes: list[tuple[str, Image]],
+        cols: int = 6,
+        cell_size: tuple[int, int] = (75, 90)
+):
+    """
+    Generate a table of labeled animated emotes
+
+    Algorithm:
+        loop through all emotes in increments of 10. Only create new result
+        frame when one emote needs to flip to a new frame (passes its
+        duration).  Otherwise just increase the duration of the current frame
+
+    Parameters
+    ----------
+    emotes: list[tuple[str, Image]]
+        list of emotes
+    cols: int
+        number of emotes per row
+    cell_size: tuple[int, int]
+        (width, height) pixels
+
+    """
+    states = [EmoteState(*info) for info in emotes]
+    _emotes = [state.emote() for state in states]
+    kwargs = dict(cols=cols, cell_size=cell_size, save=False)
+    frames = [gen_emotes_preview(_emotes, **kwargs)]
+    inc = 10
+    durs = [inc]
+
+    i = 1
+    while not all([state.complete() for state in states]):
+        print(f'iter: {i}', end='\r')
+        new_frame = False
+
+        for state in states:
+            if state.curr_dur == state.img.info['duration']:  # cycle to next frame
+                state.next()
+                state.curr_dur = 0
+                new_frame = True
+
+            state.curr_dur += inc
+
+        if new_frame:
+            _emotes = [state.emote() for state in states]
+            frames.append(gen_emotes_preview(_emotes, **kwargs))
+            durs.append(inc)
+        else:
+            durs[-1] += inc
+
+        i += 1
+
+    filename = f'{ROOT}/animated_emotes_preview.gif'
+    frames[0].save(filename, format='GIF', save_all=True, loop=0,
+                   append_images=frames[1:], duration=durs, disposal=2)
+
+
+class EmoteState:
+    def __init__(self, name, img):
+        self.name = name
+        self.img = img
+        self.curr_dur = 0
+
+    def complete(self) -> bool:
+        """Whether or not the emote has been fully cycled"""
+        return (self.img.tell() + 1 == self.img.n_frames
+                and self.curr_dur == self.img.info['duration'])
+
+    def emote(self) -> tuple[str, Image]:
+        """Return tuple of current emote frame"""
+        return self.name, self.img.convert('RGBA')
+
+    def next(self):
+        """Cycle to next frame"""
+        self.img.seek((self.img.tell() + 1) % self.img.n_frames)
 
 
 if __name__ == "__main__":
@@ -120,3 +204,14 @@ if __name__ == "__main__":
             emotes.append((emote, img))
 
         gen_emotes_preview(emotes)
+    elif option == 'gen_animated_emotes_preview':
+        files = os.listdir(f'{ROOT}/animated')
+        files.sort()
+        emotes = []
+
+        for file in files:
+            emote, ext = file.split('.')
+            img = Image.open(f'{ROOT}/animated/{file}')
+            emotes.append((emote, img))
+
+        gen_animated_emotes_preview(emotes)
