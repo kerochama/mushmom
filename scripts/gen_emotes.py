@@ -2,7 +2,7 @@
 Generate emote files for docs
 
 $python3 -m scripts.gen_emotes gen_emotes
-$python3 -m scripts.gen_emotes gen_emote_preview
+$python3 -m scripts.gen_emotes gen_emotes_preview
 
 
 """
@@ -53,7 +53,7 @@ async def gen_emotes(char: Character, session: Optional[aiohttp.ClientSession]):
         print(f'{i+1}. {path}/{emote}.{ext}')
 
 
-def gen_emote_preview(
+def gen_emotes_preview(
         emotes: list[tuple[str, Image]],
         cols: int = 8,
         cell_size: tuple[int, int] = (75, 90)
@@ -109,7 +109,7 @@ if __name__ == "__main__":
         char = Character.from_url(url)
         loop = asyncio.get_event_loop()
         loop.run_until_complete(gen_emotes(char))
-    elif option == 'gen_emote_preview':
+    elif option == 'gen_emotes_preview':
         files = os.listdir(f'{ROOT}/static')
         files.sort()
         emotes = []
@@ -119,4 +119,4 @@ if __name__ == "__main__":
             img = Image.open(f'{ROOT}/static/{file}')
             emotes.append((emote, img))
 
-        gen_emote_preview(emotes)
+        gen_emotes_preview(emotes)
