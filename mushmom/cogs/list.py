@@ -92,7 +92,7 @@ class List(commands.Cog):
         embed.add_field(name='Custom', value='\n'.join([]))
 
         check = not await in_guild_channel(interaction, raise_error=False)
-        await interaction.response.send_message(embed=embed, emphemeral=check)
+        await interaction.response.send_message(embed=embed, ephemeral=check)
 
     @list_group.command()
     async def expressions(self, interaction: discord.Interaction):
@@ -124,7 +124,7 @@ class List(commands.Cog):
         embed.add_field(name='\u200b', value='\n'.join(expressions[2]))
 
         check = not await in_guild_channel(interaction, raise_error=False)
-        await interaction.response.send_message(embed=embed, emphemeral=check)
+        await interaction.response.send_message(embed=embed, ephemeral=check)
 
     @list_group.command()
     async def poses(
@@ -164,7 +164,7 @@ class List(commands.Cog):
         embed.add_field(name='\u200b', value='\n'.join(poses[2]))
 
         check = not await in_guild_channel(interaction, raise_error=False)
-        await interaction.response.send_message(embed=embed, emphemeral=check)
+        await interaction.response.send_message(embed=embed, ephemeral=check)
 
 
 class CharacterScrollView(discord.ui.View):
