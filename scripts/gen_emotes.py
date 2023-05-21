@@ -96,8 +96,7 @@ def gen_emote_preview(
             padded.paste(cell, (j * w, i * h))
             base = Image.alpha_composite(base, padded)
 
-
-    base.show()
+    base.save(f'{ROOT}/emotes_preview.png', format='PNG')
 
 
 if __name__ == "__main__":
