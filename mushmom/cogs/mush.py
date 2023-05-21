@@ -54,7 +54,7 @@ EMOTE_LISTS = (
     CUSTOM,
     FACE_ACCESSORIES.keys()
 )
-EMOTES = [x for it in EMOTE_LISTS for x in it]
+EMOTES = list(set([x for it in EMOTE_LISTS for x in it]))
 
 
 class Mush(commands.Cog):
