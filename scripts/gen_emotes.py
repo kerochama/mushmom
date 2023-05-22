@@ -55,7 +55,7 @@ async def gen_emotes(char: Character, session: Optional[aiohttp.ClientSession]):
 
 def gen_emotes_preview(
         emotes: list[tuple[str, Image]],
-        cols: int = 6,
+        cols: int = 8,
         cell_size: tuple[int, int] = (75, 90),
         save = True
 ):
@@ -89,7 +89,7 @@ def gen_emotes_preview(
 
             # add label
             draw = ImageDraw.Draw(cell)
-            draw.fontmode = '1'
+            draw.fontmode = '1'  # no anti-aliasing
             font = ImageFont.truetype('/Library/Fonts/Arial.ttf', 10)
             _, _, tw, th = draw.textbbox((0, 0), name, font)
             tpos = ((w - tw)//2, h - th - 10)
