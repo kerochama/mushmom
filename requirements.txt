@@ -4,6 +4,7 @@ aiohttp
 python-dotenv
 motor
 pymongo[srv]
+pyyaml
 munch
 Pillow
 numpy
