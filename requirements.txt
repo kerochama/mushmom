@@ -2,7 +2,6 @@ discord
 aenum
 aiohttp
 python-dotenv
-pyyaml
 motor
 pymongo[srv]
 munch
