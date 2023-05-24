@@ -289,11 +289,10 @@ class Mushmom(commands.Bot):
             )
         except asyncio.TimeoutError:
             # delete immediately so main error handler runs
-            if not config.core.debug:
-                try:
-                    await prompt.delete()
-                except commands.MissingPermissions:
-                    pass
+            try:
+                await prompt.delete()
+            except commands.MissingPermissions:
+                pass
 
             self.reply_cache.remove(ctx.message)
             raise errors.TimeoutError  # handle in command errors
