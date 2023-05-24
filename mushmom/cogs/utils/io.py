@@ -5,132 +5,150 @@ Various functions for making prompts
 import discord
 import time
 
-from discord.ext import commands
 from typing import Optional, Any
 
-from ... import config
 from . import errors
-from ..resources import EMOJIS
+from ... import config
+
+from ...mapleio.character import Character
 
 
-class MessageCache:
-    """
-    Maintains a cache of messages sent by bot in response to a
-    command so that they can be referenced/cleaned subsequently.
-    Entries will expire after some time
+class ConfirmView(discord.ui.View):
+    def __init__(self, timeout: int = 180):
+        super().__init__(timeout=timeout)
+        self.response = None
 
-    Parameters
-    ----------
-    seconds: int
-        the number of seconds to wait before expiring
-
-    """
-    def __init__(self, seconds: int):
-        super().__init__()
-        self.__ttl = seconds
-        self.__cache = {}
-
-    def verify_cache_integrity(self) -> None:
-        """Loop through cache and remove all expired keys"""
-        current_time = time.monotonic()
-        to_remove = [k for (k, (v, t)) in self.__cache.items()
-                     if current_time > (t + self.__ttl)]
-        for k in to_remove:
-            del self.__cache[k]
-
-    def get(self, message: discord.Message) -> Any:
-        if message.id in self.__cache:
-            value, t = self.__cache.get(message.id)
-            current_time = time.monotonic()
-            if current_time <= (t + self.__ttl):
-                return value
-
-    def add(self, message: discord.Message, value: Any) -> None:
-        self.__cache[message.id] = (value, time.monotonic())
-
-    def remove(self, message: discord.Message) -> None:
-        self.__cache.pop(message.id, None)
-
-    def contains(self, message: discord.Message) -> bool:
-        if message.id in self.__cache:
-            value, t = self.__cache.get(message.id)
-            current_time = time.monotonic()
-            return current_time <= (t + self.__ttl)
-        else:
-            return False
-
-    def __contains__(self, message: discord.Message) -> bool:
-        return self.contains(message)
-
-    async def clean_up(
+    @discord.ui.button(label="Yes", style=discord.ButtonStyle.green)
+    async def yes(
             self,
-            message: discord.Message,
-            delete: bool = not config.core.debug
-    ) -> None:
-        """Delete key if exists. Also delete from discord if message"""
-        value, t = self.__cache.pop(message.id, (None, None))
+            interaction: discord.Interaction,
+            button: discord.ui.Button
+    ):
+        self.response = True
+        self.stop()
+        await interaction.response.defer()
 
-        if isinstance(value, discord.Message) and delete:
-            try:
-                await value.delete()
-            except discord.HTTPException:
-                pass
+    @discord.ui.button(label="No", style=discord.ButtonStyle.red)
+    async def no(
+            self,
+            interaction: discord.Interaction,
+            button: discord.ui.Button
+    ):
+        self.response = False
+        self.stop()
+        await interaction.response.defer()
 
 
-async def list_chars(
-        ctx: commands.Context,
-        user: dict,
-        text: str,
-        thumbnail: str = None
-) -> discord.Message:
+class CharacterSelect(discord.ui.Select):
+    def __init__(self, user: dict):
+        """
+        Populated with a user's characters
+
+        Parameters
+        ----------
+        user: dict
+            user data from database
+
+        """
+        self.user = user
+        options = [
+            discord.SelectOption(label=char['name'], value=str(i))
+            for i, char in enumerate(user['chars'])
+        ]
+        text = 'Select a character...'
+        super().__init__(placeholder=text, options=options, row=0)
+
+    async def callback(self, interaction: discord.Interaction):
+        self.view.select = int(self.values[0])
+        confirm = self.view.get_button('Confirm')
+        confirm.disabled = False
+
+        for opt in self.options:
+            opt.default = str(self.view.select) == opt.value
+
+        char = Character.from_json(self.user['chars'][self.view.select])
+        self.view.embed.set_image(url=char.url())
+
+        await interaction.response.edit_message(embed=self.view.embed, view=self.view)
+
+
+class CharacterSelectView(discord.ui.View):
+    def __init__(
+            self,
+            interaction: discord.Interaction,
+            user: dict,
+            embed: discord.Embed,
+            timeout: int = 180
+    ):
+        super().__init__(timeout=timeout)
+        self.orig_interaction = interaction
+        self.embed = embed
+        self.select = None  # select menu value
+        self.response = None  # button value
+
+        select = CharacterSelect(user)
+        self.add_item(select)
+
+    def get_button(self, label: str):
+        buttons = [x for x in self.children if isinstance(x, discord.ui.Button)]
+        return next((b for b in buttons if b.label == label), None)
+
+    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green,
+                       disabled=True, row=1)
+    async def confirm(
+            self,
+            interaction: discord.Interaction,
+            button: discord.ui.Button
+    ):
+        if self.select is not None:
+            self.response = True
+            self.stop()
+            await interaction.response.defer()
+        else:  # reset if nothing selected
+            await interaction.response.edit_message(view=self)
+
+    @discord.ui.button(label="Cancel", row=1)
+    async def cancel(
+            self,
+            interaction: discord.Interaction,
+            button: discord.ui.Button
+    ):
+        self.select = None
+        self.response = False
+        self.stop()
+        await interaction.response.defer()
+
+    async def on_timeout(self):
+        for comp in self.children:
+            comp.disabled = True
+
+        await self.orig_interaction.edit_original_response(view=self)
+
+
+async def get_default_char(interaction: discord.Interaction):
     """
-    List users chars
+    Get the char saved as default (main)
 
     Parameters
     ----------
-    ctx: commands.Context
-    user: dict
-        user data from database
-    text: str
-        description displayed in embed
-    thumbnail: str
-        url to the embed thumbnail
-
-    Returns
-    -------
-    discord.Message
-        the message, if sent
+    interaction: discord.Interaction
 
     """
-    embed = discord.Embed(description=text, color=config.core.embed_color)
-    embed.set_author(name='Characters', icon_url=ctx.bot.user.display_avatar.url)
+    user = await interaction.client.db.get_user(interaction.user.id)
 
-    if not thumbnail:
-        thumbnail = ctx.bot.get_emoji_url(EMOJIS['mushparty'])
+    if not user or not user['chars']:
+        raise errors.NoCharacters
 
-    embed.set_thumbnail(url=thumbnail)
+    i = user['default']
 
-    # format char names
-    char_names = ['-'] * config.core.max_chars
-
-    for i, char in enumerate(user['chars']):
-        template = '**{} (default)**' if i == user['default'] else '{}'
-        char_names[i] = template.format(char['name'])
-
-    # full width numbers
-    char_list = [f'{chr(65297 + i)} \u200b {name}'
-                 for i, name in enumerate(char_names)]
-
-    embed.add_field(name='Characters', value='\n'.join(char_list))
-    msg = await ctx.send(embed=embed)
-
-    return msg
+    return Character.from_json(user['chars'][i])
 
 
-async def get_char(
-        ctx: commands.Context,
+async def get_char_index(
+        interaction: discord.Interaction,
         user: dict,
         name: Optional[str] = None,
+        title: Optional[str] = None,
         text: Optional[str] = None
 ) -> Optional[int]:
     """
@@ -139,11 +157,13 @@ async def get_char(
 
     Parameters
     ----------
-    ctx: commands.Context
+    interaction: discord.Interaction
     user: dict
         user data from database
     name: str
         the character to be found
+    title: Optional[str]
+        title displayed in embed prior to instructions
     text:
         description displayed in embed prior to instructions
 
@@ -160,34 +180,27 @@ async def get_char(
         ind = next(char_iter, None)
 
         if ind is None:
-            raise errors.DataNotFound
+            raise errors.CharacterNotFound
         else:
             return ind
 
-    # prompt if no name given
-    thumbnail = ctx.bot.get_emoji_url(EMOJIS['mushping'])
-    msg = (f'{text or ""}React to select a character or select '
-           f'\u200b \u274e \u200b to cancel\n\u200b')
-    prompt = await list_chars(ctx, user, msg, thumbnail)
-    ctx.bot.reply_cache.add(ctx.message, prompt)  # cache for clean up
+    # prompt if no name
+    embed = discord.Embed(description=text, color=config.core.embed_color)
+    embed.set_author(name=title)
 
-    # numbered unicode emojis 1 - # max chars
-    max_chars = config.core.max_chars
-    reactions = {f'{x + 1}': f'{x + 1}\ufe0f\u20e3'
-                 for x in range(min(len(user['chars']), max_chars))}
-    reactions['x'] = '\u274e'
-    sel = await ctx.bot.wait_for_reaction(ctx, prompt, reactions)
-
-    return None if sel == 'x' else int(sel)-1
+    view = CharacterSelectView(interaction, user, embed)
+    await interaction.edit_original_response(embed=embed, view=view)
+    await view.wait()  # wait for response
+    return None if not view.select else int(view.select)
 
 
-async def confirm_prompt(ctx: commands.Context, text) -> bool:
+async def confirm_prompt(interaction: discord.Interaction, text) -> bool:
     """
     Prompt user for confirmation
 
     Parameters
     ----------
-    ctx: commands.Context
+    interaction: discord.Interaction
     text: str
         text to display
 
@@ -197,15 +210,7 @@ async def confirm_prompt(ctx: commands.Context, text) -> bool:
         user's selection
 
     """
-    embed = discord.Embed(description=text, color=config.core.embed_color)
-    embed.set_author(name='Confirmation', url=ctx.bot.user.display_avatar.url)
-    thumbnail = ctx.bot.get_emoji_url(EMOJIS['mushping'])
-    embed.set_thumbnail(url=thumbnail)
-    prompt = await ctx.send(embed=embed)
-    ctx.bot.reply_cache.add(ctx.message, prompt)  # cache for clean up
-
-    # wait for reaction
-    reactions = {'true': '\u2705', 'false': '\u274e'}
-    sel = await ctx.bot.wait_for_reaction(ctx, prompt, reactions)
-
-    return sel == 'true'  # other reactions will timeout
+    view = ConfirmView()
+    await interaction.edit_original_response(content=text, view=view)
+    await view.wait()  # wait for selection
+    return view.response  # other reactions will timeout

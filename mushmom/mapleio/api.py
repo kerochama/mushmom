@@ -7,11 +7,11 @@ import asyncio
 import functools
 import zipfile
 
-from PIL import Image
+from PIL import Image, ImageOps
 from io import BytesIO
-from collections import namedtuple
 from typing import Callable, Coroutine, Any, Optional, Union, Iterable
 
+from . import imutils
 from .. import config
 
 
@@ -111,9 +111,12 @@ async def get_item(
 @with_session
 async def get_emote(
         char: 'Character',
-        emotion: Optional[str] = None,
+        expression: Optional[str] = None,
         zoom: float = 1,
         pad: int = 8,
+        hide: Optional[Iterable[str]] = None,
+        replace: Optional[Iterable['Equip']] = None,
+        min_width: int = 0,
         session: aiohttp.ClientSession = None
 ) -> Optional[bytes]:
     """
@@ -124,12 +127,18 @@ async def get_emote(
     ----------
     char: Character
         The character from which to generate the sprite
-    emotion: str
-        emotion from emotions.json. If None, use default
+    expression: str
+        expression from expressions.json. If None, use default
     zoom: float
         how zoomed in the image should be (1 = 100%)
     pad: int
         number of pixels to pad below head to show body
+    hide: Optional[Iterable[str]]
+            list of equip types to hide (alpha = 0, but still affects size)
+    replace: Optional[Iterable[Equip]]
+        list of equip to overwrite char equips by type
+    min_width: int
+        min width of image. padded on right with transparent fill
     session: Optional[aiohttp.ClientSession]
         session to use when issuing http get
 
@@ -139,12 +148,14 @@ async def get_emote(
         the byte data from the generated emote
 
     """
-    emotion = emotion or char.emotion
+    expression = expression or char.expression
     u = char.url(
         pose='stand1',
-        emotion=emotion,
+        expression=expression,
         zoom=zoom,
-        remove=['Cape', 'Weapon']
+        hide=hide,
+        remove=['Cape', 'Weapon', 'Shoes'],
+        replace=replace
     )
 
     async with session.get(u) as r:
@@ -156,7 +167,10 @@ async def get_emote(
             w, h = img.size
 
             scaled_body_height = zoom * (config.mapleio.body_height - pad)
-            emote = img.crop((0, 0, w, h - scaled_body_height))
+            cropped0 = img.crop((0, 0, w, h - scaled_body_height))
+            bbox = imutils.get_bbox(cropped0)  # recrop width
+            emote = imutils.min_width(cropped0.crop(bbox), min_width)
+
             byte_arr = BytesIO()
             emote.save(byte_arr, format='PNG')
 
@@ -167,15 +181,17 @@ async def get_emote(
 async def get_sprite(
         char: 'Character',
         pose: Optional[str] = None,
-        emotion: Optional[str] = None,
+        expression: Optional[str] = None,
         frame: Union[int, str] = 0,
         zoom: float = 1,
         flipx: bool = False,
         bgcolor: tuple[int, int, int, int] = (0, 0, 0, 0),
         render_mode: Optional[str] = None,
         hide: Optional[Iterable[str]] = None,
+        keep: Optional[Iterable[str]] = None,
         remove: Optional[Iterable[str]] = None,
         replace: Optional[Iterable['Equip']] = None,
+        min_width: int = 0,
         session: aiohttp.ClientSession = None
 ) -> Optional[bytes]:
     """
@@ -187,8 +203,8 @@ async def get_sprite(
         The character from which to generate the sprite
     pose: str
         pose from poses.json. If None, use default
-    emotion: str
-        emotion from emotions.json. If None, use default
+    expression: str
+        expression from expressions.json. If None, use default
     frame: Union[int, str]
             the animation frame. animated for gif
     zoom: float
@@ -201,10 +217,14 @@ async def get_sprite(
             the render mode (e.g. centered, NavelCenter, etc.)
     hide: Optional[Iterable[str]]
             list of equip types to hide (alpha = 0, but still affects size)
+    keep: Optional[Iterable[str]]
+        list of equips types to keep (priority over remove)
     remove: Optional[Iterable[str]]
         list of equip types to remove
     replace: Optional[Iterable[Equip]]
         list of equip to overwrite char equips by type
+    min_width: int
+        min width of image. padded on right with transparent fill
     session: Optional[aiohttp.ClientSession]
         session to use when issuing http get
 
@@ -215,30 +235,39 @@ async def get_sprite(
 
     """
     pose = pose or char.pose
-    emotion = emotion or char.emotion
+    expression = expression or char.expression
 
     args = locals().copy()
     args.pop('char')
+    args.pop('min_width')
     args.pop('session')
     u = char.url(**args)
 
     # http request
     async with session.get(u) as r:
         if r.status == 200:
-            return await r.read()  # png bytes
+            img_data = await r.read()  # png bytes
+            img = Image.open(BytesIO(img_data))
+            padded = imutils.min_width(img, min_width)
+
+            byte_arr = BytesIO()
+            padded.save(byte_arr, format='PNG')
+
+            return byte_arr.getvalue()
 
 
 @with_session
 async def get_layers(
         char: 'Character',
         pose: Optional[str] = None,
-        emotion: Optional[str] = None,
+        expression: Optional[str] = None,
         frame: Union[int, str] = 0,
         zoom: float = 1,
         flipx: bool = False,
         bgcolor: tuple[int, int, int, int] = (0, 0, 0, 0),
         render_mode: Optional[str] = None,
         hide: Optional[Iterable[str]] = None,
+        keep: Optional[Iterable[str]] = None,
         remove: Optional[Iterable[str]] = None,
         replace: Optional[Iterable['Equip']] = None,
         session: aiohttp.ClientSession = None
@@ -253,8 +282,8 @@ async def get_layers(
         The character from which to generate the sprite
     pose: str
         pose from poses.json. If None, use default
-    emotion: str
-        emotion from emotions.json. If None, use default
+    expression: str
+        expression from expressions.json. If None, use default
     frame: Union[int, str]
             the animation frame. animated for gif
     zoom: float
@@ -267,6 +296,8 @@ async def get_layers(
             the render mode (e.g. centered, NavelCenter, etc.)
     hide: Optional[Iterable[str]]
             list of equip types to hide (alpha = 0, but still affects size)
+    keep: Optional[Iterable[str]]
+        list of equips types to keep (priority over remove)
     remove: Optional[Iterable[str]]
         list of equip types to remove
     replace: Optional[Iterable[Equip]]
@@ -281,7 +312,7 @@ async def get_layers(
 
     """
     pose = pose or char.pose
-    emotion = emotion or char.emotion
+    expression = expression or char.expression
 
     args = locals().copy()
     args.pop('hide')
@@ -305,13 +336,14 @@ async def get_layers(
 async def get_frames(
         char: 'Character',
         pose: Optional[str] = None,
-        emotion: Optional[str] = None,
+        expression: Optional[str] = None,
         frame: Union[int, str] = 0,
         zoom: float = 1,
         flipx: bool = False,
         bgcolor: tuple[int, int, int, int] = (0, 0, 0, 0),
         render_mode: Optional[str] = None,
         hide: Optional[Iterable[str]] = None,
+        keep: Optional[Iterable[str]] = None,
         remove: Optional[Iterable[str]] = None,
         replace: Optional[Iterable['Equip']] = None,
         session: aiohttp.ClientSession = None
@@ -326,8 +358,8 @@ async def get_frames(
         The character from which to generate the sprite
     pose: str
         pose from poses.json. If None, use default
-    emotion: str
-        emotion from emotions.json. If None, use default
+    expression: str
+        expression from expressions.json. If None, use default
     frame: Union[int, str]
             the animation frame. animated for gif
     zoom: float
@@ -340,6 +372,8 @@ async def get_frames(
             the render mode (e.g. centered, NavelCenter, etc.)
     hide: Optional[Iterable[str]]
             list of equip types to hide (alpha = 0, but still affects size)
+    keep: Optional[Iterable[str]]
+        list of equips types to keep (priority over remove)
     remove: Optional[Iterable[str]]
         list of equip types to remove
     replace: Optional[Iterable[Equip]]
@@ -353,7 +387,7 @@ async def get_frames(
 
     """
     pose = pose or char.pose
-    emotion = emotion or char.emotion
+    expression = expression or char.expression
 
     args = locals().copy()
     args.pop('char')
@@ -382,3 +416,105 @@ async def get_frames(
 @with_session
 async def get_frame_layers():
     pass
+
+
+@with_session
+async def get_animated_emote(
+        char: 'Character',
+        expression: Optional[str] = None,
+        zoom: float = 1,
+        pad: int = 8,
+        hide: Optional[Iterable[str]] = None,
+        replace: Optional[Iterable['Equip']] = None,
+        duration: Union[int, Iterable[int]] = 180,
+        min_width: int = 0,
+        session: aiohttp.ClientSession = None
+) -> Optional[bytes]:
+    """
+
+    Parameters
+    ----------
+    char: Character
+        The character from which to generate the sprite
+    expression: str
+        expression from expressions.json. If None, use default
+    zoom: float
+        how zoomed in the image should be (1 = 100%)
+    pad: int
+        number of pixels to pad below head to show body
+    hide: Optional[Iterable[str]]
+            list of equip types to hide (alpha = 0, but still affects size)
+    replace: Optional[Iterable[Equip]]
+        list of equip to overwrite char equips by type
+    duration: Union[int, Iterable[int]]
+        ms per frame. 180 is duration for walk1
+    min_width: int
+        min width of image. padded on right with transparent fill
+    session: Optional[aiohttp.ClientSession]
+        session to use when issuing http get
+
+    Returns
+    -------
+    Optional[bytes]
+        the byte data from the generated emote
+
+    """
+    expression = expression or char.expression
+    equips = char.filtered_equips()
+    hide = hide or []
+
+    # divide char parts into groups
+    remove = ['Cape', 'Weapon', 'Shoes']  # can all go below feet
+    head = ['Head', 'Face', 'Hair', 'Hat',
+            'Face Accessory', 'Eye Decoration', 'Earrings']
+    body = ['Body'] + [eq.type for eq in equips if eq.type not in head+remove]
+
+    # API calls for static body and head frames
+    kwargs = {
+        'char': char,
+        'pose': 'stand1',
+        'expression': expression,
+        'zoom': zoom,
+        'hide': head + list(hide),
+        'remove': remove,
+        'replace': replace,
+        'session': session
+    }
+
+    _base = await get_sprite(**kwargs)
+    kwargs['hide'] = body + list(hide)
+    _head_frames = await get_frames(**kwargs)
+
+    if _base and _head_frames:
+        base = Image.open(BytesIO(_base))
+        head_frames = [Image.open(BytesIO(x)) for x in _head_frames]
+
+        # calc max size
+        w, h = (max(f.width for f in head_frames),
+                max(f.height for f in head_frames))
+
+        # combine to create frames
+        # ideally use FeetCenter, but horizontally 1 pixel off
+        frames = []
+        for f in head_frames:
+            head = Image.new('RGBA', (w, h), (0, )*4)  # aligning top right
+            body = head.copy()
+            head.paste(f, (w - f.width, 0), mask=f)
+            body.paste(base, (w - base.width, 0), mask=base)
+            im = Image.alpha_composite(head, body)
+
+            # crop to head
+            scaled_body_height = zoom * (config.mapleio.body_height - pad)
+            cropped = im.crop((0, 0, w, h - scaled_body_height))
+            emote = imutils.thresh_alpha(cropped, 64)
+            frames.append(emote)
+
+        # recrop to bbox and min_width
+        bbox = imutils.get_bbox(frames)
+        frames = [imutils.min_width(f.crop(bbox), min_width) for f in frames]
+
+        byte_arr = BytesIO()
+        frames[0].save(byte_arr, format='GIF', save_all=True, loop=0,
+                       append_images=frames[1:], duration=duration, disposal=2)
+
+        return byte_arr.getvalue()

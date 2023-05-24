@@ -262,5 +262,15 @@
         "job": "Mo Xuan",
         "class": "Wu Shen",
         "branch": "Pirate"
+    },
+    {
+        "job": "Khali",
+        "class": "Flora",
+        "branch": "Thief"
+    },
+    {
+        "job": "Sia",
+        "class": "MSM Exclusive",
+        "branch": "Magician"
     }
 ]

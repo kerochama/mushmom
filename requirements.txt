@@ -1,8 +1,7 @@
-git+https://github.com/Rapptz/discord.py@master
+discord
 aenum
 aiohttp
 python-dotenv
-pyyaml
 motor
 pymongo[srv]
 munch

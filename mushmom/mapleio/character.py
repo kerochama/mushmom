@@ -11,7 +11,7 @@ from aenum import Enum, IntEnum, auto, extend_enum
 from typing import Union, Optional, Any, Iterable
 
 from .. import config
-from . import resources
+from . import SKINS
 from .equip import Equip, BeautyItem, DEFAULT_HSV
 
 
@@ -36,11 +36,15 @@ class Character:
     action: str
         default action/pose
     emotion: str
-        default emotion
+        default emotion/expression
     job: str
         character's job
 
     """
+    _cosmetic_attrs = ['skin', 'ears', 'equips', 'version', 'region']
+    _info_attrs = ['job', 'game', 'server', 'guild']
+    _state_attrs = ['action', 'emotion']
+
     def __init__(
             self,
             name: Optional[str] = None,
@@ -68,6 +72,19 @@ class Character:
     def pose(self):
         """Alias action"""
         return self.action
+
+    @pose.setter
+    def pose(self, value):
+        self.action = value
+
+    @property
+    def expression(self):
+        """Alias emotion"""
+        return self.emotion
+
+    @expression.setter
+    def expression(self, value):
+        self.emotion = value
 
     @classmethod
     def from_json(cls, data: Union[str, dict]) -> Character:
@@ -269,13 +286,14 @@ class Character:
     def url(
             self,
             pose: Optional[str] = None,
-            emotion: Optional[str] = None,
+            expression: Optional[str] = None,
             frame: Union[int, str] = 0,
             zoom: float = 1,
             flipx: bool = False,
             bgcolor: tuple[int, int, int, int] = (0, 0, 0, 0),
             render_mode: Optional[str] = None,
             hide: Optional[Iterable[str]] = None,
+            keep: Optional[Iterable[str]] = None,
             remove: Optional[Iterable[str]] = None,
             replace: Optional[Iterable[Equip]] = None
     ) -> str:
@@ -286,8 +304,8 @@ class Character:
         ----------
         pose: Optional[str]
             pose from poses.json. If None, use default
-        emotion: Optional[str]
-            emotion from emotions.json. If None, use default
+        expression: Optional[str]
+            expression from expressions.json. If None, use default
         frame: Union[int, str]
             the animation frame. animated for gif
         zoom: float
@@ -300,6 +318,8 @@ class Character:
             the render mode (e.g. centered, NavelCenter, etc.)
         hide: Optional[Iterable[str]]
             list of equip types to hide (alpha = 0, but still affects size)
+        keep: Optional[Iterable[str]]
+            list of equip types to keep (priority over remove)
         remove: Optional[Iterable[str]]
             list of equip types to remove
         replace: Optional[Iterable[Equip]]
@@ -312,9 +332,9 @@ class Character:
 
         """
         pose = pose or self.pose
-        emotion = emotion or self.emotion
+        expression = expression or self.expression
 
-        # format equips. emotion placed in face/face accessory dicts
+        # format equips. expression placed in face/face accessory dicts
         items = [
             {'type': 'Body', 'itemId': self.skin.value, 'version': self.version},
             {'type': 'Head', 'itemId': 10000+self.skin.value, 'version': self.version}
@@ -327,12 +347,15 @@ class Character:
             if item['type'] in (hide or []):
                 item['alpha'] = 0
 
-        for equip in self.filtered_equips(remove=remove, replace=replace):
+        equips = self.filtered_equips(
+            keep=keep, remove=remove, replace=replace
+        )
+        for equip in equips:
             equip = equip.to_dict()
             _type = equip.pop('type')
 
             if _type in ['Face', 'Face Accessory']:
-                equip['animationName'] = emotion
+                equip['animationName'] = expression
 
             if _type in (hide or []):
                 equip['alpha'] = 0
@@ -340,7 +363,11 @@ class Character:
             items.append(equip)
 
         items_s = parse.quote(
-            json.dumps(items).lstrip('[').rstrip(']').replace(', ', ',').replace(': ', ':')
+            json.dumps(items)
+                .lstrip('[')
+                .rstrip(']')
+                .replace(', ', ',')
+                .replace(': ', ':')
         )  # remove brackets and excess whitespace
 
         # format query
@@ -357,6 +384,37 @@ class Character:
         )  # keep commas
 
         return f'{config.mapleio.api_url}/character/{items_s}/{pose}/{frame}?{qs}'
+
+    def copy_data(
+            self,
+            source: Union[Character, dict],
+            attrs: Optional[list] = None
+    ) -> None:
+        """
+        Copy specific data from another character
+
+        Parameters
+        ----------
+        source: Union[Character, dict]
+            character to copy from
+        attrs: Optional[list]
+            attributes to copy
+
+        """
+        if isinstance(source, dict):
+            source = Character.from_json(source)
+
+        for k in attrs:
+            v = getattr(source, k)
+            setattr(self, k, v)
+
+    def copy_style(self, source: Union[Character, dict]):
+        """Copy style attributes"""
+        self.copy_data(source, Character._cosmetic_attrs)
+
+    def copy_info(self, source: Union[Character, dict]):
+        """Copy info attributes"""
+        self.copy_data(source, Character._info_attrs)
 
     def to_dict(self) -> dict[str, Any]:
         """
@@ -448,7 +506,7 @@ class Skin(IntEnum):
 
 
 # populate Skin enum
-for k, v in resources.SKINS.items():
+for k, v in SKINS.items():
     key = k.upper().replace(' ', '_')  # Pale Pink -> PALE_PINK
     extend_enum(Skin, key, v)
 

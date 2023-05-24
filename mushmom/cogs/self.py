@@ -7,24 +7,12 @@ import discord
 from discord.ext import commands
 
 from .. import config
-from .resources import EMOJIS, ATTACHMENTS
+from ..resources import EMOJIS, ATTACHMENTS
 
 
 class Self(commands.Cog, name=config.core.bot_name):
     def __init__(self, bot):
         self.bot = bot
-
-    @commands.command()
-    async def hello(self, ctx: commands.Context) -> None:
-        """
-        Say hello!
-
-        Parameters
-        ----------
-        ctx: commands.Context
-
-        """
-        await ctx.send('hai')
 
     @commands.command()
     async def about(self, ctx: commands.Context) -> None:
@@ -46,10 +34,9 @@ class Self(commands.Cog, name=config.core.bot_name):
         embed.set_author(name=f'About {config.core.bot_name}',
                          icon_url=self.bot.user.display_avatar.url)
 
-        thumbnail = self.bot.get_emoji_url(EMOJIS['mushparty'])
+        thumbnail = self.bot.get_emoji(EMOJIS['mushparty'].id).url
         embed.set_thumbnail(url=thumbnail)
-        img = self.bot.get_attachment_url(*ATTACHMENTS['mushmomheader'])
-        embed.set_image(url=img)
+        embed.set_image(url=ATTACHMENTS['mushmomheader'].url)
 
         await ctx.send(embed=embed)
 
@@ -100,10 +87,9 @@ class Self(commands.Cog, name=config.core.bot_name):
 
         embed.set_author(name=f'{config.core.bot_name} Get Started',
                          icon_url=self.bot.user.display_avatar.url)
-        thumbnail = self.bot.get_emoji_url(EMOJIS['mushparty'])
+        thumbnail = self.bot.get_emoji(EMOJIS['mushparty'].id).url
         embed.set_thumbnail(url=thumbnail)
-        img = self.bot.get_attachment_url(*ATTACHMENTS['mushmomheader'])
-        embed.set_image(url=img)
+        embed.set_image(url=ATTACHMENTS['mushmomheader'].url)
 
         embed.add_field(
             name='Get Started',
@@ -150,7 +136,7 @@ class Self(commands.Cog, name=config.core.bot_name):
 
         embed.set_author(name=f'{config.core.bot_name} Admin',
                          icon_url=self.bot.user.display_avatar.url)
-        thumbnail = self.bot.get_emoji_url(EMOJIS['mushparty'])
+        thumbnail = self.bot.get_emoji(EMOJIS['mushparty'].id).url
         embed.set_thumbnail(url=thumbnail)
 
         embed.add_field(

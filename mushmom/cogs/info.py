@@ -6,22 +6,29 @@ import discord
 import asyncio
 import re
 
-from discord.ext import commands, tasks
+from discord import app_commands
+from discord.ext import commands
 from io import BytesIO
 from PIL import Image
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
-from typing import Optional, Union
+from typing import Optional
+from aenum import Enum
+from collections import namedtuple
 
 from .. import config, mapleio
-from .utils import errors, converters, io
-from .resources import EMOJIS, ATTACHMENTS
-from .reference import ERRORS
+from .utils import errors, io
+from .utils.parameters import contains
+from .utils.checks import slash_in_guild_channel
+from ..mapleio import imutils
 from ..mapleio.character import Character
 
+from ..resources import EMOJIS, ATTACHMENTS, BACKGROUNDS
 
 UTC = timezone.utc
 NYC = ZoneInfo('America/New_York')  # new york timezone
+InfoData = namedtuple('InfoData', 'message target')
+Games = Enum('Games', zip(mapleio.GAMES, mapleio.GAMES))
 
 
 def utc(ts):
@@ -29,49 +36,55 @@ def utc(ts):
 
 
 class Info(commands.Cog):
+    # groups get added in CogMeta. Just used for naming
+    set_group = app_commands.Group(name='set', description='Set things')
+
     def __init__(self, bot):
         self.bot = bot
+        self._info_context_menu = app_commands.ContextMenu(
+            name='Get Info',
+            callback=self.info_context_menu
+        )
+        self.bot.tree.add_command(self._info_context_menu)
 
-        # watch info for reactions for 10 minutes
-        self.info_cache = io.MessageCache(seconds=600)
-
-        if not self._verify_cache_integrity.is_running:
-            self._verify_cache_integrity.start()
-
-    @commands.command()
+    @app_commands.command()
+    @slash_in_guild_channel()
     async def info(
             self,
-            ctx: commands.Context,
+            interaction: discord.Interaction,
             member: Optional[discord.Member] = None
     ) -> None:
         """
-        Discord member profile. Reacting with an emoji named
-        `:thumbsup:` or `:thumbsdown:` will fame/defame this member
+        Discord member profile. Reacting with \U0001f44d or \U0001f44e
+        will fame/defame this member
 
         Parameters
         ----------
-        ctx: commands.Context
+        interaction: discord.Interaction
         member: Optional[discord.Member]
             member's profile to show. If not supplied, caller's profile
 
         """
         if not member:
-            member = ctx.author
+            member = interaction.user
+
+        msg = f'{config.core.bot_name} is thinking'
+        await self.bot.defer(interaction, msg=msg, ephemeral=False)
 
         embed = discord.Embed(
             title=f'{member.name}#{member.discriminator}',
             color=config.core.embed_color
         )
-        mushhuh = self.bot.get_emoji_url(EMOJIS['mushhuh'])
+        mushshine = self.bot.get_emoji(EMOJIS['mushshine'].id).url
         embed.set_author(name=f'{member.display_name}\'s Info',
-                         icon_url=mushhuh)
+                         icon_url=mushshine)
         embed.set_thumbnail(url=member.display_avatar.url)
 
         # get user info
         user = await self.bot.db.get_user(member.id)
 
         if not user:
-            user, char = {}
+            user = char = {}
         else:
             if not user['chars']:
                 char = {}
@@ -88,30 +101,27 @@ class Info(commands.Cog):
         fame = user.get('fame', 0)
 
         # format info
-        _fmt_info = [self._padded_str(f'> **{k.title()}**: {v}')
+        _fmt_info = [_padded_str(f'> **{k.title()}**: {v}')
                      for k, v in char_info.items()]
         embed.add_field(name='Active Character',
                         value='\n'.join(_fmt_info) + '\n\u200b')
-        _fmt_fame = self._padded_str(f'\u2b50 {fame}', n=12)
+        _fmt_fame = _padded_str(f'\u2b50 {fame}', n=12)
         embed.add_field(name='Fame', value=_fmt_fame + '\n\u200b')
 
         # send placeholder pfp in 3 seconds
-        temp = ATTACHMENTS['pfp_loading']
-        pfp_temp = self.bot.get_attachment_url(*temp)
-        embed.set_image(url=pfp_temp)
+        embed.set_image(url=ATTACHMENTS['pfp_loading'].url)
         embed.set_footer(text='Still loading profile picture')
         temp_send_task = self.bot.loop.create_task(
-            self._delayed_send(ctx, embed=embed)
+            self._delayed_send(interaction, content='', embed=embed)
         )
 
         # get real pfp
         if not char:
             attm = ATTACHMENTS['mushcharnotfound']
-            not_found = self.bot.get_attachment_url(*attm)
-            filename = attm[-1]  # orig filename
+            filename = attm.filename
 
             try:
-                data = await self.bot.download(not_found, errors.DiscordIOError)
+                data = await self.bot.download(attm.url, errors.DiscordIOError)
             except errors.DiscordIOError:
                 data = None
 
@@ -130,22 +140,21 @@ class Info(commands.Cog):
             pfp = None
 
         # cancel if not yet sent, else edit
+        args = dict(content='', embed=embed)
+
         if not temp_send_task.done():
             temp_send_task.cancel()
 
             if pfp:
                 embed.set_image(url=f'attachment://{filename}')
-                msg = await ctx.send(file=pfp, embed=embed)
+                args['attachments'] = [pfp]
             else:
-                pfp_poo = self.bot.get_attachment_url(*ATTACHMENTS['pfp_poo'])
-                embed.set_image(url=pfp_poo)
-                msg = await ctx.send(embed=embed)
+                embed.set_image(url=ATTACHMENTS['pfp_poo'].url)
         else:
             msg = temp_send_task.result()
 
             # default fail
-            pfp_poo = self.bot.get_attachment_url(*ATTACHMENTS['pfp_poo'])
-            embed.set_image(url=pfp_poo)
+            embed.set_image(url=ATTACHMENTS['pfp_poo'].url)
 
             if pfp:  # upload to another channel and get the attachment url
                 uploads = config.discord.uploads
@@ -157,23 +166,35 @@ class Info(commands.Cog):
                 except Exception:  # just send poo
                     pass
 
-            await msg.edit(embed=embed)
+        # send the updated message
+        msg = await self.bot.followup(interaction, **args)
 
         # start waiting for fame reactions
         if user:
-            self.info_cache.add(msg, member.id)
+            _info = InfoData(msg, member)
+            self.bot.info_cache.add(msg.id, _info)
 
-    @staticmethod
-    async def _delayed_send(ctx, delay=3, **kwargs):
+    @slash_in_guild_channel()
+    async def info_context_menu(
+            self,
+            interaction: discord.Interaction,
+            member: discord.Member
+    ) -> None:
+        """
+        Context menu version of info
+
+        Parameters
+        ----------
+        interaction: discord.Interaction
+        member: Optional[discord.Member]
+            member's profile to show
+
+        """
+        await self.info.callback(self, interaction, member)
+
+    async def _delayed_send(self, interaction, delay=3, **kwargs):
         await asyncio.sleep(delay)
-
-        return await ctx.send(**kwargs)
-
-    @staticmethod
-    def _padded_str(text, n=30):
-        s = list('\xa0' * n)
-        s[:len(text)] = list(text)
-        return ''.join(s)
+        return await self.bot.followup(interaction, **kwargs)
 
     async def gen_profile_pic(
             self,
@@ -203,70 +224,184 @@ class Info(commands.Cog):
 
         """
         # get background
-        try:
-            url = self.bot.get_attachment_url(*ATTACHMENTS[bg])
-        except KeyError:
-            url = bg
+        if bg in BACKGROUNDS:
+            attm, y_ground = BACKGROUNDS[bg]
+            url = attm.url
+        else:
+            url, y_ground = bg, 0
 
         bg_data = await self.bot.download(url)
         bg = Image.open(BytesIO(bg_data)).convert('RGBA')
+
+        # gen pfp
         w_bg, h_bg = bg.size
+        pfp_data = imutils.apply_background(
+            data, bg, y_ground=y_ground, crop=False
+        )
+        pfp = Image.open(BytesIO(pfp_data)).convert('RGBA')
+        pfp = pfp.crop(((w_bg - w)//2, (h_bg - h), (w_bg + w)//2, h_bg))
 
-        # paste centered, 30px from bottom
-        im = Image.open(BytesIO(data))
-        w_im, h_im = im.size
-        bg.paste(im, ((w_bg - w_im)//2, (h_bg - h_im//2 - 30)), mask=im)
-
-        # crop to size
-        out = bg.crop(((w_bg - w)//2, (h_bg - h), (w_bg + w)//2, h_bg))
         byte_arr = BytesIO()
-        out.save(byte_arr, format='PNG')
+        pfp.save(byte_arr, format='PNG')
         return byte_arr.getvalue()
 
-    @commands.command(hidden=True)
+    @set_group.command(name="info")
+    @app_commands.autocomplete(job=contains(mapleio.JOBS),
+                               server=contains(mapleio.SERVERS))
     async def _set_info(
             self,
-            ctx: commands.Context,
-            *,
-            options: converters.InfoFlags
-    ) -> None:
+            interaction: discord.Interaction,
+            job: Optional[str] = None,
+            game: Optional[Games] = None,
+            server: Optional[str] = None,
+            guild: Optional[str] = None
+    ):
         """
-        Set character information displayed in profile
+        Set the information displayed in /info. Enter whitespace to clear
 
         Parameters
         ----------
-        ctx: commands.Context
-        options: converters.InfoFlags
-            each of the fields that can be set
+        interaction: discord.Interaction
+        job: Optional[str]
+            E.g. Bishop, Hero, etc.
+        game: Optional[Games]
+            Maplestory/MaplestoryM
+        server: Optional[str]
+            E.g. Scania (A1), Luna (EU), Reboot (NA), etc.
+        guild: Optional[str]
+            your guild
 
         """
-        user = await self.bot.db.get_user(ctx.author.id)
+        input = locals().copy()
+        input['game'] = input['game'].value if input['game'] else None  # enum
+        user = await self.bot.db.get_user(interaction.user.id)
 
         if not user or not user['chars']:
-            raise errors.NoMoreItems
+            raise errors.NoCharacters
 
         char = user['chars'][user['default']]
+        input['name'] = char.get('name')
 
-        # go through all options
-        for opt in vars(options):
-            v = getattr(options, opt)
-            if v is not None:
-                char[opt] = v
+        # only send modal when no args are passed
+        if not (job or game or server or guild):
+            modal = SetInfoModal(char)
+            await interaction.response.send_modal(modal)
+            await modal.wait()
 
-        update = {'chars': user['chars']}  # passed by reference
-        ret = await self.bot.db.set_user(ctx.author.id, update)
+            if not modal.submit:  # cancelled
+                return
 
-        if ret.acknowledged:
-            await ctx.send(f'**{char["name"]}**\'s info was updated')
+            interaction = modal.submit
+            for field in Character._info_attrs + ['name']:
+                input[field] = getattr(modal, field).value
         else:
-            raise errors.DataWriteError
+            await self.bot.defer(interaction)
+
+        # validate input. can be NA
+        update, invalid = {}, []
+        to_validate = {  # key, list
+            'job': mapleio.JOBS,
+            'game': [x.name for x in Games],
+            'server': mapleio.SERVERS,
+        }
+
+        for k, valid in to_validate.items():
+            if input[k] and input[k] != char.get(k):  # whitespace to clear
+                if input[k] in valid or input[k].isspace():
+                    update[k] = input[k].strip()
+                else:
+                    invalid.append(k)
+
+        # ensure not just whitespace
+        if (input['name'] and input['name'] != char.get('name')
+                and input['name'].strip()):
+            update['name'] = input['name']
+
+        if input['guild'] and input['guild'] != char.get('guild'):
+            update['guild'] = input['guild'].strip()
+
+        # update database
+        if update:
+            char.update(update)
+            _update = {'chars': user['chars']}
+            ret = await self.bot.db.set_user(interaction.user.id, _update)
+
+            if ret and ret.acknowledged:
+                text = f'Updated: **{", ".join(update.keys())}**'
+                await self.bot.followup(interaction, content=text)
+            else:
+                raise errors.DatabaseWriteError
+        else:
+            await self.bot.followup(interaction, content='Nothing to update')
+
+        if invalid:
+            text = 'The following issues occurred:\n\u200b'
+            embed = discord.Embed(description=text, color=config.core.embed_color)
+            mushshock = self.bot.get_emoji(EMOJIS['mushshock'].id).url
+            embed.set_thumbnail(url=mushshock)
+            embed.set_author(name='Warning',
+                             icon_url=self.bot.user.display_avatar.url)
+
+            errs = [f'**{input[k]}** is not a valid format for **{k}**'
+                    for k in invalid]
+            embed.add_field(name='Warnings', value='\n'.join(errs))
+            await self.bot.followup(interaction, embed=embed)
+
+    @set_group.command(name='pose')
+    @app_commands.autocomplete(pose=contains(mapleio.POSES),
+                               expression=contains(mapleio.EXPRESSIONS))
+    async def _set_pose(
+            self,
+            interaction: discord.Interaction,
+            pose: Optional[str] = None,
+            expression: Optional[str] = None
+    ) -> None:
+        """
+        Set default pose for /info
+
+        Parameters
+        ----------
+        interaction: discord.Interaction,
+        pose: Optional[str]
+            default pose (shown in info)
+        expression: Optional[str]
+            default expression (shown in info)
+
+        """
+        await self.bot.defer(interaction)
+
+        if pose and pose not in mapleio.POSES.values():
+            msg = f'**{pose}** is not a valid pose'
+            raise errors.BadArgument(msg, see_also=['list poses'])
+
+        if expression and expression not in mapleio.EXPRESSIONS:
+            msg = f'**{expression}** is not a valid expression'
+            raise errors.BadArgument(msg, see_also=['list expressions'])
+
+        user = await self.bot.db.get_user(interaction.user.id)
+
+        if not user or not user['chars']:
+            raise errors.NoCharacters
+
+        # update
+        char = user['chars'][user['default']]
+        char['action'] = pose or char['action']
+        char['emotion'] = expression or char['emotion']
+
+        update = {'chars': user['chars']}
+        ret = await self.bot.db.set_user(interaction.user.id, update)
+
+        if ret and ret.acknowledged:
+            text = f"Updated **{char['name']}**'s pose/expression"
+            await self.bot.followup(interaction, content=text)
+        else:
+            raise errors.DatabaseWriteError
 
     async def _fame(
             self,
             user: discord.Member,
-            member: discord.Member,
+            target: discord.Member,
             amt: int = 1,
-            channel: Optional[discord.abc.Messageable] = None
     ) -> None:
         """
         Internal function for adding fame (or defame). Bot owner
@@ -276,69 +411,71 @@ class Info(commands.Cog):
         ----------
         user: discord.Member
             the member faming
-        member: discord.Member
+        target: discord.Member
             the member to fame
         amt: int
             the amount to fame. can be negative
-        channel: Optional[discord.abc.Messageable]
-            channel to send confirmation message to. can be None
 
         """
-        if user.id == member.id and user.id != self.bot.owner_id:
+        if user.id == target.id and user.id != self.bot.owner_id:
             raise errors.SelfFameError
 
-        target = await self.bot.db.get_user(member.id)
-        if not target:
-            raise errors.DataNotFound
+        _target = await self.bot.db.get_user(target.id)
+        if not _target:
+            msg = f'{target.display_name} has not used {config.core.bot_name}'
+            raise errors.NoCharacters(msg)
 
-        update = {'fame': target['fame'] + amt}
+        target_update = {'fame': _target['fame'] + amt}
 
         # owner can fame whenever
         if user.id == self.bot.owner_id:
-            await self.bot.db.set_user(member.id, update)
+            await self.bot.db.set_user(target.id, target_update)
         else:
             # regular user
             famer = await self.bot.db.get_user(user.id)
             if not famer:
                 ret = await self.bot.db.add_user(user.id)
                 if not ret.acknowledged:
-                    raise errors.DataWriteError
-                else:
+                    raise errors.DatabaseWriteError
+                else:  # cached
                     famer = await self.bot.db.get_user(user.id)
 
             # check if already famed or max fame reached
-            fame_log = FameLog(famer['fame_log'])
+            famer_log = FameLog(**famer['fame_log'])
+            famed_log = FameLog(**_target['fame_log'])
 
-            if member.id in fame_log:
+            if target.id in famer_log:
                 raise errors.AlreadyFamedError
 
             # negative amount is a defame. cnt is separate for each
-            cnt = len(fame_log.fames() if amt > 1 else fame_log.defames())
+            cnt = len(famer_log.fames() if amt > 1 else famer_log.defames())
 
-            if cnt >= config.core.max_fame_limit:
+            if cnt >= config.core.fame_daily_limit:
                 raise errors.MaxFamesReached
 
             # add fame
-            ret = await self.bot.db.set_user(member.id, update)
+            if amt > 0:
+                famer_log.add_fame(target.id)
+                famed_log.add_famer(user.id)
+            elif amt < 0:
+                famer_log.add_defame(target.id)
+                famed_log.add_defamer(user.id)
 
-            if ret.acknowledged:
-                if amt > 0:
-                    fame_log.add_fame(member.id)
-                else:
-                    fame_log.add_defame(member.id)
+            target_update['fame_log'] = famed_log.to_json()
+            reqs = {
+                target.id: target_update,
+                user.id: {'fame_log': famer_log.to_json()}
+            }
 
-                await self.bot.db.set_user(user.id, {'fame_log': fame_log})
-            else:
-                raise errors.DataWriteError
+            ret = await self.bot.db.bulk_user_update(reqs)
 
-        if channel:
-            verb = f'{"de" if amt < 0 else ""}famed'
-            await channel.send(f'You {verb} **{member.display_name}**')
+            if not ret.acknowledged:
+                raise errors.DatabaseWriteError
 
-    @commands.command()
+    @app_commands.command()
     async def fame(
             self,
-            ctx: commands.Context,
+            interaction: discord.Interaction,
             member: discord.Member
     ) -> None:
         """
@@ -347,17 +484,22 @@ class Info(commands.Cog):
 
         Parameters
         ----------
-        ctx: commands.Context
+        interaction: discord.Interaction
         member: discord.Member
             the member to fame
 
         """
-        await self._fame(ctx.author, member, 1, ctx.channel)
+        await self.bot.defer(interaction)
+        await self._fame(interaction.user, member, 1)
 
-    @commands.command()
+        # no error
+        msg = f'You famed **{member.display_name}**'
+        await self.bot.followup(interaction, content=msg)
+
+    @app_commands.command()
     async def defame(
             self,
-            ctx: commands.Context,
+            interaction: discord.Interaction,
             member: discord.Member
     ) -> None:
         """
@@ -366,112 +508,192 @@ class Info(commands.Cog):
 
         Parameters
         ----------
-        ctx: commands.Context
+        interaction: discord.Interaction
         member: discord.Member
             the member to defame
 
         """
-        await self._fame(ctx.author, member, -1, ctx.channel)
+        await self.bot.defer(interaction)
+        await self._fame(interaction.user, member, -1)
+
+        # no error
+        msg = f'You defamed **{member.display_name}**'
+        await self.bot.followup(interaction, content=msg)
 
     @commands.Cog.listener()
-    async def on_reaction_add(
+    async def on_raw_reaction_add(
             self,
-            reaction: discord.Reaction,
-            user: Union[discord.Member, discord.User]
+            payload: discord.RawReactionActionEvent,
     ) -> None:
         """
         Monitor for fame/defame reactions to info.  Will only monitor
-        for 10 minutes and all fame restrictions apply.  Errors will
-        @mention the user
+        for 10 minutes and all fame restrictions apply.  Errors will be
+        ignored to avoid clutter
         
         Parameters
         ----------
-        reaction: discord.Reaction
-            the reaction added
-        user: Union[discord.Member, discord.User]
-            the user that added the reaction
+        payload: discord.RawReactionActionEvent
 
         """
-        if reaction.message not in self.info_cache:
+        if payload.message_id not in self.bot.info_cache:
             return
 
-        member_id = self.info_cache.get(reaction.message)
-        member = (self.bot.get_user(member_id)
-                  or await self.bot.fetch_user(member_id))
-        name = (reaction.emoji if isinstance(reaction.emoji, str)
-                else reaction.emoji.name)
+        message, target = self.bot.info_cache.get(payload.message_id)
+        react = payload.emoji.name.lower()
 
         try:
             cmd = None
-            if str(reaction) == '\U0001f44D' or 'thumbsup' in name.lower():
-                cmd, amt = 'fame', 1
-                await self._fame(user, member, 1)
-            elif str(reaction) == '\U0001f44E' or 'thumbsdown' in name.lower():
-                cmd, amt = 'defame', -1
-                await self._fame(user, member, -1)
+            if react == '\U0001f44E' or _contains_all(react, ['thumb', 'down']):
+                cmd, amt = 'fame', -1
+            elif react == '\U0001f44D' or _contains_all(react, ['thumb', 'up']):
+                cmd, amt = 'defame', 1
 
             if cmd:
+                await self._fame(payload.member, target, amt)
+
                 # edit embed. fame is the 2nd field
-                embed = reaction.message.embeds[0]
+                embed = message.embeds[0]
                 curr = re.search(r'\d+', embed.fields[1].value).group()
-                _fmt_fame = self._padded_str(f'\u2b50 {int(curr) + amt}', n=12)
+                _fmt_fame = _padded_str(f'\u2b50 {int(curr) + amt}', n=12)
                 embed.set_field_at(1, name='Fame', value=_fmt_fame + '\n\u200b')
 
                 # attached pfp pops out of embed, so remove
-                await reaction.message.edit(embed=embed, attachments=[])
-        except errors.MushmomError as error:
-            err = f'errors.{error.__class__.__name__}'
-            specs = ERRORS[self.__class__.__name__.lower()][cmd][err]
-            msg, ref_cmds = specs.values()
-            ctx = await self.bot.get_context(reaction.message)
-            await self.bot.send_error(ctx, msg, ref_cmds,
-                                      delete_message=False,
-                                      raw_content=f'{user.mention}')
+                await message.edit(embed=embed, attachments=[])
+        except errors.MushError:
+            pass  # ideally either DM or ephemeral (but no interaction)
 
-    @tasks.loop(minutes=10)
-    async def _verify_cache_integrity(self):
-        """Clean up stray cached replies"""
-        self.info_cache.verify_cache_integrity()
+        self.bot.info_cache.refresh(payload.message_id)  # extend
 
 
-class FameLog(list):
+def _padded_str(text, n=30):
+    s = list('\xa0' * n)
+    s[:len(text)] = list(text)
+    return ''.join(s)
+
+
+def _contains_all(string, iterable):
+    return all(s in string for s in iterable)
+
+
+class SetInfoModal(discord.ui.Modal, title='Set Info'):
+    def __init__(self, char: dict):
+        super().__init__()
+
+        self.char = char
+        self.submit = None
+
+        # items
+        self.name = discord.ui.TextInput(
+            label='Name',
+            placeholder="Enter your character's name...",
+            max_length=30,
+            default=char.get('name'),
+        )
+        self.job = discord.ui.TextInput(
+            label='Job',
+            placeholder="E.g. Bishop, Hero, etc.",
+            default=char.get('job'),
+            required=False
+        )
+        self.game = discord.ui.TextInput(
+            label='Game',
+            placeholder="Maplestory/MaplestoryM",
+            default=char.get('game'),
+            required=False
+        )
+        self.server = discord.ui.TextInput(
+            label='Server',
+            placeholder="E.g. Scania (A1), Luna (EU), Reboot (NA), etc.",
+            default=char.get('server'),
+            required=False
+        )
+        self.guild = discord.ui.TextInput(
+            label='Guild',
+            placeholder="Enter your guild...",
+            default=char.get('guild'),
+            required=False
+        )
+
+        # add inputs
+        self.add_item(self.name)
+        for field in Character._info_attrs:
+            self.add_item(getattr(self, field))
+
+    async def on_submit(self, interaction: discord.Interaction):
+        self.submit = interaction
+        text = f'<a:loading:{EMOJIS["loading"].id}> Processing'
+        await interaction.response.send_message(text, ephemeral=True)
+        self.stop()
+
+
+FameRecord = namedtuple('FameRecord', 'uid amt ts')
+
+
+class FameLog:
     """
-    List of tuple[int, int, datetime], which is userid, amount,
-    and timestamp. timestamp is output of datetime.utcnow()
+    Log of fames made and famers (mostly for viewing).  Keep track of
+    userid, amount, and timestamp. timestamp is output of datetime.utcnow()
     (i.e. tz unaware, but utc)
 
-    Records that are not from today are removed on init
+    Records that are not from today are removed on init.  Slight inconsistency
+    if time between init and operation crosses midnight
 
     """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, fames: list, famers: Optional[list] = None):
         utcnow = utc(datetime.utcnow())
         today = utcnow.astimezone(NYC).date()
+        famers = famers or []
 
         # clean old records. iterate over copy
-        for fame in self[:]:
-            uid, amt, ts = fame
-            if utc(ts).astimezone(NYC).date() != today:
-                self.remove(fame)
+        self._fames = [FameRecord(*fame) for fame in fames
+                       if utc(fame[-1]).astimezone(NYC).date() == today]
+
+        self._famers, self._defamers = [], []
+        famers.sort(key=lambda x: x[1], reverse=True)
+
+        for fame in famers:
+            _fame = FameRecord(*fame)
+            lst = self._famers if _fame.amt > 0 else self._defamers
+
+            if len(self._famers) <= config.core.fame_log_length:
+                lst.append(_fame)
 
     def fames(self):
-        return FameLog(filter(lambda x: x[1]>0, self))  # x[1] is amt
+        return [fame for fame in self._fames if fame.amt > 0]
 
     def defames(self):
-        return FameLog(filter(lambda x: x[1]<0, self))  # x[1] is amt
+        return [fame for fame in self._fames if fame.amt < 0]
 
     def __contains__(self, uid):
-        for fame in self:
-            if fame[0] == uid:
+        for fame in self._fames:
+            if fame.uid == uid:
                 return True
 
         return False
 
     def add_fame(self, uid):
-        self.append((uid, 1, datetime.utcnow()))
+        self._fames.append(FameRecord(uid, 1, datetime.utcnow()))
 
     def add_defame(self, uid):
-        self.append((uid, -1, datetime.utcnow()))
+        self._fames.append(FameRecord(uid, -1, datetime.utcnow()))
+
+    def add_famer(self, uid):
+        if len(self._famers) == config.core.fame_log_length:
+            self._famers.pop()
+
+        self._famers.append(FameRecord(uid, 1, datetime.utcnow()))
+
+    def add_defamer(self, uid):
+        if len(self._defamers) == config.core.fame_log_length:
+            self._defamers.pop()
+
+        self._defamers.append(FameRecord(uid, -1, datetime.utcnow()))
+
+    def to_json(self):
+        return {
+            'fames': self._fames,
+            'famers': self._famers + self._defamers
+        }
 
 
 async def setup(bot):

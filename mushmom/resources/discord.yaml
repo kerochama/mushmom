@@ -1,0 +1,55 @@
+# resources stored on discord
+
+emojis:
+  loading: 1099301922139279380
+  mushshock: 890392463867527228
+  mushheart: 890978701158809671
+  mushdab: 897105532027011073
+  mushping: 897105581406560286
+  mushparty: 890987908633362503
+  mushloading: 892077347925262367
+  mushhuh: 1099651583106629733
+  mushcheers: 1096393658258948187
+  mushshine: 1105319188282748928
+
+attachments:                           # attachments to reference
+  mushcharnotfound:
+    - 900388181139144786               # channel id (Kero's server #attachments)
+    - 900424355660595250               # attachment id
+    - mushcharnotfound.png
+  pfp_loading:
+    - 900388181139144786
+    - 901105558113906708
+    - pfp_loading.gif
+  pfp_poo:
+    - 900388181139144786
+    - 901120006136410202
+    - pfp_poo.png
+  mushmomheader:
+    - 901105805628162099
+    - 910360712692518932
+    - mushroom_background1.png
+  demo:
+    - 900388181139144786
+    - 1105465836438835230
+    - mushmom_demo_slash_1_3.mp4
+  get_started:
+    - 900388181139144786
+    - 1105825157110579230
+    - image.png
+  emotes_preview:
+    - 900388181139144786
+    - 1110067476273840138
+    - emotes_preview.png
+  animated_emotes_preview:
+    - 900388181139144786
+    - 1110010115530178630
+    - animated_emotes_preview.gif
+
+backgrounds:                           # https://kirimymaps.blogspot.com/
+  grassy_field:
+    attm:
+      - 900388181139144786
+      - 900539713813893140
+      - grassy_field.png
+    y_ground: 30                       # pixels from bottom for ground

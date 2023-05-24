@@ -1,0 +1,131 @@
+{
+    "Maplestory": {
+        "Korea": {
+            "servers": [
+                "Scania",
+                "Bera",
+                "Luna",
+                "Zenith",
+                "Croa",
+                "Union",
+                "Elysium",
+                "Enosis",
+                "Red",
+                "Aurora",
+                "Nova",
+                "Reboot",
+                "Reboot 2"
+            ],
+            "code": "KMS"
+        },
+        "Japan": {
+            "servers": [
+                "Kaede",
+                "Kurumi",
+                "Yukari",
+                "Reboot"
+            ],
+            "code": "JMS"
+        },
+        "China": {
+            "servers": [
+                "Lucid",
+                "Will",
+                "Orchid",
+                "Hilla",
+                "Magnus",
+                "Damien",
+                "Leon"
+            ],
+            "code": "CMS"
+        },
+        "North America": {
+            "servers": [
+                "Scania",
+                "Bera",
+                "Aurora",
+                "Elysium",
+                "Reboot"
+            ],
+            "code": "GMS",
+            "abbrev": "NA"
+        },
+        "Europe": {
+            "servers": [
+                "Luna",
+                "Reboot"
+            ],
+            "code": "GMS",
+            "abbrev": "EU"
+        },
+        "SEA": {
+            "servers": [
+                "Draco",
+                "Cassiopeia",
+                "Bootes",
+                "Aquila"
+            ],
+            "code": "SEA"
+        },
+        "Taiwan": {
+            "servers": [
+                "Aria",
+                "Freud",
+                "Ryude",
+                "Rhinne",
+                "Alicia",
+                "Orchid",
+                "Reboot"
+            ],
+            "code": "TMS"
+        }
+    },
+    "MaplestoryM": {
+        "North America": {
+            "servers": [
+                "Scania",
+                "Inosys"
+            ],
+            "code": "GMSM",
+            "abbrev": "NA"
+        },
+        "Europe": {
+            "servers": [
+                "Scania"
+            ],
+            "code": "GMSM",
+            "abbrev": "EU"
+        },
+        "Asia 1": {
+            "servers": [
+                "Khaini",
+                "Zenith",
+                "Scania",
+                "Windia",
+                "Luna",
+                "Elysium"
+            ],
+            "code": "GMSM",
+            "abbrev": "A1"
+        },
+        "Asia 2": {
+            "servers": [
+                "Scania",
+                "Luna",
+                "Zenith",
+                "Union",
+                "Croa"
+            ],
+            "code": "GMSM",
+            "abbrev": "A2"
+        },
+        "Korea": {
+            "servers": null,
+            "code": "KMSM"
+        },
+        "Japan": {
+            "servers": null,
+            "code": "JMSM"
+        }
+    }
+}
