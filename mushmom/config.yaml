@@ -1,33 +1,35 @@
 # constants used by the bot
 
 core:
-  debug: False                              # mostly prevents msg auto deletion
-  bot_name: Mushmom                         # change bot class name and errors
-  version: 1.1.0
+  bot_name: Mushmom                              # change bot class name and errors
+  version: 2.0.0
   hook_name: Mushmom
-  default_prefix: ["mush ", "Mush "]
-  embed_color: 0xf49c00                     # current color matching pfp
+  embed_color: 0xf49c00                          # current color matching pfp
   embed_bg_color: 0x2f3136
-  max_chars: 5                              # reactions will break if > 9
-  default_delay: 10                         # for auto deletion
-  quick_delay: 3                            # for quick auto deletion
-  delayed_react_time: 2                     # default secs for delayed reaction
-  default_pfp_size: 80                      # pixels
-  max_fame_limit: 10
+  max_chars: 5                                   # reactions will break if > 9
+  default_delay: 10                              # for auto deletion
+  delayed_react_time: 2                          # default secs for delayed reaction
+  default_pfp_size: 80                           # pixels
+  min_emote_width: 300                           # min width to prevent emote resize
+  fame_daily_limit: 10
+  fame_log_length: 25                            # total number of famers to keep in log
 
 discord:
-  uploads: 901105805628162099               # channel that can be sent to
-  invite: https://discord.gg/n37BxaXWhS
+  uploads: 901105805628162099                    # channel that can be sent to
 
-database:                                   # mongodb
+database:                                        # mongodb
   name: mushmom
-  track: True                               # keep count of command calls
 
 mapleio:
   api_url: https://maplestory.io/api
-  default_version: "225"                    # should be a string
-  body_height: 33                           # unscaled
-                                            # see scripts/get_sprite_sizes.py
+  default_version: "240"                         # should be a string
+  body_height: 33                                # unscaled
+  # see scripts/get_sprite_sizes.py
 
-website:
-  url: https://kerochama.github.io/mushmom/
+urls:
+  website: https://kerochama.github.io/mushmom/
+  invite: https://discord.gg/n37BxaXWhS
+  add_bot: >-
+    https://discord.com/oauth2/authorize?client_id=
+    886737660272590958&scope=bot&permissions=3959942209
+  demo: https://bit.ly/mushmom-demo
