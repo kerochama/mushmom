@@ -11,11 +11,10 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from aiohttp import web
 from datetime import datetime
 from typing import Optional, Union
-from types import SimpleNamespace
 from collections import namedtuple
 
 from . import config, database as db
-from .cache import TTLCache
+from .cache import TTLCache, CachedCommandTree
 from .cogs.help import FullHelpCommand
 from .cogs.utils import errors, checks
 from .resources import EMOJIS
@@ -69,7 +68,8 @@ class Mushmom(commands.Bot):
         super().__init__(
             command_prefix=commands.when_mentioned,
             intents=intents,
-            help_command=FullHelpCommand()
+            help_command=FullHelpCommand(),
+            tree_cls=CachedCommandTree
         )
 
         self.session = None  # set in on_ready
