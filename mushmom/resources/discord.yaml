@@ -37,6 +37,14 @@ attachments:                           # attachments to reference
     - 900388181139144786
     - 1105825157110579230
     - image.png
+  emotes_preview:
+    - 900388181139144786
+    - 1110067476273840138
+    - emotes_preview.png
+  animated_emotes_preview:
+    - 900388181139144786
+    - 1110010115530178630
+    - animated_emotes_preview.gif
 
 backgrounds:                           # https://kirimymaps.blogspot.com/
   grassy_field:

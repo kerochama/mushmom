@@ -8,12 +8,13 @@ from discord.ext import commands
 from discord import app_commands
 
 from itertools import cycle
+from typing import Optional
 
 from .. import config, mapleio
 from .utils import errors
 from .utils.checks import in_guild_channel
 
-from ..resources import EMOJIS
+from ..resources import EMOJIS, ATTACHMENTS
 from ..mapleio.character import Character
 
 
@@ -73,26 +74,25 @@ class List(commands.Cog):
         interaction: discord.Interaction
 
         """
+
+        mush = await self.get_ref_command(interaction, 'mush')
         embed = discord.Embed(
-            description=('The following is a list of emotes you can use. '
-                         'Call these using the `/mush` command\n\u200b'),
+            description=('The following is a list of emotes you can use. Call '
+                         f'these using the {mush.mention} command\n\u200b'),
             color=config.core.embed_color
         )
 
         embed.set_author(name='Emotes', icon_url=self.bot.user.display_avatar.url)
         thumbnail = self.bot.get_emoji(EMOJIS['mushcheers'].id).url
         embed.set_thumbnail(url=thumbnail)
+        embed.add_field(name='Animated Emotes', value='')
+        embed.set_image(url=ATTACHMENTS['animated_emotes_preview'].url)
 
-        # static, animated, custom
-        static = [emote for emote in mapleio.EXPRESSIONS
-                  if emote not in mapleio.ANIMATED] + ['\u200b']
-        embed.add_field(name='Static', value='\n'.join(static))
-        animated = mapleio.ANIMATED + ['\u200b']
-        embed.add_field(name='Animated', value='\n'.join(animated))
-        embed.add_field(name='Custom', value='\n'.join([]))
-
+        view = EmotesPreview(interaction, embed)
         check = not await in_guild_channel(interaction, raise_error=False)
-        await interaction.response.send_message(embed=embed, ephemeral=check)
+        await interaction.response.send_message(
+            embed=embed, view=view, ephemeral=check
+        )
 
     @list_group.command()
     async def expressions(self, interaction: discord.Interaction):
@@ -104,9 +104,11 @@ class List(commands.Cog):
         interaction: discord.Interaction
 
         """
+        pose = await self.get_ref_command(interaction, 'pose')
         embed = discord.Embed(
             description=('The following is a list of expressions you can use '
-                         'in the generation of your sprite in `/pose`.\n\u200b'),
+                         f'in the generation of your sprite in {pose.mention}.'
+                         '\n\u200b'),
             color=config.core.embed_color
         )
 
@@ -142,9 +144,11 @@ class List(commands.Cog):
           Display raw values instead of label
 
         """
+        pose = await self.get_ref_command(interaction, 'pose')
         embed = discord.Embed(
             description=('The following is a list of poses you can use in the '
-                         'generation of your sprite in `/pose`.\n\u200b'),
+                         f'generation of your sprite in {pose.mention}.'
+                         '\n\u200b'),
             color=config.core.embed_color
         )
 
@@ -165,6 +169,43 @@ class List(commands.Cog):
 
         check = not await in_guild_channel(interaction, raise_error=False)
         await interaction.response.send_message(embed=embed, ephemeral=check)
+
+    async def get_ref_command(
+            self,
+            interaction: discord.Interaction,
+            cmd_name: str
+    ) -> Optional[app_commands.AppCommand]:
+        """
+        Fetch/get app command with id for mention (see: CachedCommandTree)
+
+        Parameters
+        ----------
+        interaction: discord.Interaction
+        cmd_name: str
+            command name
+
+        Returns
+        -------
+        Optional[app_commands.AppCommand]
+            guild command if interaction is a guild command, else global
+
+        """
+        cmd = (
+            self.bot.tree.get_app_command(cmd_name, guild=interaction.guild)
+            or self.bot.tree.get_app_command(cmd_name)
+        )
+
+        if not cmd:  # check guild
+            cmds = await self.bot.tree.fetch_commands(guild=interaction.guild)
+            cmd = self.bot.tree.get_app_command(
+                cmd_name, guild=interaction.guild
+            )
+
+        if not cmd:  # check global
+            cmds = await self.bot.tree.fetch_commands()
+            cmd = self.bot.tree.get_app_command(cmd_name)
+
+        return cmd
 
 
 class CharacterScrollView(discord.ui.View):
@@ -262,6 +303,57 @@ def _fmt_char_names(user: dict, bold_i: int):
     # extra space
     char_names += ['\u200b']
     return char_names
+
+
+class EmotesPreview(discord.ui.View):
+    def __init__(
+            self,
+            interaction: discord.Interaction,
+            embed: discord.Embed,
+            timeout: int = 180
+    ):
+        super().__init__(timeout=timeout)
+        self.orig_interaction = interaction
+        self.embed = embed
+
+        cmd_id = interaction.data['id']
+        self.cmd_mention = f'</{interaction.command.qualified_name}:{cmd_id}>'
+
+    @discord.ui.button(label='Animated Emotes')
+    async def animated(
+            self,
+            interaction: discord.Interaction,
+            button: discord.ui.Button
+    ):
+        if interaction.user.id == self.orig_interaction.user.id:
+            self.embed.set_field_at(0, name='Animated Emotes', value='')
+            self.embed.set_image(url=ATTACHMENTS['animated_emotes_preview'].url)
+            await interaction.response.edit_message(embed=self.embed, view=self)
+        else:
+            await interaction.response.send_message(
+                f'Not original user. Use {self.cmd_mention}', ephemeral=True
+            )
+
+    @discord.ui.button(label='Static Emotes')
+    async def static(
+            self,
+            interaction: discord.Interaction,
+            button: discord.ui.Button
+    ):
+        if interaction.user.id == self.orig_interaction.user.id:
+            self.embed.set_field_at(0, name='Static Emotes', value='')
+            self.embed.set_image(url=ATTACHMENTS['emotes_preview'].url)
+            await interaction.response.edit_message(embed=self.embed, view=self)
+        else:
+            await interaction.response.send_message(
+                f'Not original user. Use {self.cmd_mention}', ephemeral=True
+            )
+
+    async def on_timeout(self):
+        for button in self.children:
+            button.disabled = True
+
+        await self.orig_interaction.edit_original_response(view=self)
 
 
 async def setup(bot):
