@@ -55,6 +55,7 @@ EMOTE_LISTS = (
     FACE_ACCESSORIES.keys()
 )
 EMOTES = list(set([x for it in EMOTE_LISTS for x in it]))
+EMOTES.sort()
 
 
 class Mush(commands.Cog):
@@ -103,6 +104,9 @@ class Mush(commands.Cog):
                 )  # delete immediately
         else:
             raise errors.MapleIOError
+
+        # pass for tracking
+        interaction.extras['emote'] = emote
 
     async def mush_context_menu(
             self,
