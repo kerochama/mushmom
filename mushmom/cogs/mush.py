@@ -84,7 +84,8 @@ async def autocomplete_recent_emotes(interaction, current):
         tracking = {k: v for k, v in tracking}  # sorted for latest ts
 
         # process from db
-        called = {k: v['ts'] for k, v in user['emotes'].items()}
+        user_emotes = user['emotes'] if 'emotes' in user else {}
+        called = {k: v['ts'] for k, v in user_emotes.items()}
         called.update(tracking)
         called = dict(sorted(called.items(), key=lambda x: x[1], reverse=True))
         recents = list(called.keys())[:10]  # most recent first
