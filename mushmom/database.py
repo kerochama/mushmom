@@ -365,9 +365,9 @@ class Database:
             # emotes tracking
             if cmd == 'mush':
                 emote = f"emotes.{extras['emote']}"
-                _inc[f'{emote}.0'] = _inc.get(f'{emote}.0', 0) + 1
-                _prev = _set.get(f'{emote}.1', datetime.min)
-                _set[f'{emote}.1'] = max(_prev, ts)
+                _inc[f'{emote}.cnt'] = _inc.get(f'{emote}.0', 0) + 1
+                _prev = _set.get(f'{emote}.ts', datetime.min)
+                _set[f'{emote}.ts'] = max(_prev, ts)
 
         for record in tracking:
             gid, uid, cmd, ts, extras = record
