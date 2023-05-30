@@ -58,6 +58,44 @@ EMOTES = list(set([x for it in EMOTE_LISTS for x in it]))
 EMOTES.sort()
 
 
+async def autocomplete_recent_emotes(interaction, current):
+    """
+    Autocomplete for user's 10 recently used emotes. Note: db call is
+    cached, so not clobbering the database
+
+    Parameters
+    ----------
+    interaction: discord.Interaction
+    current: str
+
+    Returns
+    -------
+        List[app_commands.Choice]
+    """
+    user = await interaction.client.db.get_user(interaction.user.id)
+    if user:
+        # process tracking
+        tracking = [
+            (rec.extras['emote'], rec.ts)
+            for rec in interaction.client._tracking
+            if rec.command == 'mush' and rec.userid == interaction.user.id
+        ]
+        tracking.sort(key=lambda x: x[1])
+        tracking = {k: v for k, v in tracking}  # sorted for latest ts
+
+        # process from db
+        called = {k: v['ts'] for k, v in user['emotes'].items()}
+        called.update(tracking)
+        called = dict(sorted(called.items(), key=lambda x: x[1], reverse=True))
+        recents = list(called.keys())[:10]  # most recent first
+        emotes = recents + [emote for emote in EMOTES if emote not in recents]
+
+        return [app_commands.Choice(name=emote, value=emote)
+                for emote in emotes
+                if current.lower() in emote.lower()][:25]
+    return EMOTES
+
+
 class Mush(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -71,7 +109,7 @@ class Mush(commands.Cog):
             self.bot.tree.add_command(self._mush_context_menu)
 
     @app_commands.command()
-    @app_commands.autocomplete(emote=contains(EMOTES),
+    @app_commands.autocomplete(emote=autocomplete_recent_emotes,
                                char=autocomplete_chars)
     async def mush(
             self,
