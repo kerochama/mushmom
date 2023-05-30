@@ -362,8 +362,15 @@ class Database:
             _set['update_time'] = max(_set['update_time'], ts)
             _inc[f'commands.{cmd}'] = _inc.get(f'commands.{cmd}', 0) + 1
 
+            # emotes tracking
+            if cmd == 'mush':
+                emote = f"emotes.{extras['emote']}"
+                _inc[f'{emote}.cnt'] = _inc.get(f'{emote}.0', 0) + 1
+                _prev = _set.get(f'{emote}.ts', datetime.min)
+                _set[f'{emote}.ts'] = max(_prev, ts)
+
         for record in tracking:
-            gid, uid, cmd, ts = record
+            gid, uid, cmd, ts, extras = record
 
             if not await self.get_guild(gid):  # mostly in cache
                 await self.add_guild(gid)

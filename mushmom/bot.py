@@ -35,7 +35,7 @@ initial_extensions = (
     'cogs.pose'
 )
 
-TrackRecord = namedtuple('TrackRecord', 'guildid userid command ts')
+TrackRecord = namedtuple('TrackRecord', 'guildid userid command ts extras')
 
 
 class Mushmom(commands.Bot):
@@ -337,7 +337,8 @@ class Mushmom(commands.Bot):
                 guildid=interaction.guild_id,
                 userid=interaction.user.id,
                 command=command.qualified_name,
-                ts=datetime.utcnow()
+                ts=datetime.utcnow(),
+                extras=interaction.extras
             )
             self._tracking.append(record)
 
