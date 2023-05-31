@@ -102,6 +102,7 @@ class Help(commands.Cog):
 
         embed.set_author(name=f'About {config.core.bot_name}',
                          icon_url=self.bot.user.display_avatar.url)
+        embed.set_footer(text=f'v{config.core.version}')
         thumbnail = self.bot.get_emoji(EMOJIS['mushparty'].id).url
         embed.set_thumbnail(url=thumbnail)
         embed.set_image(url=ATTACHMENTS['mushmomheader'].url)
@@ -173,6 +174,7 @@ class Help(commands.Cog):
 
         embed.set_author(name=f'{config.core.bot_name}',
                          icon_url=self.bot.user.display_avatar.url)
+        embed.set_footer(text=f'v{config.core.version}')
         thumbnail = self.bot.get_emoji(EMOJIS['mushcheers'].id).url
         embed.set_thumbnail(url=thumbnail)
         embed.set_image(url=ATTACHMENTS['mushmomheader'].url)
