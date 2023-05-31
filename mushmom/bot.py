@@ -60,7 +60,6 @@ class Mushmom(commands.Bot):
     def __init__(
             self,
             db_client: AsyncIOMotorClient,
-            sync: Optional[int, bool] = None,  # specific guild id or all
             enable_tracking: bool = True
     ):
         intents = discord.Intents.default()
@@ -80,7 +79,6 @@ class Mushmom(commands.Bot):
 
         self.info_cache = TTLCache(seconds=600)
         self.db = db.Database(db_client)
-        self.init_sync = sync
 
         # add global checks
         self.add_check(checks.not_bot)
@@ -110,13 +108,6 @@ class Mushmom(commands.Bot):
 
         # update help command cog
         self.help_command.cog = self.get_cog(config.core.bot_name)
-
-        # sync slash commands
-        if self.init_sync:
-            guild = self.init_sync if type(self.init_sync) is int else None
-            _log.info(
-                await self.get_cog('Meta')._sync(guild)
-            )
 
         # update guild cache
         await self.db.initialize_guild_cache()
