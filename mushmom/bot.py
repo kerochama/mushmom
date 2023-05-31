@@ -23,7 +23,6 @@ _log = logging.getLogger('discord')
 
 initial_extensions = (
     'cogs.meta',
-    'cogs.self',
     'cogs.error_handler',
     'cogs.help',
     'cogs.server',
