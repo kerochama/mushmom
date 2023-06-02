@@ -12,12 +12,13 @@ from io import BytesIO
 from PIL import Image
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
-from typing import Optional
+from typing import Optional, Union
 from aenum import Enum
 from collections import namedtuple
+from urllib.parse import urlparse, parse_qsl
 
 from .. import config, mapleio
-from .utils import errors, io
+from .utils import errors
 from .utils.parameters import contains
 from .utils.checks import slash_in_guild_channel
 from ..mapleio import imutils
@@ -27,12 +28,17 @@ from ..resources import EMOJIS, ATTACHMENTS, BACKGROUNDS
 
 UTC = timezone.utc
 NYC = ZoneInfo('America/New_York')  # new york timezone
-InfoData = namedtuple('InfoData', 'message target')
 Games = Enum('Games', zip(mapleio.GAMES, mapleio.GAMES))
 
 
 def utc(ts):
     return ts.replace(tzinfo=UTC)
+
+
+class PartialMember:
+    def __init__(self, id: int, display_name: str):
+        self.id = id
+        self.display_name = display_name
 
 
 class Info(commands.Cog):
@@ -78,7 +84,9 @@ class Info(commands.Cog):
         mushshine = self.bot.get_emoji(EMOJIS['mushshine'].id).url
         embed.set_author(name=f'{member.display_name}\'s Info',
                          icon_url=mushshine)
-        embed.set_thumbnail(url=member.display_avatar.url)
+        thumb = member.display_avatar.url  # hide id in thumb url
+        thumb += ('&' if urlparse(thumb).query else '?') + f'uid={member.id}'
+        embed.set_thumbnail(url=thumb)
 
         # get user info
         user = await self.bot.db.get_user(member.id)
@@ -171,8 +179,7 @@ class Info(commands.Cog):
 
         # start waiting for fame reactions
         if user:
-            _info = InfoData(msg, member)
-            self.bot.info_cache.add(msg.id, _info)
+            self.bot.info_cache.add(msg.id, msg)
 
     @slash_in_guild_channel()
     async def info_context_menu(
@@ -400,7 +407,7 @@ class Info(commands.Cog):
     async def _fame(
             self,
             user: discord.Member,
-            target: discord.Member,
+            target: Union[discord.Member, PartialMember],
             amt: int = 1,
     ) -> None:
         """
@@ -411,8 +418,8 @@ class Info(commands.Cog):
         ----------
         user: discord.Member
             the member faming
-        target: discord.Member
-            the member to fame
+        target: Union[discord.Member, PartialMember]
+            the member or member ID to fame
         amt: int
             the amount to fame. can be negative
 
@@ -526,43 +533,78 @@ class Info(commands.Cog):
             payload: discord.RawReactionActionEvent,
     ) -> None:
         """
-        Monitor for fame/defame reactions to info.  Will only monitor
-        for 10 minutes and all fame restrictions apply.  Errors will be
-        ignored to avoid clutter
-        
+        Monitor for fame/defame reactions to info. All fame restrictions apply.
+        Errors will be ignored to avoid clutter
+
         Parameters
         ----------
         payload: discord.RawReactionActionEvent
 
         """
-        if payload.message_id not in self.bot.info_cache:
-            return
-
-        message, target = self.bot.info_cache.get(payload.message_id)
         react = payload.emoji.name.lower()
 
+        if react == '\U0001f44E' or _contains_all(react, ['thumb', 'down']):
+            amt = -1
+        elif react == '\U0001f44D' or _contains_all(react, ['thumb', 'up']):
+            amt = 1
+        else:
+            return  # neither a thumbs up nor thumbs down
+
         try:
-            cmd = None
-            if react == '\U0001f44E' or _contains_all(react, ['thumb', 'down']):
-                cmd, amt = 'fame', -1
-            elif react == '\U0001f44D' or _contains_all(react, ['thumb', 'up']):
-                cmd, amt = 'defame', 1
+            # get message
+            if payload.message_id in self.bot.info_cache:
+                message = self.bot.info_cache.get(payload.message_id)
+                self.bot.info_cache.refresh(payload.message_id)  # extend
+            else:
+                channel = self.bot.get_channel(payload.channel_id)
+                message = await channel.fetch_message(payload.message_id)
 
-            if cmd:
-                await self._fame(payload.member, target, amt)
+                if (
+                    message.author.id != self.bot.user.id
+                    or message.interaction is None
+                    or message.interaction.name not in ['info', 'Get Info']
+                ):
+                    return  # not an info message
 
-                # edit embed. fame is the 2nd field
-                embed = message.embeds[0]
-                curr = re.search(r'\d+', embed.fields[1].value).group()
-                _fmt_fame = _padded_str(f'\u2b50 {int(curr) + amt}', n=12)
-                embed.set_field_at(1, name='Fame', value=_fmt_fame + '\n\u200b')
+                # add to cache
+                self.bot.info_cache.add(payload.message_id, message)
 
-                # attached pfp pops out of embed, so remove
-                await message.edit(embed=embed, attachments=[])
-        except errors.MushError:
-            pass  # ideally either DM or ephemeral (but no interaction)
+            embed = message.embeds[0]
+            display_name = embed.author.name.replace("'s Info", '')
 
-        self.bot.info_cache.refresh(payload.message_id)  # extend
+            # determine target from thumbnail (params or after /avatars/)
+            url = embed.thumbnail.url
+            params = dict(parse_qsl(urlparse(url).query))
+            _id = params['uid'] if 'uid' in params else url.split('/')[-2]
+
+            # fallback on title, though users can change name
+            if not _id or not _id.isnumeric():
+                name, disc = embed.title.split('#')
+                target = discord.utils.get(
+                    self.bot.get_all_members(),
+                    name=name,
+                    discriminator=disc
+                )
+            else:
+                target = PartialMember(
+                    id=int(_id),
+                    display_name=display_name
+                )
+
+            if not target:  # cant determine target
+                return
+
+            # fame and update embed. note: does not pull fame cnt from db
+            await self._fame(payload.member, target, amt)
+            curr = re.search(r'\d+', embed.fields[1].value).group()
+            _fmt_fame = _padded_str(f'\u2b50 {int(curr) + amt}', n=12)
+            embed.set_field_at(1, name='Fame', value=_fmt_fame + '\n\u200b')
+
+            # attached pfp pops out of embed, so remove
+            await message.edit(embed=embed, attachments=[])
+
+        except (discord.HTTPException, errors.MushError):
+            pass  # ideally would DM or ephemeral (but no interaction)
 
 
 def _padded_str(text, n=30):
