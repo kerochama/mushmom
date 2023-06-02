@@ -29,18 +29,27 @@ class TTLCache:
         the number of seconds to wait before expiring
 
     """
-    def __init__(self, seconds: int):
+    def __init__(self, seconds: int, max_size: Optional[int] = None):
         self.__ttl = seconds
         self.__cache = {}
         self.__cnt = 0
         self.__recur = 20  # auto prune every 20 calls
 
+        # also max_size
+        self.__max_size = max_size
+
     def prune(self) -> None:
         """Loop through cache and remove all expired keys"""
         current_time = time.monotonic()
-        to_remove = [k for (k, (v, t)) in self.__cache.items()
-                     if current_time > (t + self.__ttl)]
-        for k in to_remove:
+        rm_time = [k for (k, (v, t)) in self.__cache.items()
+                    if current_time > (t + self.__ttl)]
+
+        # cap at max_size. oldest first
+        n = self.__max_size
+        filtered = [k for k in self.__cache.keys() if k not in rm_time]
+        rm_size = list(reversed(filtered))[n:] if n is not None else []
+
+        for k in rm_time + rm_size:
             del self.__cache[k]
 
     def get(self, k: Hashable) -> Any:

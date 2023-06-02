@@ -77,7 +77,7 @@ class Mushmom(commands.Bot):
             default=aiohttp.http.SERVER_SOFTWARE
         )
 
-        self.info_cache = TTLCache(seconds=600)
+        self.info_cache = TTLCache(seconds=86400, max_size=1000)
         self.db = db.Database(db_client)
 
         # add global checks
