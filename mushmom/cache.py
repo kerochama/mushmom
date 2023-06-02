@@ -42,7 +42,7 @@ class TTLCache:
         """Loop through cache and remove all expired keys"""
         current_time = time.monotonic()
         rm_time = [k for (k, (v, t)) in self.__cache.items()
-                    if current_time > (t + self.__ttl)]
+                   if current_time > (t + self.__ttl)]
 
         # cap at max_size. oldest first
         n = self.__max_size
