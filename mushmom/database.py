@@ -128,7 +128,10 @@ class Database:
             'default': 0,
             'chars': chars,
             'fame': 0,
-            'fame_log': [],
+            'fame_log': {
+                'fames': [],
+                'famers': []
+            },
             'create_time': datetime.utcnow(),
             'update_time': datetime.utcnow(),
         }
