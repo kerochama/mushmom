@@ -204,7 +204,14 @@ class Mushmom(commands.Bot):
             the message that was sent
 
         """
-        webhooks = await interaction.channel.webhooks()
+        # handle thread
+        if isinstance(interaction.channel, discord.Thread):
+            channel = interaction.channel.parent
+            kwargs['thread'] = interaction.channel
+        else:
+            channel = interaction.channel
+
+        webhooks = await channel.webhooks()
         hook_name = config.core.hook_name
         webhook = next((wh for wh in webhooks if wh.name == hook_name), None)
 
