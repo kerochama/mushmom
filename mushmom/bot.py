@@ -77,7 +77,7 @@ class Mushmom(commands.Bot):
             default=aiohttp.http.SERVER_SOFTWARE
         )
 
-        self.info_cache = TTLCache(seconds=600)
+        self.info_cache = TTLCache(seconds=86400, max_size=1000)
         self.db = db.Database(db_client)
 
         # add global checks
@@ -204,7 +204,14 @@ class Mushmom(commands.Bot):
             the message that was sent
 
         """
-        webhooks = await interaction.channel.webhooks()
+        # handle thread
+        if isinstance(interaction.channel, discord.Thread):
+            channel = interaction.channel.parent
+            kwargs['thread'] = interaction.channel
+        else:
+            channel = interaction.channel
+
+        webhooks = await channel.webhooks()
         hook_name = config.core.hook_name
         webhook = next((wh for wh in webhooks if wh.name == hook_name), None)
 

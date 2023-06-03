@@ -448,11 +448,12 @@ class EmoteSelectModal(discord.ui.Modal, title='Select Emote'):
             max_length=30,
         )
 
-        static = [emote for emote in mapleio.EXPRESSIONS
-                  if emote not in mapleio.ANIMATED]
-        animated = mapleio.ANIMATED
-        text = (f'Animated:\n{", ".join(animated)}\n\n'
-                f'Static:\n{", ".join(static)}')
+        animated = (mapleio.ANIMATED + list(CUSTOM)
+                    + [k for k, v in FACE_ACCESSORIES.items() if v.animated])
+        animated.sort()
+        static = sorted([emote for emote in EMOTES if emote not in animated])
+        text = (f'Animated:\n{", ".join(set(sorted(animated)))}\n\n'
+                f'Static:\n{", ".join(set(sorted(static)))}')
 
         self.options = discord.ui.TextInput(
             label='Options',
